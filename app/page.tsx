@@ -127,7 +127,7 @@ export default function Home() {
           <div className="lg:col-span-8">
             <RecipeList
               key={key}
-              userId={selectedUserId ? parseInt(selectedUserId) : (isMyRecipesView ? parseInt(session?.user.id) : undefined)}
+              userId={selectedUserId ? selectedUserId : (isMyRecipesView && session?.user?.id ? session.user.id.toString() : undefined)}
               showPrivate={Boolean(isMyRecipesView || (selectedUserId && parseInt(selectedUserId) === session?.user?.id))}
               publicOnly={Boolean(!isMyRecipesView && (!selectedUserId || parseInt(selectedUserId) !== session?.user?.id))}
             />
