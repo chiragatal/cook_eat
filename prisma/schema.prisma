@@ -17,8 +17,16 @@ model Post {
   id          Int      @id @default(autoincrement())
   title       String
   description String
-  ingredients String   // We'll store this as JSON string initially
+  ingredients String   // Store as JSON string of array of objects with name and amount
+  steps       String   // Store as JSON string of array of step objects with instruction and id
+  notes       String?  // Optional cooking tips, variations, or special notes
+  images      String   // Store as JSON string of array of image paths
+  tags        String?  // Store as JSON string of array of strings
+  category    String?  // Main category of the recipe
+  cookingTime Int?     // Cooking time in minutes
+  difficulty  String?  // Easy, Medium, Hard
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   isPublic    Boolean  @default(false)
+  cookedOn    DateTime? // When this recipe was cooked
 }
