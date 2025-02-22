@@ -1,0 +1,50 @@
+.calendar {
+  --rdp-cell-size: auto;
+  --rdp-accent-color: #4f46e5;
+  --rdp-background-color: #e0e7ff;
+  --rdp-accent-color-dark: #4338ca;
+  --rdp-background-color-dark: #818cf8;
+  --rdp-outline: 2px solid var(--rdp-accent-color);
+  --rdp-outline-selected: 2px solid var(--rdp-accent-color);
+  width: 100%;
+}
+
+.calendar :global(.rdp-day_selected),
+.calendar :global(.rdp-day_selected:hover) {
+  background-color: transparent;
+  color: inherit;
+}
+
+.calendar :global(.rdp-day_today) {
+  font-weight: bold;
+  color: var(--rdp-accent-color);
+  background-color: #faf5ff;
+}
+
+.calendar :global(.rdp-button) {
+  width: 100%;
+  height: 100%;
+}
+
+.calendar :global(.rdp-tbody) {
+  border: 1px solid #e5e7eb;
+}
+
+.calendar :global(.rdp-cell) {
+  border: 1px solid #e5e7eb;
+  height: 120px;
+  padding: 0;
+}
+
+.calendar :global(.rdp-head_cell) {
+  font-weight: 600;
+  color: #4b5563;
+  padding: 0.75rem;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.calendar :global(.rdp-nav) {
+  padding: 1rem;
+}
