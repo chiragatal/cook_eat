@@ -1,17 +1,28 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/route';
+import { prisma } from '../../../lib/prisma';
 
 export async function GET(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
     const url = new URL(request.url);
     const id = url.searchParams.get('id');
+    const userId = url.searchParams.get('userId');
+    const publicOnly = url.searchParams.get('publicOnly') === 'true';
 
     if (id) {
       // Fetch single recipe
       const recipe = await prisma.post.findUnique({
-        where: { id: parseInt(id) }
+        where: { id: parseInt(id) },
+        include: {
+          user: {
+            select: {
+              name: true,
+              email: true
+            }
+          }
+        }
       });
 
       if (!recipe) {
@@ -21,13 +32,41 @@ export async function GET(request: Request) {
         );
       }
 
+      // Check if user has access to this recipe
+      if (!recipe.isPublic && (!session || recipe.userId !== parseInt(session.user.id))) {
+        return NextResponse.json(
+          { error: 'Not authorized to view this recipe' },
+          { status: 403 }
+        );
+      }
+
       return NextResponse.json(recipe);
     }
 
-    // Fetch all recipes
+    // Build the query
+    const where: any = {};
+
+    if (userId) {
+      // User-specific recipes (for My Recipes page)
+      where.userId = parseInt(userId);
+    } else if (publicOnly || !session) {
+      // Public recipes only (for All Recipes page or non-authenticated users)
+      where.isPublic = true;
+    }
+
+    // Fetch recipes
     const posts = await prisma.post.findMany({
+      where,
       orderBy: {
         createdAt: 'desc'
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
       }
     });
 
@@ -43,6 +82,14 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Not authenticated' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     console.log('Creating post with data:', body);
 
@@ -75,6 +122,7 @@ export async function POST(request: Request) {
         difficulty,
         isPublic,
         cookedOn: cookedOn ? new Date(cookedOn) : null,
+        userId: parseInt(session.user.id),
       },
     });
 
@@ -90,6 +138,14 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Not authenticated' },
+        { status: 401 }
+      );
+    }
+
     const url = new URL(request.url);
     const id = parseInt(url.searchParams.get('id') || '');
 
@@ -97,6 +153,25 @@ export async function DELETE(request: Request) {
       return NextResponse.json(
         { error: 'Recipe ID is required' },
         { status: 400 }
+      );
+    }
+
+    // Check if user owns the recipe or is admin
+    const recipe = await prisma.post.findUnique({
+      where: { id }
+    });
+
+    if (!recipe) {
+      return NextResponse.json(
+        { error: 'Recipe not found' },
+        { status: 404 }
+      );
+    }
+
+    if (recipe.userId !== parseInt(session.user.id) && !session.user.isAdmin) {
+      return NextResponse.json(
+        { error: 'Not authorized to delete this recipe' },
+        { status: 403 }
       );
     }
 
@@ -116,10 +191,17 @@ export async function DELETE(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Not authenticated' },
+        { status: 401 }
+      );
+    }
+
     const url = new URL(request.url);
     const id = parseInt(url.searchParams.get('id') || '');
     const body = await request.json();
-    const { title, description, ingredients, steps, notes, images, tags, category, cookingTime, difficulty, isPublic, cookedOn } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -128,21 +210,56 @@ export async function PUT(request: Request) {
       );
     }
 
+    // Check if user owns the recipe or is admin
+    const recipe = await prisma.post.findUnique({
+      where: { id }
+    });
+
+    if (!recipe) {
+      return NextResponse.json(
+        { error: 'Recipe not found' },
+        { status: 404 }
+      );
+    }
+
+    if (recipe.userId !== parseInt(session.user.id) && !session.user.isAdmin) {
+      return NextResponse.json(
+        { error: 'Not authorized to update this recipe' },
+        { status: 403 }
+      );
+    }
+
+    // Extract only the updatable fields
+    const {
+      title,
+      description,
+      ingredients,
+      steps,
+      notes,
+      images,
+      tags,
+      category,
+      cookingTime,
+      difficulty,
+      isPublic,
+      cookedOn
+    } = body;
+
     const post = await prisma.post.update({
       where: { id },
       data: {
-        title: title || undefined,
-        description: description || undefined,
-        ingredients: ingredients || undefined,
-        steps: steps || undefined,
-        notes: notes || null,
-        images: images || undefined,
-        tags: tags || undefined,
-        category: category || null,
-        cookingTime: cookingTime ? parseInt(cookingTime) : null,
-        difficulty: difficulty || null,
-        isPublic: isPublic ?? undefined,
-        cookedOn: cookedOn || null,
+        title,
+        description,
+        ingredients,
+        steps,
+        notes,
+        images,
+        tags,
+        category,
+        cookingTime,
+        difficulty,
+        isPublic,
+        cookedOn: cookedOn ? new Date(cookedOn) : null,
       },
     });
 

@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import RecipeForm from './RecipeForm';
 import RecipeSearch from './RecipeSearch';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+import { useView } from '../contexts/ViewContext';
+import { useRouter } from 'next/navigation';
 
 interface Ingredient {
   name: string;
@@ -30,6 +33,11 @@ interface Recipe {
   createdAt: string;
   isPublic: boolean;
   cookedOn: string | null;
+  userId: number;
+  user: {
+    name?: string;
+    email?: string;
+  };
 }
 
 interface SearchFilters {
@@ -41,13 +49,26 @@ interface SearchFilters {
 interface RecipeListProps {
   selectedDate?: Date | null;
   filterByDate?: boolean;
+  userId?: string | number | undefined;
+  showPrivate?: boolean;
+  publicOnly?: boolean;
 }
 
-export default function RecipeList({ selectedDate, filterByDate = false }: RecipeListProps) {
+export default function RecipeList({
+  selectedDate,
+  filterByDate = false,
+  userId,
+  showPrivate = false,
+  publicOnly = false
+}: RecipeListProps) {
+  const { data: session } = useSession();
+  const { setSelectedUser, isMyRecipesView } = useView();
+  const router = useRouter();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
+  const [shareButtonText, setShareButtonText] = useState('Share Collection');
   const [filters, setFilters] = useState<SearchFilters>({
     query: '',
     category: '',
@@ -55,25 +76,37 @@ export default function RecipeList({ selectedDate, filterByDate = false }: Recip
   });
 
   useEffect(() => {
-    fetchRecipes();
-  }, []);
+    const fetchRecipes = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const params = new URLSearchParams();
 
-  const fetchRecipes = async () => {
-    try {
-      const response = await fetch('/api/posts');
-      if (!response.ok) {
-        throw new Error('Failed to fetch recipes');
+        if (isMyRecipesView && session?.user?.id) {
+          params.append('userId', session.user.id.toString());
+        } else if (userId) {
+          params.append('userId', userId.toString());
+        } else if (publicOnly) {
+          params.append('publicOnly', 'true');
+        }
+
+        const response = await fetch(`/api/posts?${params.toString()}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch recipes');
+        }
+
+        const data = await response.json();
+        setRecipes(data);
+      } catch (err) {
+        console.error('Error fetching recipes:', err);
+        setError('Failed to load recipes');
+      } finally {
+        setLoading(false);
       }
-      const data = await response.json();
-      setRecipes(data);
-      setError(null);
-    } catch (err) {
-      setError('Failed to load recipes');
-      console.error('Error fetching recipes:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchRecipes();
+  }, [userId, publicOnly, isMyRecipesView, session?.user?.id]);
 
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this recipe?')) {
@@ -89,7 +122,7 @@ export default function RecipeList({ selectedDate, filterByDate = false }: Recip
         throw new Error('Failed to delete recipe');
       }
 
-      setRecipes(recipes.filter(recipe => recipe.id !== id));
+      setRecipes(recipes.filter(r => r.id !== id));
     } catch (err) {
       console.error('Error deleting recipe:', err);
       alert('Failed to delete recipe');
@@ -155,6 +188,30 @@ export default function RecipeList({ selectedDate, filterByDate = false }: Recip
     return `${ingredient.name}: ${ingredient.amount}`;
   };
 
+  const handleUserClick = (userId: number, userName: string | undefined | null, email: string) => {
+    setSelectedUser(userId.toString(), userName || email);
+  };
+
+  const handleShare = async () => {
+    if (!userId) return;
+
+    try {
+      // Create the URL with the user ID as a string
+      const url = new URL(window.location.href);
+      url.pathname = '/';
+      url.searchParams.set('user', userId.toString());
+
+      await navigator.clipboard.writeText(url.toString());
+      setShareButtonText('Copied!');
+      setTimeout(() => {
+        setShareButtonText('Share Collection');
+      }, 2000);
+    } catch (err) {
+      console.error('Error copying to clipboard:', err);
+      alert('Failed to copy link to clipboard');
+    }
+  };
+
   const filteredRecipes = useMemo(() => {
     return recipes.filter(recipe => {
       // Filter by date if enabled and date is selected
@@ -170,27 +227,25 @@ export default function RecipeList({ selectedDate, filterByDate = false }: Recip
         if (!isSameDate) return false;
       }
 
+      // Filter by visibility if not showing private recipes
+      if (!showPrivate && !recipe.isPublic) {
+        return false;
+      }
+
       // Filter by search query
       if (filters.query) {
         const searchTerm = filters.query.toLowerCase();
         const ingredients = JSON.parse(recipe.ingredients);
 
-        // Search in title, description
         const titleMatch = recipe.title.toLowerCase().includes(searchTerm);
         const descriptionMatch = recipe.description.toLowerCase().includes(searchTerm);
-
-        // Search in ingredients (both name and amount)
         const ingredientMatch = ingredients.some((ingredient: Ingredient) =>
           ingredient.name.toLowerCase().includes(searchTerm) ||
           ingredient.amount.toLowerCase().includes(searchTerm)
         );
-
-        // Search in tags
         const tagMatch = JSON.parse(recipe.tags || '[]').some((tag: string) =>
           tag.toLowerCase().includes(searchTerm)
         );
-
-        // Search in category
         const categoryMatch = recipe.category?.toLowerCase().includes(searchTerm);
 
         if (!(titleMatch || descriptionMatch || ingredientMatch || tagMatch || categoryMatch)) {
@@ -199,16 +254,19 @@ export default function RecipeList({ selectedDate, filterByDate = false }: Recip
       }
 
       // Filter by category
-      const categoryMatch = !filters.category || recipe.category === filters.category;
+      if (filters.category && recipe.category !== filters.category) {
+        return false;
+      }
 
-      // Filter by visibility
-      const visibilityMatch = filters.visibility === 'all' ||
-        (filters.visibility === 'public' && recipe.isPublic) ||
-        (filters.visibility === 'private' && !recipe.isPublic);
+      // Filter by visibility setting in search filters
+      if (filters.visibility !== 'all') {
+        if (filters.visibility === 'public' && !recipe.isPublic) return false;
+        if (filters.visibility === 'private' && recipe.isPublic) return false;
+      }
 
-      return categoryMatch && visibilityMatch;
+      return true;
     });
-  }, [recipes, filters, selectedDate, filterByDate]);
+  }, [recipes, filters, selectedDate, filterByDate, showPrivate]);
 
   if (editingRecipe) {
     return (
@@ -224,7 +282,7 @@ export default function RecipeList({ selectedDate, filterByDate = false }: Recip
   if (loading) {
     return (
       <div className="flex justify-center items-center h-32">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
       </div>
     );
   }
@@ -248,7 +306,10 @@ export default function RecipeList({ selectedDate, filterByDate = false }: Recip
 
   return (
     <div>
-      <RecipeSearch onSearch={setFilters} />
+      <div className="flex justify-between items-center mb-4">
+        <RecipeSearch onSearch={setFilters} />
+      </div>
+
       {filteredRecipes.length === 0 ? (
         <div className="bg-gray-50 text-gray-500 p-8 rounded-lg text-center">
           <p className="text-lg">No recipes found matching your filters.</p>
@@ -332,6 +393,17 @@ export default function RecipeList({ selectedDate, filterByDate = false }: Recip
                     >
                       {recipe.title}
                     </Link>
+                    {recipe.user && (
+                      <p className="text-sm text-gray-500 mt-1">
+                        by{' '}
+                        <button
+                          onClick={() => handleUserClick(recipe.userId, recipe.user.name || '', recipe.user.email || '')}
+                          className="text-indigo-600 hover:text-indigo-800 hover:underline focus:outline-none"
+                        >
+                          {recipe.user.name || recipe.user.email}
+                        </button>
+                      </p>
+                    )}
                     <div className="flex flex-wrap items-center gap-2 mt-2">
                       {recipe.category && (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-purple-100 text-purple-800">
@@ -352,72 +424,35 @@ export default function RecipeList({ selectedDate, filterByDate = false }: Recip
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => handleEdit(recipe)}
-                      className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(recipe.id)}
-                      className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
-                    >
-                      Delete
-                    </button>
-                    <button
-                      onClick={() => handleTogglePublic(recipe)}
-                      className={`px-3 py-1 text-sm rounded transition-colors ${
-                        recipe.isPublic
-                          ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      {recipe.isPublic ? 'Public' : 'Private'}
-                    </button>
+                    {session && (session.user.id === recipe.userId || session.user.isAdmin) && (
+                      <>
+                        <button
+                          onClick={() => handleEdit(recipe)}
+                          className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(recipe.id)}
+                          className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          onClick={() => handleTogglePublic(recipe)}
+                          className={`px-3 py-1 text-sm rounded transition-colors ${
+                            recipe.isPublic
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {recipe.isPublic ? 'Public' : 'Private'}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
                 <p className="text-gray-600 mb-4">{recipe.description}</p>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Ingredients</h3>
-                    <ul className="space-y-2">
-                      {JSON.parse(recipe.ingredients).map((ingredient: Ingredient, index: number) => (
-                        <li key={index} className="text-gray-600">
-                          <span className="font-medium">{ingredient.name}:</span> {ingredient.amount}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Steps</h3>
-                    <ul className="space-y-2">
-                      {JSON.parse(recipe.steps || '[]').map((step: Step, index: number) => (
-                        <li key={step.id || index} className="flex items-start gap-2 text-gray-600">
-                          <span className="text-indigo-500 mt-1">•</span>
-                          <span>{step.instruction}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                {recipe.notes && (
-                  <div className="mt-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Notes</h3>
-                    <div className="bg-yellow-50 p-4 rounded-lg">
-                      <p className="text-gray-700 whitespace-pre-wrap">{recipe.notes}</p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="text-sm text-gray-500 pt-4 border-t mt-6">
-                  {new Date(recipe.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </div>
               </div>
             </div>
           ))}

@@ -1,13 +1,11 @@
-import type { Metadata } from 'next';
+'use client';
+
 import { Inter } from 'next/font/google';
+import { SessionProvider } from 'next-auth/react';
+import { ViewProvider } from './contexts/ViewContext';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
-
-export const metadata: Metadata = {
-  title: 'Cook & Eat - Recipe Tracker',
-  description: 'Track and manage your cooking recipes',
-};
 
 export default function RootLayout({
   children,
@@ -16,7 +14,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full bg-gray-50">
-      <body className={`${inter.className} h-full`}>{children}</body>
+      <body className={`${inter.className} h-full`}>
+        <SessionProvider>
+          <ViewProvider>
+            {children}
+          </ViewProvider>
+        </SessionProvider>
+      </body>
     </html>
   );
 }

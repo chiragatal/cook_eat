@@ -60,3 +60,9 @@ A post is basically a recipe.
 - [ ] Users should be able to view their shopping list
 - [ ] Users should be able to clear their shopping list
 - [ ] Users should be able to add some/all items to the shopping list from a post
+
+## Bugs
+
+- [ ] When I share a user, the link is not working
+- [ ] The Full calendar is not working and not looking so nice
+- [ ] 

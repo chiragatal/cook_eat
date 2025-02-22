@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format } from 'date-fns';
+import { useSession } from 'next-auth/react';
+import { useView } from '../contexts/ViewContext';
 import 'react-day-picker/dist/style.css';
 import styles from './Calendar.module.css';
 import Link from 'next/link';
@@ -20,16 +22,31 @@ interface CalendarProps {
 
 export default function Calendar({ onDateSelect }: CalendarProps) {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const { data: session } = useSession();
+  const { isMyRecipesView } = useView();
 
   useEffect(() => {
     fetchRecipes();
-  }, []);
+  }, [isMyRecipesView, session]);
 
   const fetchRecipes = async () => {
     try {
-      const response = await fetch('/api/posts');
+      let url = '/api/posts';
+      const params = new URLSearchParams();
+
+      if (isMyRecipesView && session) {
+        params.append('userId', session.user.id);
+      } else {
+        params.append('publicOnly', 'true');
+      }
+
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch recipes');
       }
@@ -70,7 +87,7 @@ export default function Calendar({ onDateSelect }: CalendarProps) {
   const footer = selectedDate ? (
     <div className="mt-4">
       <h3 className="font-medium text-gray-900">
-        Recipes cooked on {format(selectedDate, 'MMMM d, yyyy')}:
+        {isMyRecipesView ? 'Your recipes' : 'All recipes'} cooked on {format(selectedDate, 'MMMM d, yyyy')}:
       </h3>
       <ul className="mt-2 space-y-1">
         {getRecipesForDate(selectedDate).map(recipe => (
@@ -99,7 +116,9 @@ export default function Calendar({ onDateSelect }: CalendarProps) {
     <div className="p-4 bg-white rounded-lg shadow w-full">
       <div className="flex items-center mb-4">
         <CalendarIcon className="mr-2 h-5 w-5 text-gray-500" />
-        <h2 className="text-lg font-semibold text-gray-900">Recipe Calendar</h2>
+        <h2 className="text-lg font-semibold text-gray-900">
+          {isMyRecipesView ? 'Your Recipe Calendar' : 'All Recipe Calendar'}
+        </h2>
       </div>
       <DayPicker
         mode="single"

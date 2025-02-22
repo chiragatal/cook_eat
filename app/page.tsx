@@ -1,22 +1,66 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import RecipeForm from './components/RecipeForm';
 import RecipeList from './components/RecipeList';
 import Calendar from './components/Calendar';
-import Link from 'next/link';
+import Navigation from './components/Navigation';
+import { useSession } from 'next-auth/react';
+import { useView } from './contexts/ViewContext';
+import { useSearchParams } from 'next/navigation';
 
 export default function Home() {
+  const { data: session } = useSession();
+  const { isMyRecipesView, selectedUserId, selectedUserName, setSelectedUser } = useView();
   const [key, setKey] = useState(0);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const searchParams = useSearchParams();
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  useEffect(() => {
+    const userParam = searchParams.get('user');
+    if (!userParam) {
+      if (isInitialLoad) {
+        setIsInitialLoad(false);
+      }
+      return;
+    }
+
+    // Skip if we already have this user selected
+    if (userParam === selectedUserId) {
+      setIsInitialLoad(false);
+      return;
+    }
+
+    // Fetch user details to get the name
+    fetch(`/api/users/search?q=${userParam}`)
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch user details');
+        return res.json();
+      })
+      .then(users => {
+        if (users && users.length > 0) {
+          // Find the exact user by ID
+          const user = users.find((u: any) => u.id.toString() === userParam);
+          if (user) {
+            setSelectedUser(userParam, user.name || user.email);
+          }
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching user details:', err);
+        setSelectedUser(null, null);
+      })
+      .finally(() => {
+        setIsInitialLoad(false);
+      });
+  }, [searchParams, setSelectedUser, isInitialLoad, selectedUserId]);
 
   const handleRecipeCreated = async (recipe: any) => {
     try {
       setError(null);
-      console.log('Creating recipe:', recipe);
-
       const response = await fetch('/api/posts', {
         method: 'POST',
         headers: {
@@ -30,7 +74,6 @@ export default function Home() {
         throw new Error(data.details || data.error || 'Failed to create recipe');
       }
 
-      console.log('Recipe created successfully:', data);
       setKey(prev => prev + 1);
       setIsCreating(false);
     } catch (error) {
@@ -64,27 +107,30 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-[1400px] mx-auto px-4">
-        <div className="flex justify-between items-center mb-12">
-          <h1 className="text-4xl font-bold">Cook & Eat</h1>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/calendar"
-              className="px-4 py-2 text-indigo-600 hover:text-indigo-800 font-medium"
-            >
-              View Calendar
-            </Link>
+        <Navigation />
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold">
+            {selectedUserId
+              ? `${selectedUserName}'s Recipes`
+              : (isMyRecipesView ? 'Your Recipes' : 'All Public Recipes')}
+          </h2>
+          {session && (
             <button
               onClick={() => setIsCreating(true)}
               className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
             >
               Create New Recipe
             </button>
-          </div>
+          )}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8">
-            <h2 className="text-2xl font-bold mb-6">Your Recipes</h2>
-            <RecipeList key={key} />
+            <RecipeList
+              key={key}
+              userId={selectedUserId ? parseInt(selectedUserId) : (isMyRecipesView ? parseInt(session?.user.id) : undefined)}
+              showPrivate={Boolean(isMyRecipesView || (selectedUserId && parseInt(selectedUserId) === session?.user?.id))}
+              publicOnly={Boolean(!isMyRecipesView && (!selectedUserId || parseInt(selectedUserId) !== session?.user?.id))}
+            />
           </div>
           <div className="lg:col-span-4">
             <Calendar onDateSelect={setSelectedDate} />
