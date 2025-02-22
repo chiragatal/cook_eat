@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { supabase } from '../../../lib/supabase';
 
 export async function POST(request: Request) {
   try {
@@ -15,11 +13,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
     const imagePaths: string[] = [];
 
     for (const file of files) {
@@ -30,10 +23,27 @@ export async function POST(request: Request) {
       const buffer = Buffer.from(await file.arrayBuffer());
       const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
       const filename = `${uniqueSuffix}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
-      const filepath = join(uploadDir, filename);
 
-      await writeFile(filepath, buffer);
-      imagePaths.push(`/uploads/${filename}`);
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('recipe-images')
+        .upload(filename, buffer, {
+          contentType: file.type,
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error('Error uploading to Supabase:', error);
+        continue;
+      }
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('recipe-images')
+        .getPublicUrl(data.path);
+
+      imagePaths.push(publicUrl);
     }
 
     return NextResponse.json({ imagePaths });

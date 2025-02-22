@@ -6,17 +6,17 @@ I want to create a web app to track what I am cooking.
 
 ### Authentication
 
-- [ ] For now, there can be only one user
-- [ ] The user should be able to login and logout
-- [ ] The user should be able to sign up
-- [ ] There should be a "forgot password" feature
+- [x] For now, there can be only one user
+- [x] The user should be able to login and logout
+- [x] The user should be able to sign up
+- [x] There should be a "forgot password" feature (not needed for now)
 
 ### Access control
 
-- [ ] A post can be private or public
-- [ ] There should be access control for the posts
-- [ ] A user should not be able to edit or delete another user's post
-- [ ] There can be an admin user that can view all posts and edit or delete any post
+- [x] A post can be private or public
+- [x] There should be access control for the posts
+- [x] A user should not be able to edit or delete another user's post
+- [x] There can be an admin user that can view all posts and edit or delete any post (Not needed for now)
 
 ### What I cooked: Posts
 
@@ -26,7 +26,7 @@ A post is basically a recipe.
 - [x] This post should have a title, description, and a list of ingredients
 - [ ] I should be able to add photos, videos, links, notes, ratings, reviews, and tags
 - [x] This post should be able to be edited
-- [ ] Option to share a post as a link
+- [x] Option to share a post as a link
 
 ### Calendar
 
@@ -45,7 +45,7 @@ A post is basically a recipe.
 
 ### Search
 
-- [ ] Add search functionality
+- [x] Add search functionality
 
 ### Bookmarks
 
@@ -65,4 +65,3 @@ A post is basically a recipe.
 
 - [ ] When I share a user, the link is not working
 - [ ] The Full calendar is not working and not looking so nice
-- [ ] 
