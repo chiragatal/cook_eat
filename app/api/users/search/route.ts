@@ -3,7 +3,7 @@ import { prisma } from '../../../../lib/prisma';
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
+    const searchParams = new URL(request.url, process.env.NEXTAUTH_URL).searchParams;
     const query = searchParams.get('q');
 
     if (!query) {
