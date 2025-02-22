@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 type ViewContextType = {
   isMyRecipesView: boolean;
@@ -27,12 +27,12 @@ export function ViewProvider({ children }: { children: ReactNode }) {
       setSelectedUserId(null);
       setSelectedUserName(null);
       setIsMyRecipesView(false);
-      router.push('/');
+      // Use replaceState to clear the URL without triggering a navigation
+      window.history.replaceState({}, '', '/');
     } else {
       // Toggle between my recipes and all recipes
       const newIsMyRecipesView = !isMyRecipesView;
       setIsMyRecipesView(newIsMyRecipesView);
-      router.push('/');
     }
   };
 
@@ -41,12 +41,13 @@ export function ViewProvider({ children }: { children: ReactNode }) {
       setSelectedUserId(userId.toString());
       setSelectedUserName(userName);
       setIsMyRecipesView(false);
-      router.push(`/?user=${userId.toString()}`);
+      // Use replaceState to update URL without triggering a navigation
+      window.history.replaceState({}, '', `/?user=${userId.toString()}`);
     } else {
       setSelectedUserId(null);
       setSelectedUserName(null);
       setIsMyRecipesView(false);
-      router.push('/');
+      window.history.replaceState({}, '', '/');
     }
   };
 

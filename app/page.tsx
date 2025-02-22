@@ -29,7 +29,7 @@ export default function Home() {
     }
 
     // Skip if we already have this user selected
-    if (userParam === selectedUserId) {
+    if (userParam === selectedUserId || !isInitialLoad) {
       setIsInitialLoad(false);
       return;
     }
