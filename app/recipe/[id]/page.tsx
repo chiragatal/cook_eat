@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useView } from '../../contexts/ViewContext';
 
 interface Ingredient {
   name: string;
@@ -29,6 +30,11 @@ interface Recipe {
   createdAt: string;
   isPublic: boolean;
   cookedOn: string | null;
+  userId: string;
+  user: {
+    name: string | null;
+    email: string;
+  };
 }
 
 export default function RecipePage({ params }: { params: { id: string } }) {
@@ -36,6 +42,7 @@ export default function RecipePage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { setSelectedUser } = useView();
 
   useEffect(() => {
     fetchRecipe();
@@ -55,6 +62,11 @@ export default function RecipePage({ params }: { params: { id: string } }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleUserClick = (userId: string, userName: string | null, email: string) => {
+    setSelectedUser(userId, userName || email);
+    router.push('/');
   };
 
   if (loading) {
@@ -98,12 +110,6 @@ export default function RecipePage({ params }: { params: { id: string } }) {
           >
             ← Back to recipes
           </Link>
-          <Link
-            href="/calendar"
-            className="text-indigo-600 hover:text-indigo-800"
-          >
-            View Calendar
-          </Link>
         </div>
 
         <article className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -139,22 +145,37 @@ export default function RecipePage({ params }: { params: { id: string } }) {
 
           <div className="p-8">
             <div className="flex flex-wrap items-center gap-4 mb-6">
-              <h1 className="text-3xl font-bold text-gray-900">{recipe.title}</h1>
-              {recipe.category && (
-                <span className="px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                  {recipe.category}
-                </span>
-              )}
-              {recipe.difficulty && (
-                <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                  {recipe.difficulty}
-                </span>
-              )}
-              {recipe.cookingTime && (
-                <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                  {recipe.cookingTime} minutes
-                </span>
-              )}
+              <div className="flex-1">
+                <h1 className="text-3xl font-bold text-gray-900">{recipe.title}</h1>
+                {recipe.user && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    by{' '}
+                    <button
+                      onClick={() => handleUserClick(recipe.userId, recipe.user.name, recipe.user.email)}
+                      className="text-indigo-600 hover:text-indigo-800 hover:underline focus:outline-none"
+                    >
+                      {recipe.user.name || recipe.user.email}
+                    </button>
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {recipe.category && (
+                  <span className="px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                    {recipe.category}
+                  </span>
+                )}
+                {recipe.difficulty && (
+                  <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    {recipe.difficulty}
+                  </span>
+                )}
+                {recipe.cookingTime && (
+                  <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    {recipe.cookingTime} minutes
+                  </span>
+                )}
+              </div>
             </div>
 
             <p className="text-lg text-gray-700 mb-8">{recipe.description}</p>
