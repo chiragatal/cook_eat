@@ -37,7 +37,7 @@ export default function Calendar({ onDateSelect }: CalendarProps) {
       const params = new URLSearchParams();
 
       if (isMyRecipesView && session) {
-        params.append('userId', session.user.id);
+        params.append('userId', session.user.id.toString());
       } else {
         params.append('publicOnly', 'true');
       }
