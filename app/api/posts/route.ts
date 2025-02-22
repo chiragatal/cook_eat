@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/config';
 import { prisma } from '../../../lib/prisma';
-import { Prisma } from '@prisma/client';
 
 export async function GET(request: Request) {
   try {
@@ -45,7 +44,7 @@ export async function GET(request: Request) {
     }
 
     // Build the query
-    const where: Prisma.PostWhereInput = {};
+    const where = {} as any;
 
     if (userId) {
       // User-specific recipes (for My Recipes page)
@@ -123,7 +122,7 @@ export async function POST(request: Request) {
         difficulty,
         isPublic,
         cookedOn: cookedOn ? new Date(cookedOn) : null,
-        userId: session.user.id,
+        userId: session.user.id
       },
       include: {
         user: {
