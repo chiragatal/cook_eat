@@ -8,6 +8,7 @@ declare module 'next-auth' {
       email: string;
       name?: string | null;
       isAdmin: boolean;
+      image?: string | null;
     }
   }
 
@@ -16,6 +17,7 @@ declare module 'next-auth' {
     email: string;
     name?: string | null;
     isAdmin: boolean;
+    image?: string | null;
   }
 }
 
