@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../lib/supabase';
+import { put } from '@vercel/blob';
 
 export async function POST(request: Request) {
   try {
@@ -20,30 +20,20 @@ export async function POST(request: Request) {
         continue;
       }
 
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
-      const filename = `${uniqueSuffix}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
+      try {
+        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+        const filename = `${uniqueSuffix}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
 
-      // Upload to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('recipe-images')
-        .upload(filename, buffer, {
-          contentType: file.type,
-          cacheControl: '3600',
-          upsert: false
+        // Upload to Vercel Blob Storage
+        const { url } = await put(filename, file, {
+          access: 'public',
         });
 
-      if (error) {
-        console.error('Error uploading to Supabase:', error);
+        imagePaths.push(url);
+      } catch (error) {
+        console.error('Error uploading file:', error);
         continue;
       }
-
-      // Get the public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('recipe-images')
-        .getPublicUrl(data.path);
-
-      imagePaths.push(publicUrl);
     }
 
     return NextResponse.json({ imagePaths });

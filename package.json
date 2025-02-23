@@ -14,7 +14,7 @@
     "@mantine/hooks": "^7.17.0",
     "@prisma/client": "5.10.2",
     "@radix-ui/react-slot": "^1.1.2",
-    "@supabase/supabase-js": "^2.48.1",
+    "@vercel/blob": "^0.22.1",
     "@tailwindcss/forms": "^0.5.7",
     "bcryptjs": "^3.0.2",
     "date-fns": "^4.1.0",
