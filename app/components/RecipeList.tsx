@@ -45,6 +45,7 @@ interface SearchFilters {
   query: string;
   category: string;
   visibility: 'all' | 'public' | 'private';
+  reactionFilter: string;
 }
 
 interface RecipeListProps {
@@ -70,11 +71,34 @@ export default function RecipeList({
   const [error, setError] = useState<string | null>(null);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
   const [shareButtonText, setShareButtonText] = useState('Share Collection');
+  const [userReactions, setUserReactions] = useState<Record<number, string[]>>({});
   const [filters, setFilters] = useState<SearchFilters>({
     query: '',
     category: '',
     visibility: 'all',
+    reactionFilter: '',
   });
+
+  // Fetch user reactions for all recipes
+  const fetchUserReactions = async (recipeIds: number[]) => {
+    if (!session?.user?.id) return;
+
+    try {
+      const reactions: Record<number, string[]> = {};
+
+      await Promise.all(recipeIds.map(async (postId) => {
+        const response = await fetch(`/api/posts/${postId}/reactions`);
+        if (response.ok) {
+          const data = await response.json();
+          reactions[postId] = data.userReactions || [];
+        }
+      }));
+
+      setUserReactions(reactions);
+    } catch (error) {
+      console.error('Error fetching user reactions:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchRecipes = async () => {
@@ -98,6 +122,11 @@ export default function RecipeList({
 
         const data = await response.json();
         setRecipes(data);
+
+        // Fetch reactions for all recipes if user is logged in
+        if (session?.user?.id) {
+          await fetchUserReactions(data.map((recipe: Recipe) => recipe.id));
+        }
       } catch (err) {
         console.error('Error fetching recipes:', err);
         setError('Failed to load recipes');
@@ -233,6 +262,14 @@ export default function RecipeList({
         return false;
       }
 
+      // Filter by reactions if a reaction filter is selected
+      if (filters.reactionFilter && session?.user?.id) {
+        const recipeReactions = userReactions[recipe.id] || [];
+        if (!recipeReactions.includes(filters.reactionFilter)) {
+          return false;
+        }
+      }
+
       // Filter by search query
       if (filters.query) {
         const searchTerm = filters.query.toLowerCase();
@@ -267,7 +304,7 @@ export default function RecipeList({
 
       return true;
     });
-  }, [recipes, filters, selectedDate, filterByDate, showPrivate]);
+  }, [recipes, filters, selectedDate, filterByDate, showPrivate, userReactions, session?.user?.id]);
 
   if (editingRecipe) {
     return (

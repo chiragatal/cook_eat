@@ -41,12 +41,12 @@ A post is basically a recipe.
 
 ### Reactions
 
-- [ ] Users should be able to react to a post
+- [x] Users should be able to react to a post
 
 ### What I want to cook
 
-- [ ] There should be a "what I want to cook" page
-- [ ] This can be automatically done based on the reactions
+- [x] There should be a "what I want to cook" page
+- [x] This can be automatically done based on the reactions
 
 ### Search
 
@@ -54,10 +54,10 @@ A post is basically a recipe.
 
 ### Bookmarks (Favorites)
 
-- [ ] This can be automatically done based on the reactions
-- [ ] Users should be able to bookmark posts
-- [ ] Users should be able to unbookmark posts
-- [ ] Users should be able to view all their bookmarks
+- [x] This can be automatically done based on the reactions
+- [x] Users should be able to bookmark posts
+- [x] Users should be able to unbookmark posts
+- [x] Users should be able to view all their bookmarks
 
 ### Shopping list
 
