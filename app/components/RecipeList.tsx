@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useView } from '../contexts/ViewContext';
 import { useRouter } from 'next/navigation';
+import QuickReactions from './QuickReactions';
 
 interface Ingredient {
   name: string;
@@ -453,6 +454,9 @@ export default function RecipeList({
                   </div>
                 </div>
                 <p className="text-gray-600 mb-4">{recipe.description}</p>
+                <div className="mt-4">
+                  <QuickReactions postId={recipe.id} />
+                </div>
               </div>
             </div>
           ))}

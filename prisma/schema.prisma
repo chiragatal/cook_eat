@@ -1,11 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["multiSchema"]
 }
 
@@ -16,35 +10,35 @@ datasource db {
 }
 
 model User {
-  id            Int      @id @default(autoincrement())
-  email         String   @unique
-  name          String?
-  passwordHash  String
-  isAdmin       Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  posts         Post[]
-  reactions     Reaction[]
+  id           Int        @id @default(autoincrement())
+  email        String     @unique
+  name         String?
+  passwordHash String
+  isAdmin      Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  posts        Post[]
+  reactions    Reaction[]
 }
 
 model Post {
-  id          Int       @id @default(autoincrement())
+  id          Int        @id @default(autoincrement())
   title       String
   description String
-  ingredients String    // Store as JSON string of array of objects with name and amount
-  steps       String    // Store as JSON string of array of step objects with instruction and id
-  notes       String?   // Optional cooking tips, variations, or special notes
-  images      String    // Store as JSON string of array of image paths
-  tags        String?   // Store as JSON string of array of strings
-  category    String?   // Main category of the recipe
-  cookingTime Int?      // Cooking time in minutes
-  difficulty  String?   // Easy, Medium, Hard
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  isPublic    Boolean   @default(false)
-  cookedOn    DateTime? // When this recipe was cooked
-  userId      Int       // Foreign key for User
-  user        User      @relation(fields: [userId], references: [id])
+  ingredients String
+  steps       String
+  notes       String?
+  images      String
+  tags        String?
+  category    String?
+  cookingTime Int?
+  difficulty  String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  isPublic    Boolean    @default(false)
+  cookedOn    DateTime?
+  userId      Int
+  user        User       @relation(fields: [userId], references: [id])
   reactions   Reaction[]
 
   @@index([userId])
@@ -52,14 +46,14 @@ model Post {
 
 model Reaction {
   id        Int      @id @default(autoincrement())
-  type      String   // The type of reaction (e.g., "LOVE", "YUM", "WANT_TO_TRY", "MADE_IT", "FAVORITE")
-  postId    Int      // Foreign key for Post
-  userId    Int      // Foreign key for User who reacted
+  type      String
+  postId    Int
+  userId    Int
   createdAt DateTime @default(now())
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([postId, userId, type]) // A user can only have one of each reaction type per post
+  @@unique([postId, userId, type])
   @@index([postId])
   @@index([userId])
 }

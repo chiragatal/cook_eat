@@ -39,16 +39,22 @@ A post is basically a recipe.
 - [x] Deploy the app
 - [x] Make the app available for public use
 
+### Reactions
+
+- [ ] Users should be able to react to a post
+
 ### What I want to cook
 
 - [ ] There should be a "what I want to cook" page
+- [ ] This can be automatically done based on the reactions
 
 ### Search
 
 - [x] Add search functionality
 
-### Bookmarks
+### Bookmarks (Favorites)
 
+- [ ] This can be automatically done based on the reactions
 - [ ] Users should be able to bookmark posts
 - [ ] Users should be able to unbookmark posts
 - [ ] Users should be able to view all their bookmarks

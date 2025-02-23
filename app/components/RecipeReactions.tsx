@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { REACTION_TYPES, ReactionType } from '../api/posts/[id]/reactions/types';
 
 interface Reaction {
-  type: string;
+  type: ReactionType;
   count: number;
 }
 
@@ -12,7 +13,7 @@ interface RecipeReactionsProps {
   postId: number;
 }
 
-const REACTION_EMOJIS: Record<string, { emoji: string; label: string }> = {
+const REACTION_EMOJIS: Record<ReactionType, { emoji: string; label: string }> = {
   LOVE: { emoji: '❤️', label: 'Love' },
   YUM: { emoji: '😋', label: 'Yum' },
   WANT_TO_TRY: { emoji: '🔖', label: 'Want to try' },

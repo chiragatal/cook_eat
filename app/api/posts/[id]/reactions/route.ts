@@ -1,18 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/config';
-import { prisma } from '../../../../../lib/prisma';
-
-// Valid reaction types
-export const REACTION_TYPES = [
-  'LOVE',        // ❤️ General love/like
-  'YUM',         // 😋 Delicious
-  'WANT_TO_TRY', // 🔖 Want to try
-  'MADE_IT',     // 👩‍🍳 Made this recipe
-  'FAVORITE'     // ⭐ Add to favorites
-] as const;
-
-type ReactionType = typeof REACTION_TYPES[number];
+import { REACTION_TYPES, ReactionType } from './types';
+import { prisma } from '../../../../../lib/db';
 
 // GET reactions for a post
 export async function GET(
@@ -21,14 +11,32 @@ export async function GET(
 ) {
   try {
     const postId = parseInt(params.id);
+    if (isNaN(postId)) {
+      return NextResponse.json(
+        { error: 'Invalid post ID' },
+        { status: 400 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
 
     // Get all reactions for the post
-    const reactions = await prisma.reaction.groupBy({
-      by: ['type'],
+    const allReactions = await prisma.reaction.findMany({
       where: { postId },
-      _count: true,
+      select: { type: true },
     });
+
+    // Count reactions by type
+    const reactionCounts = allReactions.reduce((acc, { type }) => {
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Format reactions for response
+    const reactions = Object.entries(reactionCounts).map(([type, count]) => ({
+      type,
+      count,
+    }));
 
     // If user is logged in, get their reactions
     let userReactions: string[] = [];
@@ -44,10 +52,7 @@ export async function GET(
     }
 
     return NextResponse.json({
-      reactions: reactions.map(r => ({
-        type: r.type,
-        count: r._count,
-      })),
+      reactions,
       userReactions,
     });
   } catch (error) {
@@ -74,6 +79,13 @@ export async function POST(
     }
 
     const postId = parseInt(params.id);
+    if (isNaN(postId)) {
+      return NextResponse.json(
+        { error: 'Invalid post ID' },
+        { status: 400 }
+      );
+    }
+
     const { type } = await request.json();
 
     // Validate reaction type
@@ -84,7 +96,7 @@ export async function POST(
       );
     }
 
-    // Check if reaction exists
+    // Find existing reaction
     const existingReaction = await prisma.reaction.findFirst({
       where: {
         postId,
@@ -93,13 +105,12 @@ export async function POST(
       },
     });
 
+    // Toggle the reaction
     if (existingReaction) {
-      // Remove reaction if it exists
       await prisma.reaction.delete({
         where: { id: existingReaction.id },
       });
     } else {
-      // Add reaction if it doesn't exist
       await prisma.reaction.create({
         data: {
           type,
@@ -109,13 +120,18 @@ export async function POST(
       });
     }
 
-    // Return updated reactions
-    const reactions = await prisma.reaction.groupBy({
-      by: ['type'],
+    // Get updated reactions
+    const allReactions = await prisma.reaction.findMany({
       where: { postId },
-      _count: true,
+      select: { type: true },
     });
 
+    const reactionCounts = allReactions.reduce((acc, { type: reactionType }) => {
+      acc[reactionType] = (acc[reactionType] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Get user's reactions
     const userReactionsData = await prisma.reaction.findMany({
       where: {
         postId,
@@ -125,9 +141,9 @@ export async function POST(
     });
 
     return NextResponse.json({
-      reactions: reactions.map(r => ({
-        type: r.type,
-        count: r._count,
+      reactions: Object.entries(reactionCounts).map(([type, count]) => ({
+        type,
+        count,
       })),
       userReactions: userReactionsData.map(r => r.type),
     });
