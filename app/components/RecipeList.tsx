@@ -84,17 +84,20 @@ export default function RecipeList({
     if (!session?.user?.id) return;
 
     try {
-      const reactions: Record<number, string[]> = {};
+      const newReactions: Record<number, string[]> = {};
 
       await Promise.all(recipeIds.map(async (postId) => {
         const response = await fetch(`/api/posts/${postId}/reactions`);
         if (response.ok) {
           const data = await response.json();
-          reactions[postId] = data.userReactions || [];
+          newReactions[postId] = data.userReactions || [];
         }
       }));
 
-      setUserReactions(reactions);
+      setUserReactions(prev => ({
+        ...prev,
+        ...newReactions
+      }));
     } catch (error) {
       console.error('Error fetching user reactions:', error);
     }
@@ -240,6 +243,11 @@ export default function RecipeList({
       console.error('Error copying to clipboard:', err);
       alert('Failed to copy link to clipboard');
     }
+  };
+
+  const handleReactionToggled = async (postId: number) => {
+    if (!session?.user?.id) return;
+    await fetchUserReactions([postId]);
   };
 
   const filteredRecipes = useMemo(() => {
@@ -492,7 +500,7 @@ export default function RecipeList({
                 </div>
                 <p className="text-gray-600 mb-4">{recipe.description}</p>
                 <div className="mt-4">
-                  <QuickReactions postId={recipe.id} />
+                  <QuickReactions postId={recipe.id} onReactionToggled={() => handleReactionToggled(recipe.id)} />
                 </div>
               </div>
             </div>

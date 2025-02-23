@@ -11,6 +11,7 @@ interface Reaction {
 
 interface RecipeReactionsProps {
   postId: number;
+  onReactionToggled?: () => void;
 }
 
 const REACTION_EMOJIS: Record<ReactionType, { emoji: string; label: string }> = {
@@ -21,7 +22,7 @@ const REACTION_EMOJIS: Record<ReactionType, { emoji: string; label: string }> = 
   FAVORITE: { emoji: '⭐', label: 'Favorite' },
 };
 
-export default function RecipeReactions({ postId }: RecipeReactionsProps) {
+export default function RecipeReactions({ postId, onReactionToggled }: RecipeReactionsProps) {
   const { data: session } = useSession();
   const [reactions, setReactions] = useState<Reaction[]>([]);
   const [userReactions, setUserReactions] = useState<string[]>([]);
@@ -47,7 +48,6 @@ export default function RecipeReactions({ postId }: RecipeReactionsProps) {
 
   const handleReaction = async (type: string) => {
     if (!session) {
-      // Optionally show a login prompt
       return;
     }
 
@@ -65,6 +65,7 @@ export default function RecipeReactions({ postId }: RecipeReactionsProps) {
       const data = await response.json();
       setReactions(data.reactions);
       setUserReactions(data.userReactions);
+      onReactionToggled?.();
     } catch (error) {
       console.error('Error toggling reaction:', error);
     }

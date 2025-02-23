@@ -11,6 +11,7 @@ interface Reaction {
 
 interface QuickReactionsProps {
   postId: number;
+  onReactionToggled?: () => void;
 }
 
 const REACTION_EMOJIS: Record<ReactionType, { emoji: string; label: string }> = {
@@ -21,7 +22,7 @@ const REACTION_EMOJIS: Record<ReactionType, { emoji: string; label: string }> = 
   FAVORITE: { emoji: '⭐', label: 'Favorite' },
 };
 
-export default function QuickReactions({ postId }: QuickReactionsProps) {
+export default function QuickReactions({ postId, onReactionToggled }: QuickReactionsProps) {
   const { data: session } = useSession();
   const [reactions, setReactions] = useState<Reaction[]>([]);
   const [userReactions, setUserReactions] = useState<string[]>([]);
@@ -76,6 +77,7 @@ export default function QuickReactions({ postId }: QuickReactionsProps) {
       setReactions(data.reactions || []);
       setUserReactions(data.userReactions || []);
       setShowReactionPicker(false);
+      onReactionToggled?.();
     } catch (error) {
       console.error('Error toggling reaction:', error);
     }

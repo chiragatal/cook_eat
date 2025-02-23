@@ -28,6 +28,21 @@ A post is basically a recipe.
 - [x] This post should be able to be edited
 - [x] Option to share a post as a link
 
+### Post Create++
+
+- [ ] Rich text editor for the description
+- [ ] Voice input for the post
+- [ ] For ingredients, newline is automatically converted to a new ingredient
+- [ ] A big text field where I can paste the recipe from somewhere else, and it will be converted to the post format
+- [ ] Add links section
+- [ ] On the full post, show the buttons for editing and deleting the post and public/private status
+
+### Post list
+
+- [ ] In the post list, show the time needed
+- [ ] It should expand the post when I click on it
+- [ ] On expansion, show the ingredients
+
 ### Calendar
 
 - [x] Add a calendar for tracking
@@ -51,6 +66,8 @@ A post is basically a recipe.
 ### Search
 
 - [x] Add search functionality
+- [ ] Multiple filters
+- [ ] There should be sections, the top one would be all filters matching, and the second one would be some filters matching
 
 ### Bookmarks (Favorites)
 
