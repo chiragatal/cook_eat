@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useView } from '../../contexts/ViewContext';
+import RecipeReactions from '../../components/RecipeReactions';
 
 interface Ingredient {
   name: string;
@@ -256,15 +257,18 @@ export default function RecipePage({ params }: { params: { id: string } }) {
             )}
 
             <div className="mt-8 pt-6 border-t border-gray-200">
-              <div className="flex items-center justify-between text-sm text-gray-500">
-                <div>
-                  Created on {new Date(recipe.createdAt).toLocaleDateString()}
-                </div>
-                {recipe.cookedOn && (
+              <div className="flex flex-col gap-4">
+                <RecipeReactions postId={recipe.id} />
+                <div className="flex items-center justify-between text-sm text-gray-500">
                   <div>
-                    Cooked on {new Date(recipe.cookedOn).toLocaleDateString()}
+                    Created on {new Date(recipe.createdAt).toLocaleDateString()}
                   </div>
-                )}
+                  {recipe.cookedOn && (
+                    <div>
+                      Cooked on {new Date(recipe.cookedOn).toLocaleDateString()}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

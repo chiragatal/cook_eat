@@ -36,8 +36,8 @@ A post is basically a recipe.
 
 ### Deployment
 
-- [ ] Deploy the app
-- [ ] Make the app available for public use
+- [x] Deploy the app
+- [x] Make the app available for public use
 
 ### What I want to cook
 

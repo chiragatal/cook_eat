@@ -5,7 +5,12 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+if (!process.env.NEXTAUTH_SECRET) {
+  throw new Error('Please provide NEXTAUTH_SECRET environment variable');
+}
+
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
       name: 'Credentials',

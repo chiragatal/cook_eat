@@ -24,6 +24,7 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   posts         Post[]
+  reactions     Reaction[]
 }
 
 model Post {
@@ -44,6 +45,21 @@ model Post {
   cookedOn    DateTime? // When this recipe was cooked
   userId      Int       // Foreign key for User
   user        User      @relation(fields: [userId], references: [id])
+  reactions   Reaction[]
 
+  @@index([userId])
+}
+
+model Reaction {
+  id        Int      @id @default(autoincrement())
+  type      String   // The type of reaction (e.g., "LOVE", "YUM", "WANT_TO_TRY", "MADE_IT", "FAVORITE")
+  postId    Int      // Foreign key for Post
+  userId    Int      // Foreign key for User who reacted
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId, type]) // A user can only have one of each reaction type per post
+  @@index([postId])
   @@index([userId])
 }
