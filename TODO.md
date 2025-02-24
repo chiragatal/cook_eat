@@ -42,6 +42,7 @@ A post is basically a recipe.
 - [ ] In the post list, show the time needed
 - [ ] It should expand the post when I click on it
 - [ ] On expansion, show the ingredients
+- [ ] Also show a button in the expanded view, to view the full recipe
 
 ### Calendar
 
@@ -57,6 +58,7 @@ A post is basically a recipe.
 ### Reactions
 
 - [x] Users should be able to react to a post
+- [ ] Reaction users list
 
 ### What I want to cook
 
@@ -84,7 +86,13 @@ A post is basically a recipe.
 - [ ] Users should be able to clear their shopping list
 - [ ] Users should be able to add some/all items to the shopping list from a post
 
+### Usability improvements
+
+- [ ] Mobile friendly
+- [ ] Dark mode
+
 ## Bugs
 
 - [ ] When I share a user, the link is not working
 - [ ] The Full calendar is not working and not looking so nice
+- [ ] Images are not showing up

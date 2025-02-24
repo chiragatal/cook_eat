@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react';
 import { useView } from '../contexts/ViewContext';
 import { useRouter } from 'next/navigation';
 import QuickReactions from './QuickReactions';
+import Image from 'next/image';
 
 interface Ingredient {
   name: string;
@@ -373,14 +374,15 @@ export default function RecipeList({
                   <div className="relative w-full h-48 group">
                     <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide">
                       {JSON.parse(recipe.images).map((image: string, index: number) => (
-                        <div key={index} className="flex-none w-full h-48 snap-center">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
+                        <div key={index} className="flex-none w-full h-48 snap-center relative">
+                          <Image
                             src={image}
                             alt={`${recipe.title} - Image ${index + 1}`}
-                            className="w-full h-full object-cover"
+                            fill
+                            className="object-cover"
                             onError={(e) => {
-                              e.currentTarget.src = 'https://via.placeholder.com/800x400?text=No+Image';
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'https://via.placeholder.com/800x400?text=No+Image';
                             }}
                           />
                         </div>
@@ -430,17 +432,17 @@ export default function RecipeList({
                 </Link>
               )}
 
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
+              <div className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
+                  <div className="w-full">
                     <Link
                       href={`/recipe/${recipe.id}`}
-                      className="text-xl font-semibold hover:text-indigo-600 transition-colors"
+                      className="text-xl sm:text-2xl font-semibold hover:text-indigo-600 transition-colors block mb-2"
                     >
                       {recipe.title}
                     </Link>
                     {recipe.user && (
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-base sm:text-sm text-gray-500 mb-3">
                         by{' '}
                         <button
                           onClick={() => handleUserClick(recipe.userId, recipe.user.name || '', recipe.user.email || '')}
@@ -450,9 +452,9 @@ export default function RecipeList({
                         </button>
                       </p>
                     )}
-                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
                       {recipe.category && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-purple-100 text-purple-800">
+                        <span className="inline-flex items-center px-3 py-1.5 rounded-md text-base sm:text-sm font-medium bg-purple-100 text-purple-800">
                           <svg className="mr-1.5 h-2 w-2 text-purple-400" fill="currentColor" viewBox="0 0 8 8">
                             <circle cx="4" cy="4" r="3" />
                           </svg>
@@ -462,43 +464,41 @@ export default function RecipeList({
                       {JSON.parse(recipe.tags || '[]').map((tag: string) => (
                         <span
                           key={tag}
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800"
+                          className="inline-flex items-center px-3 py-1.5 rounded-full text-base sm:text-sm font-medium bg-indigo-100 text-indigo-800"
                         >
                           #{tag}
                         </span>
                       ))}
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    {session && (session.user.id === recipe.userId || session.user.isAdmin) && (
-                      <>
-                        <button
-                          onClick={() => handleEdit(recipe)}
-                          className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(recipe.id)}
-                          className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
-                        >
-                          Delete
-                        </button>
-                        <button
-                          onClick={() => handleTogglePublic(recipe)}
-                          className={`px-3 py-1 text-sm rounded transition-colors ${
-                            recipe.isPublic
-                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                          }`}
-                        >
-                          {recipe.isPublic ? 'Public' : 'Private'}
-                        </button>
-                      </>
-                    )}
-                  </div>
+                  {session && (session.user.id === recipe.userId || session.user.isAdmin) && (
+                    <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto">
+                      <button
+                        onClick={() => handleEdit(recipe)}
+                        className="flex-1 sm:flex-none px-4 py-3 sm:py-2 text-base sm:text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(recipe.id)}
+                        className="flex-1 sm:flex-none px-4 py-3 sm:py-2 text-base sm:text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+                      >
+                        Delete
+                      </button>
+                      <button
+                        onClick={() => handleTogglePublic(recipe)}
+                        className={`flex-1 sm:flex-none px-4 py-3 sm:py-2 text-base sm:text-sm rounded-md transition-colors ${
+                          recipe.isPublic
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        {recipe.isPublic ? 'Public' : 'Private'}
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <p className="text-gray-600 mb-4">{recipe.description}</p>
+                <p className="text-base sm:text-sm text-gray-600 mb-4">{recipe.description}</p>
                 <div className="mt-4">
                   <QuickReactions postId={recipe.id} onReactionToggled={() => handleReactionToggled(recipe.id)} />
                 </div>

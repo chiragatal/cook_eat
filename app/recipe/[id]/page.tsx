@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useView } from '../../contexts/ViewContext';
 import RecipeReactions from '../../components/RecipeReactions';
+import Image from 'next/image';
 
 interface Ingredient {
   name: string;
@@ -138,14 +139,15 @@ export default function RecipePage({ params }: { params: { id: string } }) {
             <div className="relative w-full h-96 group">
               <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide">
                 {images.map((image, index) => (
-                  <div key={index} className="flex-none w-full h-96 snap-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                  <div key={index} className="flex-none w-full h-96 snap-center relative">
+                    <Image
                       src={image}
                       alt={`${recipe.title} - Image ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
                       onError={(e) => {
-                        e.currentTarget.src = 'https://via.placeholder.com/800x400?text=No+Image';
+                        const target = e.target as HTMLImageElement;
+                        target.src = 'https://via.placeholder.com/800x400?text=No+Image';
                       }}
                     />
                   </div>

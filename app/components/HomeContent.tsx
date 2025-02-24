@@ -103,8 +103,8 @@ export default function HomeContent() {
 
   return (
     <>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold">
           {selectedUserId
             ? `${selectedUserName}'s Recipes`
             : (isMyRecipesView ? 'Your Recipes' : 'All Public Recipes')}
@@ -112,23 +112,28 @@ export default function HomeContent() {
         {session && (
           <button
             onClick={() => setIsCreating(true)}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-sm font-medium"
           >
             Create New Recipe
           </button>
         )}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-8">
+        <div className="lg:col-span-4 order-1 lg:order-2 hidden lg:sticky lg:top-4 lg:block">
+          <Calendar onDateSelect={setSelectedDate} />
+        </div>
+        <div className="block lg:hidden order-1 mb-4">
+          <Calendar onDateSelect={setSelectedDate} />
+        </div>
+        <div className="lg:col-span-8 order-2 lg:order-1">
           <RecipeList
             key={key}
             userId={selectedUserId ? selectedUserId : (isMyRecipesView && session?.user?.id ? session.user.id.toString() : undefined)}
             showPrivate={Boolean(isMyRecipesView || (selectedUserId && parseInt(selectedUserId) === session?.user?.id))}
             publicOnly={Boolean(!isMyRecipesView && (!selectedUserId || parseInt(selectedUserId) !== session?.user?.id))}
+            selectedDate={selectedDate}
+            filterByDate={Boolean(selectedDate)}
           />
-        </div>
-        <div className="lg:col-span-4">
-          <Calendar onDateSelect={setSelectedDate} />
         </div>
       </div>
     </>
