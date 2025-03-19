@@ -260,29 +260,25 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                       </svg>
                     </button>
 
-                    {session && (session.user.id === recipe.userId || session.user.isAdmin) && (
+                    {session && (session.user.id === recipe?.userId.toString() || session.user.isAdmin) && (
                       <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
                         <Link
                           href={`/recipe/${recipe.id}/edit`}
-                          className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-sm font-medium"
+                          className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800"
                         >
                           Edit
                         </Link>
                         <button
                           onClick={handleDelete}
-                          className="px-4 py-2 bg-red-600 dark:bg-red-500 text-white rounded-md hover:bg-red-700 dark:hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-sm font-medium"
+                          className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-md bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900 dark:text-red-200 dark:hover:bg-red-800"
                         >
                           Delete
                         </button>
                         <button
                           onClick={handleTogglePublic}
-                          className={`px-4 py-2 ${
-                            recipe.isPublic
-                              ? 'bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-600 focus:ring-green-500'
-                              : 'bg-gray-600 dark:bg-gray-500 hover:bg-gray-700 dark:hover:bg-gray-600 focus:ring-gray-500'
-                          } text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-sm font-medium`}
+                          className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-md bg-purple-50 text-purple-700 hover:bg-purple-100 dark:bg-purple-900 dark:text-purple-200 dark:hover:bg-purple-800"
                         >
-                          {recipe.isPublic ? 'Public' : 'Private'}
+                          {recipe.isPublic ? 'Make Private' : 'Make Public'}
                         </button>
                       </div>
                     )}

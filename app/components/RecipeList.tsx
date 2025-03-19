@@ -533,7 +533,7 @@ export default function RecipeList({
                     </div>
                   </div>
 
-                  {session && (session.user.id === recipe.userId || session.user.isAdmin) && (
+                  {session && (session.user.id === recipe.userId.toString() || session.user.isAdmin) && (
                     <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto">
                       <button
                         onClick={(e) => {
