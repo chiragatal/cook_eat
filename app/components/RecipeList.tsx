@@ -603,7 +603,10 @@ export default function RecipeList({
                 {/* Expanded content */}
                 {expandedRecipes.includes(recipe.id) && (
                   <div
-                    ref={el => expandedRefs.current[recipe.id] = el}
+                    ref={(el: HTMLDivElement | null) => {
+                      expandedRefs.current[recipe.id] = el;
+                      return undefined;
+                    }}
                     className="mt-4 border-t pt-4 border-gray-200 dark:border-gray-700 animate-fade-in-up overflow-hidden transition-all duration-300 ease-in-out"
                   >
                     <h4 className="font-medium text-gray-900 dark:text-white mb-2">Ingredients:</h4>
