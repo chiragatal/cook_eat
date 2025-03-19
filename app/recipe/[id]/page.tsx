@@ -89,6 +89,8 @@ export default function RecipePage({ params }: { params: { id: string } }) {
   };
 
   const handleDelete = async () => {
+    if (!recipe) return;
+
     if (window.confirm('Are you sure you want to delete this recipe? This action cannot be undone.')) {
       try {
         const response = await fetch(`/api/posts/${recipe.id}`, {
@@ -108,6 +110,8 @@ export default function RecipePage({ params }: { params: { id: string } }) {
   };
 
   const handleTogglePublic = async () => {
+    if (!recipe) return;
+
     try {
       const response = await fetch(`/api/posts/${recipe.id}`, {
         method: 'PATCH',
