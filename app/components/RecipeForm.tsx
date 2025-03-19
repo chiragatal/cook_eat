@@ -445,21 +445,42 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
           </div>
 
           {ingredients.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-2 mt-2">
+            <ul className="mt-4 space-y-2">
               {ingredients.map((ingredient, index) => (
-                <div key={index} className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-full px-3 py-1">
-                  <span className="text-sm text-gray-800 dark:text-gray-200">{ingredient.amount} {ingredient.name}</span>
+                <li
+                  key={index}
+                  draggable
+                  onDragStart={(e) => handleIngredientDragStart(e, index)}
+                  onDragOver={handleIngredientDragOver}
+                  onDrop={(e) => handleIngredientDrop(e, index)}
+                  className="flex items-center gap-2 py-1 px-2 bg-gray-50 dark:bg-gray-700 rounded cursor-move group hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <div className="flex-shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                    </svg>
+                  </div>
+                  <span className="flex-grow text-gray-700 dark:text-gray-300">
+                    <span className="font-medium text-gray-900 dark:text-white">{ingredient.name}</span>
+                    {ingredient.amount && (
+                      <>
+                        <span className="mx-2 text-gray-400 dark:text-gray-500">•</span>
+                        <span className="text-gray-600 dark:text-gray-400">{ingredient.amount}</span>
+                      </>
+                    )}
+                  </span>
                   <button
                     type="button"
                     onClick={() => removeIngredient(index)}
-                    className="ml-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                    disabled={isSubmitting}
+                    className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 disabled:opacity-50 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    &times;
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
 
@@ -469,22 +490,45 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
           </label>
           <div className="space-y-4">
             <div className="mb-2 space-y-2">
-              {steps.map((step, index) => (
-                <div key={index} className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-2">
-                  <span className="mr-2 flex-shrink-0 w-6 h-6 flex items-center justify-center bg-indigo-600 dark:bg-indigo-500 text-white rounded-full text-xs">
-                    {index + 1}
-                  </span>
-                  <span className="text-sm text-gray-800 dark:text-gray-200">{step.instruction}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeStep(index)}
-                    className="ml-auto text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                    disabled={isSubmitting}
+              <ul className="space-y-2">
+                {steps.map((step, index) => (
+                  <li
+                    key={index}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, index)}
+                    className="flex gap-2 items-center bg-gray-50 dark:bg-gray-700 p-2 rounded-lg cursor-move group hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                   >
-                    &times;
-                  </button>
-                </div>
-              ))}
+                    <div className="flex-shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      value={step.instruction}
+                      onChange={(e) => {
+                        const updatedSteps = [...steps];
+                        updatedSteps[index] = { ...step, instruction: e.target.value };
+                        setSteps(updatedSteps);
+                      }}
+                      placeholder="Step instruction"
+                      className="flex-1 bg-transparent border-none dark:text-white focus:ring-0 p-0"
+                      disabled={isSubmitting}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeStep(index)}
+                      className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 disabled:opacity-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
 
             <div className="flex gap-2">
