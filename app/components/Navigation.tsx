@@ -1,6 +1,6 @@
 'use client';
 
-import { useSession, signOut } from 'next-auth/react';
+import { useSession, signOut, signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { useView } from '../contexts/ViewContext';
 import UserSearch from './UserSearch';
