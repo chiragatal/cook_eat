@@ -27,7 +27,6 @@ interface Recipe {
   difficulty: string | null;
   createdAt?: string;
   isPublic: boolean;
-  cookedOn: string | null;
 }
 
 interface RecipeFormProps {
@@ -49,7 +48,6 @@ const emptyRecipe: Recipe = {
   cookingTime: null,
   difficulty: null,
   isPublic: false,
-  cookedOn: null,
 };
 
 const CATEGORIES = [
@@ -76,7 +74,6 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
   const [cookingTime, setCookingTime] = useState<number | null>(recipe.cookingTime);
   const [difficulty, setDifficulty] = useState<string | null>(recipe.difficulty);
   const [isPublic, setIsPublic] = useState(recipe.isPublic);
-  const [cookedOn, setCookedOn] = useState<string | null>(recipe.cookedOn);
   const [newIngredient, setNewIngredient] = useState<Ingredient>({
     name: '',
     amount: '',
@@ -139,7 +136,6 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
         cookingTime,
         difficulty,
         isPublic,
-        cookedOn,
       };
 
       console.log('Submitting recipe:', updatedRecipe);
@@ -233,12 +229,12 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 max-w-4xl mx-auto">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">{mode === 'create' ? 'Create New Recipe' : 'Edit Recipe'}</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{mode === 'create' ? 'Create New Recipe' : 'Edit Recipe'}</h2>
         <button
           onClick={onCancel}
-          className="text-gray-600 hover:text-gray-800"
+          className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
         >
           Cancel
         </button>
@@ -246,7 +242,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="flex justify-between items-start gap-4">
           <div className="flex-1">
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Title
             </label>
             <input
@@ -254,7 +250,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               required
               disabled={isSubmitting}
             />
@@ -268,22 +264,22 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
                 className="sr-only peer"
                 disabled={isSubmitting}
               />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-              <span className="ml-3 text-sm font-medium text-gray-700">Make Public</span>
+              <div className="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+              <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">Make Public</span>
             </label>
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Category
             </label>
             <select
               id="category"
               value={category || ''}
               onChange={(e) => setCategory(e.target.value || null)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               disabled={isSubmitting}
             >
               <option value="">Select a category</option>
@@ -294,7 +290,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
           </div>
 
           <div>
-            <label htmlFor="cookingTime" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="cookingTime" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Cooking Time (minutes)
             </label>
             <input
@@ -303,20 +299,20 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
               value={cookingTime || ''}
               onChange={(e) => setCookingTime(e.target.value ? parseInt(e.target.value) : null)}
               min="1"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               disabled={isSubmitting}
             />
           </div>
 
           <div>
-            <label htmlFor="difficulty" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="difficulty" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Difficulty
             </label>
             <select
               id="difficulty"
               value={difficulty || ''}
               onChange={(e) => setDifficulty(e.target.value || null)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               disabled={isSubmitting}
             >
               <option value="">Select difficulty</option>
@@ -325,24 +321,10 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
               ))}
             </select>
           </div>
-
-          <div>
-            <label htmlFor="cookedOn" className="block text-sm font-medium text-gray-700">
-              Date Cooked
-            </label>
-            <input
-              type="date"
-              id="cookedOn"
-              value={cookedOn || ''}
-              onChange={(e) => setCookedOn(e.target.value || null)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              disabled={isSubmitting}
-            />
-          </div>
         </div>
 
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Description
           </label>
           <textarea
@@ -350,7 +332,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             required
             disabled={isSubmitting}
           />
@@ -358,7 +340,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
 
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Recipe Images
             </label>
             <div className="mt-1 flex items-center gap-4">
@@ -367,12 +349,13 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
                 accept="image/*"
                 multiple
                 onChange={handleImageUpload}
-                className="block w-full text-sm text-gray-500
+                className="block w-full text-sm text-gray-500 dark:text-gray-400
                   file:mr-4 file:py-2 file:px-4
                   file:rounded-md file:border-0
                   file:text-sm file:font-semibold
                   file:bg-indigo-50 file:text-indigo-700
-                  hover:file:bg-indigo-100"
+                  dark:file:bg-indigo-900 dark:file:text-indigo-200
+                  hover:file:bg-indigo-100 dark:hover:file:bg-indigo-800"
                 disabled={isSubmitting}
               />
             </div>
@@ -393,8 +376,8 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
                     <button
                       type="button"
                       onClick={() => removeImage(index)}
-                      className="absolute top-2 right-2 bg-red-100 text-red-600 rounded-full p-1.5
-                               hover:bg-red-200 transition-colors opacity-0 group-hover:opacity-100"
+                      className="absolute top-2 right-2 bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300 rounded-full p-1.5
+                               hover:bg-red-200 dark:hover:bg-red-800 transition-colors opacity-0 group-hover:opacity-100"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -407,7 +390,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
           </div>
 
           <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Recipe Notes
             </label>
             <div className="mt-1">
@@ -417,7 +400,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
                 onChange={(e) => setNotes(e.target.value)}
                 rows={4}
                 placeholder="Add cooking tips, variations, or special notes..."
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 disabled={isSubmitting}
               />
             </div>
@@ -425,7 +408,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Ingredients
           </label>
           <div className="grid grid-cols-12 gap-2">
@@ -434,7 +417,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
               placeholder="Ingredient name"
               value={newIngredient.name}
               onChange={(e) => setNewIngredient({ ...newIngredient, name: e.target.value })}
-              className="col-span-5 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="col-span-5 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               disabled={isSubmitting}
             />
             <input
@@ -442,7 +425,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
               placeholder="Amount (e.g., 2 cups, 1 packet)"
               value={newIngredient.amount}
               onChange={(e) => setNewIngredient({ ...newIngredient, amount: e.target.value })}
-              className="col-span-5 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="col-span-5 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               disabled={isSubmitting}
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
@@ -454,7 +437,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
             <button
               type="button"
               onClick={addIngredient}
-              className="col-span-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+              className="col-span-2 px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50"
               disabled={isSubmitting || !newIngredient.name.trim()}
             >
               Add
@@ -462,91 +445,47 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
           </div>
 
           {ingredients.length > 0 && (
-            <ul className="mt-4 space-y-2">
+            <div className="flex flex-wrap gap-2 mb-2 mt-2">
               {ingredients.map((ingredient, index) => (
-                <li
-                  key={ingredient.id}
-                  draggable
-                  onDragStart={(e) => handleIngredientDragStart(e, index)}
-                  onDragOver={handleIngredientDragOver}
-                  onDrop={(e) => handleIngredientDrop(e, index)}
-                  className="flex items-center gap-2 py-1 px-2 bg-gray-50 rounded cursor-move group hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex-shrink-0 text-gray-400 group-hover:text-gray-600">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-                    </svg>
-                  </div>
-                  <span className="flex-grow text-gray-700">
-                    <span className="font-medium text-gray-900">{ingredient.name}</span>
-                    {ingredient.amount && (
-                      <>
-                        <span className="mx-2 text-gray-400">•</span>
-                        <span className="text-gray-600">{ingredient.amount}</span>
-                      </>
-                    )}
-                  </span>
+                <div key={index} className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-full px-3 py-1">
+                  <span className="text-sm text-gray-800 dark:text-gray-200">{ingredient.amount} {ingredient.name}</span>
                   <button
                     type="button"
                     onClick={() => removeIngredient(index)}
-                    className="text-red-600 hover:text-red-800 disabled:opacity-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="ml-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                     disabled={isSubmitting}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    &times;
                   </button>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Quick Steps
           </label>
           <div className="space-y-4">
-            <ul className="space-y-2">
+            <div className="mb-2 space-y-2">
               {steps.map((step, index) => (
-                <li
-                  key={step.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, index)}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, index)}
-                  className="flex gap-2 items-center bg-gray-50 p-2 rounded-lg cursor-move group hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex-shrink-0 text-gray-400 group-hover:text-gray-600">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-                    </svg>
-                  </div>
-                  <input
-                    type="text"
-                    value={step.instruction}
-                    onChange={(e) => {
-                      const updatedSteps = [...steps];
-                      updatedSteps[index] = { ...step, instruction: e.target.value };
-                      setSteps(updatedSteps);
-                    }}
-                    placeholder="Step instruction"
-                    className="flex-1 bg-transparent border-none focus:ring-0 p-0"
-                    disabled={isSubmitting}
-                  />
+                <div key={index} className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-2">
+                  <span className="mr-2 flex-shrink-0 w-6 h-6 flex items-center justify-center bg-indigo-600 dark:bg-indigo-500 text-white rounded-full text-xs">
+                    {index + 1}
+                  </span>
+                  <span className="text-sm text-gray-800 dark:text-gray-200">{step.instruction}</span>
                   <button
                     type="button"
                     onClick={() => removeStep(index)}
-                    className="text-red-600 hover:text-red-800 disabled:opacity-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="ml-auto text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                     disabled={isSubmitting}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    &times;
                   </button>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
 
             <div className="flex gap-2">
               <input
@@ -554,7 +493,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
                 value={newStep.instruction}
                 onChange={(e) => setNewStep({ ...newStep, instruction: e.target.value })}
                 placeholder="Add a quick step"
-                className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 disabled={isSubmitting}
                 onKeyPress={(e) => {
                   if (e.key === 'Enter') {
@@ -566,7 +505,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
               <button
                 type="button"
                 onClick={addStep}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+                className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50"
                 disabled={isSubmitting || !newStep.instruction.trim()}
               >
                 Add
@@ -576,7 +515,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
         </div>
 
         <div>
-          <label htmlFor="tags" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="tags" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Tags
           </label>
           <div className="flex gap-2">
@@ -592,13 +531,13 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
                 }
               }}
               placeholder="Add a tag"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               disabled={isSubmitting}
             />
             <button
               type="button"
               onClick={addTag}
-              className="mt-1 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+              className="mt-1 px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50"
               disabled={isSubmitting || !newTag.trim()}
             >
               Add
@@ -609,13 +548,13 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
               {tags.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800"
+                  className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200"
                 >
                   {tag}
                   <button
                     type="button"
                     onClick={() => removeTag(tag)}
-                    className="ml-1 text-indigo-600 hover:text-indigo-900 focus:outline-none"
+                    className="ml-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-200 focus:outline-none"
                     disabled={isSubmitting}
                   >
                     ×
@@ -630,14 +569,14 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
             disabled={isSubmitting}
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+            className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50"
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Saving...' : mode === 'create' ? 'Create Recipe' : 'Save Changes'}

@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import RecipeForm from './RecipeForm';
 import RecipeList from './RecipeList';
 import Calendar from './Calendar';
+import Link from 'next/link';
 
 export default function HomeContent() {
   const { data: session } = useSession();
@@ -104,18 +105,16 @@ export default function HomeContent() {
   return (
     <>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold">
-          {selectedUserId
-            ? `${selectedUserName}'s Recipes`
-            : (isMyRecipesView ? 'Your Recipes' : 'All Public Recipes')}
-        </h2>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          {isMyRecipesView ? 'My Recipes' : 'All Public Recipes'}
+        </h1>
         {session && (
-          <button
-            onClick={() => setIsCreating(true)}
-            className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-sm font-medium"
+          <Link
+            href="/recipes/new"
+            className="inline-flex items-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-900"
           >
             Create New Recipe
-          </button>
+          </Link>
         )}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-8">

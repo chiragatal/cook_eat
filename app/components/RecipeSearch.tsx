@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { CATEGORIES, REACTION_FILTERS, Category } from '../lib/constants';
 
 interface SearchFilters {
   query: string;
-  category: string;
+  category: Category | '';
   visibility: 'all' | 'public' | 'private';
   reactionFilter: string;
 }
@@ -13,22 +14,6 @@ interface SearchFilters {
 interface RecipeSearchProps {
   onSearch: (filters: SearchFilters) => void;
 }
-
-const CATEGORIES = [
-  'Breakfast',
-  'Lunch',
-  'Dinner',
-  'Dessert',
-  'Snack',
-  'Beverage',
-  'Other'
-];
-
-const REACTION_FILTERS = [
-  { value: 'FAVORITE', emoji: '⭐', label: 'My Favorites' },
-  { value: 'WANT_TO_TRY', emoji: '🔖', label: 'Want to Try' },
-  { value: 'MADE_IT', emoji: '👩‍🍳', label: 'Made These' },
-];
 
 export default function RecipeSearch({ onSearch }: RecipeSearchProps) {
   const { data: session } = useSession();
@@ -51,50 +36,52 @@ export default function RecipeSearch({ onSearch }: RecipeSearchProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 mb-6">
       <div className="space-y-4">
+        <div>
+          <label htmlFor="search" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Search recipes
+          </label>
+          <input
+            type="text"
+            id="search"
+            placeholder="Search recipes..."
+            value={filters.query}
+            onChange={(e) => setFilters({ ...filters, query: e.target.value })}
+            className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm h-12 sm:h-10 placeholder-gray-500 dark:placeholder-gray-400"
+          />
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
-              Search
-            </label>
-            <input
-              type="text"
-              id="search"
-              placeholder="Search recipes..."
-              value={filters.query}
-              onChange={(e) => setFilters({ ...filters, query: e.target.value })}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm h-12 sm:h-10"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Category
             </label>
             <select
               id="category"
               value={filters.category}
-              onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm h-12 sm:h-10"
+              onChange={(e) => setFilters({ ...filters, category: e.target.value as Category | '' })}
+              className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm h-12 sm:h-10"
             >
               <option value="">All Categories</option>
-              {CATEGORIES.map(category => (
-                <option key={category} value={category}>{category}</option>
+              {CATEGORIES.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
               ))}
             </select>
           </div>
 
           {session && (
             <div>
-              <label htmlFor="visibility" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="visibility" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Visibility
               </label>
               <select
                 id="visibility"
                 value={filters.visibility}
                 onChange={(e) => setFilters({ ...filters, visibility: e.target.value as 'all' | 'public' | 'private' })}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm h-12 sm:h-10"
+                className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm h-12 sm:h-10"
               >
                 <option value="all">All Recipes</option>
                 <option value="public">Public Only</option>
@@ -102,25 +89,22 @@ export default function RecipeSearch({ onSearch }: RecipeSearchProps) {
               </select>
             </div>
           )}
+        </div>
 
-          {session && (
-            <div>
-              <label htmlFor="reactionFilter" className="block text-sm font-medium text-gray-700 mb-2">
-                Quick Filters
-              </label>
-              <select
-                id="reactionFilter"
-                value={filters.reactionFilter}
-                onChange={(e) => setFilters({ ...filters, reactionFilter: e.target.value })}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base sm:text-sm h-12 sm:h-10"
-              >
-                <option value="">All Recipes</option>
-                {REACTION_FILTERS.map(filter => (
-                  <option key={filter.value} value={filter.value}>{`${filter.emoji} ${filter.label}`}</option>
-                ))}
-              </select>
-            </div>
-          )}
+        <div className="flex flex-wrap gap-2">
+          {REACTION_FILTERS.map((filter) => (
+            <button
+              key={filter.value}
+              onClick={() => handleReactionFilter(filter.value)}
+              className={`flex items-center px-4 py-2 rounded-full text-sm font-medium ${
+                filters.reactionFilter === filter.value
+                  ? 'bg-indigo-600 text-white dark:bg-indigo-500'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              {filter.emoji} {filter.label}
+            </button>
+          ))}
         </div>
       </div>
     </div>

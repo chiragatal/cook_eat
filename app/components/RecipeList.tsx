@@ -367,7 +367,7 @@ export default function RecipeList({
           {filteredRecipes.map((recipe) => (
             <div
               key={recipe.id}
-              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
             >
               {JSON.parse(recipe.images).length > 0 && (
                 <Link href={`/recipe/${recipe.id}`}>
@@ -439,18 +439,12 @@ export default function RecipeList({
                       href={`/recipe/${recipe.id}`}
                       className="text-xl sm:text-2xl font-semibold hover:text-indigo-600 transition-colors block mb-2"
                     >
-                      {recipe.title}
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">{recipe.title}</h3>
                     </Link>
                     {recipe.user && (
-                      <p className="text-base sm:text-sm text-gray-500 mb-3">
-                        by{' '}
-                        <button
-                          onClick={() => handleUserClick(recipe.userId, recipe.user.name || '', recipe.user.email || '')}
-                          className="text-indigo-600 hover:text-indigo-800 hover:underline focus:outline-none"
-                        >
-                          {recipe.user.name || recipe.user.email}
-                        </button>
-                      </p>
+                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-2">
+                        <span>by {recipe.user?.name || 'Anonymous'}</span>
+                      </div>
                     )}
                     <div className="flex flex-wrap items-center gap-2 mb-4">
                       {recipe.category && (
@@ -498,7 +492,7 @@ export default function RecipeList({
                     </div>
                   )}
                 </div>
-                <p className="text-base sm:text-sm text-gray-600 mb-4">{recipe.description}</p>
+                <p className="text-gray-600 dark:text-gray-300 mb-2 line-clamp-2">{recipe.description}</p>
                 <div className="mt-4">
                   <QuickReactions postId={recipe.id} onReactionToggled={() => handleReactionToggled(recipe.id)} />
                 </div>

@@ -1,139 +1,128 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon } from 'lucide-react';
-import { DayPicker } from 'react-day-picker';
-import { format } from 'date-fns';
-import { useSession } from 'next-auth/react';
+import { Calendar as CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import Link from 'next/link';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from 'date-fns';
 import { useView } from '../contexts/ViewContext';
 import 'react-day-picker/dist/style.css';
 import styles from './Calendar.module.css';
-import Link from 'next/link';
 
-interface Recipe {
-  id: number;
-  title: string;
-  cookedOn: string | null;
-}
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-interface CalendarProps {
-  onDateSelect?: (date: Date) => void;
-}
-
-export default function Calendar({ onDateSelect }: CalendarProps) {
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const { data: session } = useSession();
+export default function Calendar() {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const { isMyRecipesView } = useView();
 
-  useEffect(() => {
-    fetchRecipes();
-  }, [isMyRecipesView, session]);
+  const start = startOfMonth(currentDate);
+  const end = endOfMonth(currentDate);
+  const days = eachDayOfInterval({ start, end });
 
-  const fetchRecipes = async () => {
-    try {
-      let url = '/api/posts';
-      const params = new URLSearchParams();
+  // Add padding days at the start
+  const startPadding = Array(start.getDay()).fill(null);
+  // Add padding days at the end
+  const endPadding = Array((6 - end.getDay())).fill(null);
+  const allDays = [...startPadding, ...days, ...endPadding];
 
-      if (isMyRecipesView && session) {
-        params.append('userId', session.user.id.toString());
-      } else {
-        params.append('publicOnly', 'true');
-      }
+  const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
+  const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
 
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
-
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Failed to fetch recipes');
-      }
-      const data = await response.json();
-      setRecipes(data);
-    } catch (error) {
-      console.error('Error fetching recipes:', error);
-    } finally {
-      setLoading(false);
-    }
+  const isToday = (date: Date) => {
+    return isSameDay(date, new Date());
   };
 
-  const handleDaySelect = (day: Date | undefined) => {
-    setSelectedDate(day);
-    if (day && onDateSelect) {
-      onDateSelect(day);
-    }
+  // Mock function - replace with actual data
+  const hasRecipes = (date: Date) => {
+    return Math.random() > 0.7; // Just for demonstration
   };
 
-  // Get recipes for the selected date
+  // Mock function - replace with actual data
   const getRecipesForDate = (date: Date) => {
-    return recipes.filter(recipe => {
-      if (!recipe.cookedOn) return false;
-      const cookedDate = new Date(recipe.cookedOn);
-      return (
-        cookedDate.getDate() === date.getDate() &&
-        cookedDate.getMonth() === date.getMonth() &&
-        cookedDate.getFullYear() === date.getFullYear()
-      );
-    });
+    return [
+      { id: '1', title: 'Sample Recipe 1' },
+      { id: '2', title: 'Sample Recipe 2' },
+    ];
   };
-
-  // Create a modifier to highlight days with recipes
-  const daysWithRecipes = recipes
-    .filter(recipe => recipe.cookedOn)
-    .map(recipe => new Date(recipe.cookedOn!));
-
-  const footer = selectedDate ? (
-    <div className="mt-4">
-      <h3 className="font-medium text-gray-900">
-        {isMyRecipesView ? 'Your recipes' : 'All recipes'} cooked on {format(selectedDate, 'MMMM d, yyyy')}:
-      </h3>
-      <ul className="mt-2 space-y-1">
-        {getRecipesForDate(selectedDate).map(recipe => (
-          <li key={recipe.id} className="text-sm">
-            <Link
-              href={`/recipe/${recipe.id}`}
-              className="text-indigo-600 hover:text-indigo-800 hover:underline"
-            >
-              {recipe.title}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
-  ) : null;
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-      </div>
-    );
-  }
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow w-full">
-      <div className="flex items-center mb-4">
-        <CalendarIcon className="mr-2 h-5 w-5 text-gray-500" />
-        <h2 className="text-lg font-semibold text-gray-900">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
+          <CalendarIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
           {isMyRecipesView ? 'Your Recipe Calendar' : 'All Recipe Calendar'}
         </h2>
       </div>
-      <DayPicker
-        mode="single"
-        selected={selectedDate}
-        onSelect={handleDaySelect}
-        modifiers={{ hasRecipe: daysWithRecipes }}
-        modifiersStyles={{
-          hasRecipe: {
-            backgroundColor: '#e0e7ff',
-            color: '#4f46e5',
-          }
-        }}
-        className={`${styles.calendar} w-full`}
-        footer={footer}
-      />
+
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-base font-medium text-gray-900 dark:text-white">
+          {format(currentDate, 'MMMM yyyy')}
+        </h3>
+        <div className="flex gap-2">
+          <button
+            onClick={prevMonth}
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          >
+            <ChevronLeftIcon className="h-5 w-5" />
+          </button>
+          <button
+            onClick={nextMonth}
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          >
+            <ChevronRightIcon className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {WEEKDAYS.map((day) => (
+          <div
+            key={day}
+            className="text-center text-sm font-medium text-gray-500 dark:text-gray-400"
+          >
+            {day}
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-1">
+        {allDays.map((day, idx) => (
+          <div
+            key={idx}
+            className={`p-2 text-center ${
+              !day
+                ? 'text-gray-400 dark:text-gray-600'
+                : isToday(day)
+                ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 rounded-lg'
+                : hasRecipes(day)
+                ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600'
+                : 'text-gray-500 dark:text-gray-400'
+            }`}
+            onClick={() => day && hasRecipes(day) && setSelectedDate(day)}
+          >
+            {day?.getDate()}
+          </div>
+        ))}
+      </div>
+
+      {selectedDate && (
+        <div className="mt-4">
+          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+            {isMyRecipesView ? 'Your recipes' : 'All recipes'} cooked on {format(selectedDate, 'MMMM d, yyyy')}:
+          </h4>
+          <div className="space-y-2">
+            {getRecipesForDate(selectedDate).map((recipe) => (
+              <Link
+                key={recipe.id}
+                href={`/recipe/${recipe.id}`}
+                className="block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100"
+              >
+                {recipe.title}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
