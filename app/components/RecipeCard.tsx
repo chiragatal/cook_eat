@@ -1,6 +1,22 @@
 import { RichTextContent } from './RichTextEditor';
 
-export default function RecipeCard({ recipe, onEdit, onDelete, onTogglePublic }) {
+interface Recipe {
+  id: number;
+  title: string;
+  description: string;
+  category?: string;
+  tags?: string[];
+  isPublic: boolean;
+}
+
+interface RecipeCardProps {
+  recipe: Recipe;
+  onEdit: (recipe: Recipe) => void;
+  onDelete: (recipe: Recipe) => void;
+  onTogglePublic: (recipe: Recipe) => void;
+}
+
+export default function RecipeCard({ recipe, onEdit, onDelete, onTogglePublic }: RecipeCardProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
       <div className="p-4">
