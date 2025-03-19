@@ -9,6 +9,7 @@ import { useView } from '../contexts/ViewContext';
 import { useRouter } from 'next/navigation';
 import QuickReactions from './QuickReactions';
 import Image from 'next/image';
+import { RichTextContent } from './RichTextEditor';
 
 interface Ingredient {
   name: string;
@@ -285,7 +286,8 @@ export default function RecipeList({
         const ingredients = JSON.parse(recipe.ingredients);
 
         const titleMatch = recipe.title.toLowerCase().includes(searchTerm);
-        const descriptionMatch = recipe.description.toLowerCase().includes(searchTerm);
+        const strippedDescription = recipe.description.replace(/<\/?[^>]+(>|$)/g, "");
+        const descriptionMatch = strippedDescription.toLowerCase().includes(searchTerm);
         const ingredientMatch = ingredients.some((ingredient: Ingredient) =>
           ingredient.name.toLowerCase().includes(searchTerm) ||
           ingredient.amount.toLowerCase().includes(searchTerm)
@@ -492,7 +494,11 @@ export default function RecipeList({
                     </div>
                   )}
                 </div>
-                <p className="text-gray-600 dark:text-gray-300 mb-2 line-clamp-2">{recipe.description}</p>
+                <div className="mb-2 overflow-y-auto max-h-24">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-line">
+                    {recipe.description.replace(/<[^>]*>/g, '')}
+                  </p>
+                </div>
                 <div className="mt-4">
                   <QuickReactions postId={recipe.id} onReactionToggled={() => handleReactionToggled(recipe.id)} />
                 </div>

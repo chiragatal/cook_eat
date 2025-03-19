@@ -9,6 +9,7 @@ import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import Navigation from '../../components/Navigation';
 import QuickReactions from '../../components/QuickReactions';
+import { RichTextContent } from '../../components/RichTextEditor';
 
 interface Ingredient {
   name: string;
@@ -225,7 +226,10 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                   )}
                 </div>
 
-                <p className="text-gray-700 dark:text-gray-300 text-lg mb-4">{recipe.description}</p>
+                <div className="mb-8">
+                  <h2 className="text-2xl font-bold mb-4">Description</h2>
+                  <RichTextContent content={recipe.description} className="mb-6 recipe-description" />
+                </div>
 
                 {tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-6">
@@ -278,10 +282,8 @@ export default function RecipePage({ params }: { params: { id: string } }) {
 
               {recipe.notes && (
                 <div className="mb-8">
-                  <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Notes</h2>
-                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 text-gray-700 dark:text-gray-300">
-                    {recipe.notes}
-                  </div>
+                  <h2 className="text-2xl font-bold mb-4">Notes</h2>
+                  <RichTextContent content={recipe.notes} className="mb-6 recipe-notes" />
                 </div>
               )}
 

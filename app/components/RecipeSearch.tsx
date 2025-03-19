@@ -12,10 +12,10 @@ interface SearchFilters {
 }
 
 interface RecipeSearchProps {
-  onSearch: (filters: SearchFilters) => void;
+  onSearch?: (filters: SearchFilters) => void;
 }
 
-export default function RecipeSearch({ onSearch }: RecipeSearchProps) {
+export default function RecipeSearch({ onSearch = () => {} }: RecipeSearchProps) {
   const { data: session } = useSession();
   const [filters, setFilters] = useState<SearchFilters>({
     query: '',
@@ -31,17 +31,15 @@ export default function RecipeSearch({ onSearch }: RecipeSearchProps) {
   const handleReactionFilter = (value: string) => {
     setFilters(prev => ({
       ...prev,
-      reactionFilter: prev.reactionFilter === value ? '' : value
+      reactionFilter: prev.reactionFilter === value ? '' : value,
     }));
   };
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 mb-6">
+      <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Search recipes</h2>
       <div className="space-y-4">
         <div>
-          <label htmlFor="search" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Search recipes
-          </label>
           <input
             type="text"
             id="search"
@@ -52,7 +50,7 @@ export default function RecipeSearch({ onSearch }: RecipeSearchProps) {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Category
@@ -91,20 +89,25 @@ export default function RecipeSearch({ onSearch }: RecipeSearchProps) {
           )}
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {REACTION_FILTERS.map((filter) => (
-            <button
-              key={filter.value}
-              onClick={() => handleReactionFilter(filter.value)}
-              className={`flex items-center px-4 py-2 rounded-full text-sm font-medium ${
-                filters.reactionFilter === filter.value
-                  ? 'bg-indigo-600 text-white dark:bg-indigo-500'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-              }`}
-            >
-              {filter.emoji} {filter.label}
-            </button>
-          ))}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Quick Filters
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {REACTION_FILTERS.map((filter) => (
+              <button
+                key={filter.value}
+                onClick={() => handleReactionFilter(filter.value)}
+                className={`flex items-center px-4 py-2 rounded-full text-sm font-medium ${
+                  filters.reactionFilter === filter.value
+                    ? 'bg-indigo-600 text-white dark:bg-indigo-500'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                {filter.emoji} {filter.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

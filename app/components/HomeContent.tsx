@@ -6,8 +6,10 @@ import { useView } from '../contexts/ViewContext';
 import { useSearchParams } from 'next/navigation';
 import RecipeForm from './RecipeForm';
 import RecipeList from './RecipeList';
+import RecipeSearch from './RecipeSearch';
 import Calendar from './Calendar';
 import Link from 'next/link';
+import { Suspense } from 'react';
 
 export default function HomeContent() {
   const { data: session } = useSession();
@@ -104,7 +106,7 @@ export default function HomeContent() {
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           {isMyRecipesView ? 'My Recipes' : 'All Public Recipes'}
         </h1>
@@ -117,22 +119,31 @@ export default function HomeContent() {
           </Link>
         )}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-8">
-        <div className="lg:col-span-4 order-1 lg:order-2 hidden lg:sticky lg:top-4 lg:block">
-          <Calendar onDateSelect={setSelectedDate} />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="lg:col-span-2 order-2 lg:order-1">
+          <Suspense
+            fallback={
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
+              </div>
+            }
+          >
+            <RecipeList
+              key={key}
+              userId={selectedUserId ? selectedUserId : (isMyRecipesView && session?.user?.id ? session.user.id.toString() : undefined)}
+              showPrivate={Boolean(isMyRecipesView || (selectedUserId && parseInt(selectedUserId) === session?.user?.id))}
+              publicOnly={Boolean(!isMyRecipesView && (!selectedUserId || parseInt(selectedUserId) !== session?.user?.id))}
+              selectedDate={selectedDate}
+              filterByDate={Boolean(selectedDate)}
+            />
+          </Suspense>
         </div>
-        <div className="block lg:hidden order-1 mb-4">
-          <Calendar onDateSelect={setSelectedDate} />
-        </div>
-        <div className="lg:col-span-8 order-2 lg:order-1">
-          <RecipeList
-            key={key}
-            userId={selectedUserId ? selectedUserId : (isMyRecipesView && session?.user?.id ? session.user.id.toString() : undefined)}
-            showPrivate={Boolean(isMyRecipesView || (selectedUserId && parseInt(selectedUserId) === session?.user?.id))}
-            publicOnly={Boolean(!isMyRecipesView && (!selectedUserId || parseInt(selectedUserId) !== session?.user?.id))}
-            selectedDate={selectedDate}
-            filterByDate={Boolean(selectedDate)}
-          />
+
+        <div className="lg:order-2">
+          <div className="sticky lg:top-4 order-1 mb-4 lg:mb-0">
+            <Calendar onDateSelect={setSelectedDate} />
+          </div>
         </div>
       </div>
     </>

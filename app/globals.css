@@ -8,6 +8,20 @@
   }
 }
 
+@layer components {
+  /* Rich text styling */
+
+  /* Detailed view styling */
+  .prose p {
+    @apply my-3;
+  }
+
+  /* Ensure paragraphs in recipe page display properly */
+  .recipe-description p, .recipe-notes p {
+    @apply my-3 block;
+  }
+}
+
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;  /* IE and Edge */

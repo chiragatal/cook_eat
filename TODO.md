@@ -33,6 +33,7 @@ A post is basically a recipe.
 - [ ] Rich text editor for the description
 - [ ] Voice input for the post
 - [ ] For ingredients, newline is automatically converted to a new ingredient
+- [ ] Also make ingredients editable, like steps
 - [ ] A big text field where I can paste the recipe from somewhere else, and it will be converted to the post format
 - [ ] Add links section
 - [ ] On the full post, show the buttons for editing and deleting the post and public/private status
@@ -49,6 +50,7 @@ A post is basically a recipe.
 - [x] Add a calendar for tracking
 - [x] The post should show up in the calendar
 - [ ] The "what I cooked" and "what I want to cook" should be per user
+- [ ] Add support to make the cooked date for the same recipe multiple times
 
 ### Deployment
 
@@ -88,8 +90,8 @@ A post is basically a recipe.
 
 ### Usability improvements
 
-- [ ] Mobile friendly
-- [ ] Dark mode
+- [x] Mobile friendly
+- [x] Dark mode
 
 ## Bugs
 

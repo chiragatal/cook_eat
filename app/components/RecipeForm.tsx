@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import RichTextEditor from './RichTextEditor';
 
 interface Ingredient {
   name: string;
@@ -85,6 +86,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
   });
   const [newTag, setNewTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showNotes, setShowNotes] = useState(recipe.notes ? true : false);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
@@ -327,16 +329,40 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
           <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Description
           </label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={4}
-            className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            required
-            disabled={isSubmitting}
-          />
+          <div className="mt-1">
+            <RichTextEditor
+              value={description}
+              onChange={setDescription}
+              placeholder="Describe your recipe, including any history or special tips..."
+              className="min-h-[200px]"
+            />
+          </div>
         </div>
+
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Notes</h3>
+          <button
+            type="button"
+            onClick={() => setShowNotes(!showNotes)}
+            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-sm font-medium"
+          >
+            {showNotes ? 'Hide Notes' : 'Show Notes'}
+          </button>
+        </div>
+
+        {showNotes && (
+          <div className="mb-6">
+            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Notes
+            </label>
+            <RichTextEditor
+              value={notes}
+              onChange={setNotes}
+              placeholder="Add any notes about the recipe, such as variations, substitutions, or serving suggestions..."
+              className="min-h-[200px]"
+            />
+          </div>
+        )}
 
         <div className="space-y-6">
           <div>
@@ -387,23 +413,6 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
                 ))}
               </div>
             )}
-          </div>
-
-          <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Recipe Notes
-            </label>
-            <div className="mt-1">
-              <textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={4}
-                placeholder="Add cooking tips, variations, or special notes..."
-                className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                disabled={isSubmitting}
-              />
-            </div>
           </div>
         </div>
 

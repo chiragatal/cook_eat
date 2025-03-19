@@ -1,3 +1,5 @@
+import { RichTextContent } from './RichTextEditor';
+
 export default function RecipeCard({ recipe, onEdit, onDelete, onTogglePublic }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
@@ -44,9 +46,11 @@ export default function RecipeCard({ recipe, onEdit, onDelete, onTogglePublic })
           ))}
         </div>
 
-        <p className="text-gray-600 dark:text-gray-300 mb-4">
-          {recipe.description}
-        </p>
+        <div className="mb-4">
+          <p className="text-gray-600 dark:text-gray-300 whitespace-pre-line">
+            {recipe.description.replace(/<[^>]*>/g, '')}
+          </p>
+        </div>
 
         <div className="flex items-center space-x-2">
           <button className="inline-flex items-center text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
