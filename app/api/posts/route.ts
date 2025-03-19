@@ -10,6 +10,9 @@ export async function GET(request: Request) {
     const id = url.searchParams.get('id');
     const userId = url.searchParams.get('userId');
     const publicOnly = url.searchParams.get('publicOnly') === 'true';
+    const startDate = url.searchParams.get('startDate');
+    const endDate = url.searchParams.get('endDate');
+    const myRecipes = url.searchParams.get('myRecipes') === 'true';
 
     if (id) {
       // Fetch single recipe
@@ -49,9 +52,28 @@ export async function GET(request: Request) {
     if (userId) {
       // User-specific recipes (for My Recipes page)
       where.userId = parseInt(userId);
+    } else if (myRecipes && session) {
+      // My recipes for current user
+      where.userId = session.user.id;
     } else if (publicOnly || !session) {
       // Public recipes only (for All Recipes page or non-authenticated users)
       where.isPublic = true;
+    }
+
+    // Add date range filtering if provided
+    if (startDate && endDate) {
+      where.cookedOn = {
+        gte: new Date(startDate),
+        lte: new Date(endDate),
+      };
+    }
+
+    // Only include recipes with cookedOn date if querying for calendar
+    if (startDate && endDate) {
+      where.cookedOn = {
+        ...where.cookedOn,
+        not: null,
+      };
     }
 
     // Fetch recipes

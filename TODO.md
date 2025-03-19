@@ -30,20 +30,21 @@ A post is basically a recipe.
 
 ### Post Create++
 
-- [ ] Rich text editor for the description
+- [x] Rich text editor for the description
 - [ ] Voice input for the post
 - [ ] For ingredients, newline is automatically converted to a new ingredient
 - [ ] Also make ingredients editable, like steps
 - [ ] A big text field where I can paste the recipe from somewhere else, and it will be converted to the post format
 - [ ] Add links section
-- [ ] On the full post, show the buttons for editing and deleting the post and public/private status
+- [x] On the full post, show the buttons for editing and deleting the post and public/private status
 
 ### Post list
 
-- [ ] In the post list, show the time needed
-- [ ] It should expand the post when I click on it
-- [ ] On expansion, show the ingredients
-- [ ] Also show a button in the expanded view, to view the full recipe
+- [x] In the post list, show the time needed
+- [x] It should expand the post when I click on it
+- [x] On expansion, show the ingredients
+- [x] Also show a button in the expanded view, to view the full recipe
+- [ ] Ingredients should be of the format "\<name> * \<quantity>"
 
 ### Calendar
 
@@ -98,3 +99,5 @@ A post is basically a recipe.
 - [ ] When I share a user, the link is not working
 - [ ] The Full calendar is not working and not looking so nice
 - [ ] Images are not showing up
+- [ ] The post list does not show the description in rich text format
+- [ ] The user name is not clickable in the post list
