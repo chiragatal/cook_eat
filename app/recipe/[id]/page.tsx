@@ -260,7 +260,7 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                       </svg>
                     </button>
 
-                    {session && (session.user.id === recipe?.userId.toString() || session.user.isAdmin) && (
+                    {session && ((String(session.user.id) === String(recipe?.userId)) || session.user.isAdmin) && (
                       <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
                         <Link
                           href={`/recipe/${recipe.id}/edit`}
