@@ -88,6 +88,63 @@ export default function RecipePage({ params }: { params: { id: string } }) {
     }
   };
 
+  const handleDelete = async () => {
+    if (window.confirm('Are you sure you want to delete this recipe? This action cannot be undone.')) {
+      try {
+        const response = await fetch(`/api/posts/${recipe.id}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete recipe');
+        }
+
+        router.push('/');
+      } catch (error) {
+        console.error('Error deleting recipe:', error);
+        alert('Failed to delete the recipe. Please try again.');
+      }
+    }
+  };
+
+  const handleTogglePublic = async () => {
+    try {
+      const response = await fetch(`/api/posts/${recipe.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isPublic: !recipe.isPublic,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update recipe');
+      }
+
+      // Update the recipe state
+      setRecipe({
+        ...recipe,
+        isPublic: !recipe.isPublic,
+      });
+    } catch (error) {
+      console.error('Error updating recipe:', error);
+      alert('Failed to update the recipe. Please try again.');
+    }
+  };
+
+  // Add this function to format dates
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -188,23 +245,54 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                 <div className="flex flex-wrap justify-between items-start gap-4 mb-4">
                   <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{recipe.title}</h1>
 
-                  <div className="flex items-center">
-                    <QuickReactions postId={recipe.id} />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={handleShare}
+                      className="p-2 bg-blue-600 dark:bg-blue-500 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-sm font-medium flex items-center"
+                      title={shareButtonText}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                      </svg>
+                    </button>
 
-                    {session && session.user.id === recipe.userId && (
-                      <Link
-                        href={`/recipe/${recipe.id}/edit`}
-                        className="ml-4 px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-sm"
-                      >
-                        Edit Recipe
-                      </Link>
+                    {session && (session.user.id === recipe.userId || session.user.isAdmin) && (
+                      <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
+                        <Link
+                          href={`/recipe/${recipe.id}/edit`}
+                          className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-sm font-medium"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          onClick={handleDelete}
+                          className="px-4 py-2 bg-red-600 dark:bg-red-500 text-white rounded-md hover:bg-red-700 dark:hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-sm font-medium"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          onClick={handleTogglePublic}
+                          className={`px-4 py-2 ${
+                            recipe.isPublic
+                              ? 'bg-green-600 dark:bg-green-500 hover:bg-green-700 dark:hover:bg-green-600 focus:ring-green-500'
+                              : 'bg-gray-600 dark:bg-gray-500 hover:bg-gray-700 dark:hover:bg-gray-600 focus:ring-gray-500'
+                          } text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-sm font-medium`}
+                        >
+                          {recipe.isPublic ? 'Public' : 'Private'}
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 mb-4">
                   {recipe.user && (
-                    <span className="text-sm text-gray-600 dark:text-gray-400">By {recipe.user.name || recipe.user.email}</span>
+                    <span
+                      className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400"
+                      onClick={() => handleUserClick(recipe.userId, recipe.user.name, recipe.user.email)}
+                    >
+                      By {recipe.user.name || recipe.user.email}
+                    </span>
                   )}
 
                   {recipe.category && (
@@ -221,6 +309,9 @@ export default function RecipePage({ params }: { params: { id: string } }) {
 
                   {recipe.cookingTime && (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
                       {recipe.cookingTime} min
                     </span>
                   )}
@@ -287,11 +378,37 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                 </div>
               )}
 
-              {recipe.cookedOn && (
-                <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                  Last cooked on: {new Date(recipe.cookedOn).toLocaleDateString()}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                  <div>
+                    <QuickReactions postId={recipe.id} />
+                  </div>
+
+                  <div className="flex flex-wrap gap-4 text-right">
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 mr-2 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Created</span>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{formatDate(recipe.createdAt)}</p>
+                      </div>
+                    </div>
+
+                    {recipe.cookedOn && (
+                      <div className="flex items-center">
+                        <svg className="w-5 h-5 mr-2 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">Last cooked</span>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{formatDate(recipe.cookedOn)}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
