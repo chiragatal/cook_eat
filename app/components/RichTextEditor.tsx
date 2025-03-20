@@ -4,7 +4,8 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, forwardRef } from 'react';
+import { cn } from '../../lib/utils';
 
 interface RichTextEditorProps {
   value: string;
@@ -187,65 +188,64 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
 export default RichTextEditor;
 
-// Create a component that just renders the rich text content for viewing
-export function RichTextContent({
-  content,
-  className = "prose dark:prose-invert max-w-none"
-}: {
-  content: string;
-  className?: string;
-}) {
+export const RichTextContent = forwardRef<
+  HTMLDivElement,
+  { content: string; className?: string }
+>(({ content, className }, ref) => {
   if (!content) return null;
 
   return (
     <div
-      className={className}
+      ref={ref}
+      className={cn("prose dark:prose-invert max-w-none", className)}
       dangerouslySetInnerHTML={{ __html: content }}
     />
   );
-}
+});
 
-// Create a component for truncated rich text content with gradient fade
+RichTextContent.displayName = 'RichTextContent';
+
 export function TruncatedRichText({
   content,
-  maxHeight = '6rem',
-  className = "prose dark:prose-invert max-w-none",
-  onReadMore
+  onClick,
+  className,
+  maxHeight = "160px", // Default max height
 }: {
   content: string;
-  maxHeight?: string;
+  onClick?: () => void;
   className?: string;
-  onReadMore?: (e?: React.MouseEvent) => void;
+  maxHeight?: string;
 }) {
-  const [hasOverflow, setHasOverflow] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const [overflow, setOverflow] = useState(false);
 
   useEffect(() => {
-    // Check if content overflows the container
     if (contentRef.current) {
-      const element = contentRef.current;
-      setHasOverflow(element.scrollHeight > element.clientHeight);
+      setOverflow(
+        contentRef.current.scrollHeight > contentRef.current.clientHeight
+      );
     }
   }, [content]);
 
   if (!content) return null;
 
   return (
-    <div className="relative" style={{ maxHeight }}>
-      <div
+    <div
+      className={cn(
+        "relative cursor-pointer overflow-hidden transition-all duration-200",
+        className
+      )}
+      style={{ maxHeight }}
+      onClick={onClick}
+    >
+      <RichTextContent
+        content={content}
+        className="mt-4"
         ref={contentRef}
-        className={`${className} overflow-hidden`}
-        style={{ maxHeight }}
-        dangerouslySetInnerHTML={{ __html: content }}
-        onClick={(e) => {
-          if (onReadMore) {
-            e.stopPropagation();
-            onReadMore(e);
-          }
-        }}
       />
-      {hasOverflow && (
-        <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white dark:from-gray-800 to-transparent" />
+
+      {overflow && (
+        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white dark:from-gray-800 to-transparent" />
       )}
     </div>
   );
