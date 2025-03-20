@@ -100,4 +100,4 @@ A post is basically a recipe.
 - [ ] The Full calendar is not working and not looking so nice
 - [ ] Images are not showing up
 - [ ] The post list does not show the description in rich text format
-- [ ] The user name is not clickable in the post list
+- [x] The user name is not clickable in the post list
