@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useView } from '../contexts/ViewContext';
 import UserSearch from './UserSearch';
 import { useState, useEffect, useRef } from 'react';
+import Logo from './Logo';
 
 export default function Navigation() {
   const { data: session } = useSession();
@@ -53,8 +54,9 @@ export default function Navigation() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:h-16 justify-between items-start sm:items-center py-3 sm:py-0">
           <div className="flex w-full sm:w-auto items-center justify-between">
-            <Link href="/" className="text-xl font-semibold text-gray-900 dark:text-white">
-              Cook & Eat
+            <Link href="/" className="flex items-center gap-2 text-xl font-semibold text-gray-900 dark:text-white">
+              <Logo size={28} />
+              <span>Cook-Eat</span>
             </Link>
 
             {/* Mobile menu button */}
