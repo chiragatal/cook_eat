@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "prepare": "husky install",
+    "type-check": "tsc --noEmit",
+    "pre-push": "npm run type-check"
   },
   "dependencies": {
     "@mantine/core": "^7.17.0",
@@ -39,6 +42,8 @@
     "autoprefixer": "^10.4.17",
     "eslint": "^8.56.0",
     "eslint-config-next": "14.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.0",
     "postcss": "^8.4.35",
     "prisma": "5.10.2",
     "tailwindcss": "^3.4.1",
