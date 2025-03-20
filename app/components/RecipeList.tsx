@@ -483,7 +483,16 @@ export default function RecipeList({
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       {recipe.user && (
                         <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                          <span>by {recipe.user?.name || 'Anonymous'}</span>
+                          <span
+                            className="cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400"
+                            onClick={() => handleUserClick(
+                              recipe.userId,
+                              recipe.user?.name,
+                              recipe.user?.email || recipe.user?.name || "Anonymous"
+                            )}
+                          >
+                            by {recipe.user?.name || 'Anonymous'}
+                          </span>
                         </div>
                       )}
 
