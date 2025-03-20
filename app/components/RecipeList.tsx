@@ -249,7 +249,7 @@ export default function RecipeList({
 
   const formatIngredient = (ingredient: Ingredient) => {
     if (!ingredient.amount) return ingredient.name;
-    return `${ingredient.name} * ${ingredient.amount}`;
+    return `${ingredient.name} · ${ingredient.amount}`;
   };
 
   const handleUserClick = (userId: number, userName: string | undefined | null, email: string) => {

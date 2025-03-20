@@ -152,7 +152,7 @@ export default function RecipePage({ params }: { params: { id: string } }) {
   // Format ingredient with new pattern
   const formatIngredient = (ingredient: Ingredient) => {
     if (!ingredient.amount) return ingredient.name;
-    return `${ingredient.name} * ${ingredient.amount}`;
+    return `${ingredient.name} · ${ingredient.amount}`;
   };
 
   if (loading) {
