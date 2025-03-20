@@ -74,7 +74,7 @@ export default function UserSearch() {
           }}
           onFocus={() => setIsOpen(true)}
           placeholder="Search users..."
-          className="w-48 px-3 py-2 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          className="w-full sm:w-48 px-3 py-2 text-sm rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
         />
         {isLoading && (
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -84,7 +84,7 @@ export default function UserSearch() {
       </div>
 
       {isOpen && (query.trim() || users.length > 0) && (
-        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700">
+        <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700">
           {users.length > 0 ? (
             <ul className="max-h-60 overflow-auto py-1">
               {users.map(user => (

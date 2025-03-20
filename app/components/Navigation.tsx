@@ -4,19 +4,34 @@ import { useSession, signOut, signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { useView } from '../contexts/ViewContext';
 import UserSearch from './UserSearch';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function Navigation() {
   const { data: session } = useSession();
   const { isMyRecipesView, selectedUserId, selectedUserName, toggleView } = useView();
   const [theme, setTheme] = useState('light');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Check if theme is stored in localStorage
     const savedTheme = localStorage.getItem('theme') || 'light';
     setTheme(savedTheme);
     document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+  }, []);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   const toggleTheme = () => {
@@ -36,26 +51,53 @@ export default function Navigation() {
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-sm mb-6">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 justify-between items-center">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row sm:h-16 justify-between items-start sm:items-center py-3 sm:py-0">
+          <div className="flex w-full sm:w-auto items-center justify-between">
             <Link href="/" className="text-xl font-semibold text-gray-900 dark:text-white">
               Cook & Eat
             </Link>
 
-            {session && (
+            {/* Mobile menu button */}
+            <div className="flex sm:hidden items-center">
+              {session && (
+                <span className="mr-3 text-sm text-gray-700 dark:text-gray-300">
+                  Hi, {session.user?.name?.split(' ')[0] || session.user?.email?.split('@')[0]}
+                </span>
+              )}
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="rounded-md bg-gray-100 dark:bg-gray-700 p-2 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600"
+                aria-label="Toggle menu"
+                aria-expanded={isMenuOpen}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  {isMenuOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* View toggle button - on a new line for mobile */}
+          {session && (
+            <div className="flex w-full sm:w-auto mt-3 sm:mt-0">
               <button
                 onClick={toggleView}
-                className="rounded-md bg-gray-100 dark:bg-gray-700 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600"
+                className="w-full sm:w-auto rounded-md bg-gray-100 dark:bg-gray-700 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600"
               >
                 {getViewText()}
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
-          <div className="flex items-center gap-4">
+          {/* Desktop navigation items */}
+          <div className="hidden sm:flex items-center gap-4">
             {session ? (
               <>
-                <span className="hidden sm:inline-block text-gray-700 dark:text-gray-300">
+                <span className="text-gray-700 dark:text-gray-300">
                   Hi, {session.user?.name || session.user?.email}
                 </span>
                 <div className="flex items-center gap-3">
@@ -109,6 +151,89 @@ export default function Navigation() {
               </div>
             )}
           </div>
+
+          {/* Mobile dropdown menu */}
+          {isMenuOpen && (
+            <div
+              ref={menuRef}
+              className="sm:hidden absolute right-4 top-16 mt-2 w-56 origin-top-right bg-white dark:bg-gray-800 rounded-md shadow-lg p-2 z-10 border border-gray-200 dark:border-gray-700"
+            >
+              <div className="flex flex-col py-2 gap-3">
+                {session ? (
+                  <>
+                    <UserSearch />
+                    <button
+                      onClick={toggleTheme}
+                      className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      {theme === 'light' ? (
+                        <>
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                          </svg>
+                          <span>Dark Mode</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                          </svg>
+                          <span>Light Mode</span>
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        signOut();
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      <span>Sign out</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={toggleTheme}
+                      className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      {theme === 'light' ? (
+                        <>
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                          </svg>
+                          <span>Dark Mode</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                          </svg>
+                          <span>Light Mode</span>
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        signIn();
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                      </svg>
+                      <span>Sign in</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </nav>
