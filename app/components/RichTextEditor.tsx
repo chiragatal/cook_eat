@@ -4,7 +4,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface RichTextEditorProps {
   value: string;
@@ -205,7 +205,7 @@ export function RichTextContent({
   );
 }
 
-// Create a component for truncated rich text content with a "read more" button
+// Create a component for truncated rich text content with gradient fade
 export function TruncatedRichText({
   content,
   maxHeight = '6rem',
@@ -217,28 +217,36 @@ export function TruncatedRichText({
   className?: string;
   onReadMore?: (e?: React.MouseEvent) => void;
 }) {
+  const [hasOverflow, setHasOverflow] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Check if content overflows the container
+    if (contentRef.current) {
+      const element = contentRef.current;
+      setHasOverflow(element.scrollHeight > element.clientHeight);
+    }
+  }, [content]);
+
   if (!content) return null;
 
   return (
     <div className="relative" style={{ maxHeight }}>
       <div
+        ref={contentRef}
         className={`${className} overflow-hidden`}
         style={{ maxHeight }}
         dangerouslySetInnerHTML={{ __html: content }}
+        onClick={(e) => {
+          if (onReadMore) {
+            e.stopPropagation();
+            onReadMore(e);
+          }
+        }}
       />
-      <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white dark:from-gray-800 to-transparent">
-        {onReadMore && (
-          <button
-            className="absolute bottom-0 left-1/2 transform -translate-x-1/2 text-xs text-indigo-600 dark:text-indigo-400 bg-white dark:bg-gray-800 px-2 py-1 rounded-t-md"
-            onClick={(e) => {
-              e.stopPropagation();
-              onReadMore(e);
-            }}
-          >
-            Read more
-          </button>
-        )}
-      </div>
+      {hasOverflow && (
+        <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white dark:from-gray-800 to-transparent" />
+      )}
     </div>
   );
 }
