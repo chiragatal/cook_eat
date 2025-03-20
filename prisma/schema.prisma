@@ -19,6 +19,7 @@ model User {
   updatedAt    DateTime   @updatedAt
   posts        Post[]
   reactions    Reaction[]
+  comments     Comment[]
 }
 
 model Post {
@@ -40,6 +41,7 @@ model Post {
   userId      Int
   user        User       @relation(fields: [userId], references: [id])
   reactions   Reaction[]
+  comments    Comment[]
 
   @@index([userId])
 }
@@ -54,6 +56,20 @@ model Reaction {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId, type])
+  @@index([postId])
+  @@index([userId])
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  postId    Int
+  userId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([postId])
   @@index([userId])
 }

@@ -10,6 +10,7 @@ import { useSession } from 'next-auth/react';
 import Navigation from '../../components/Navigation';
 import QuickReactions from '../../components/QuickReactions';
 import { RichTextContent } from '../../components/RichTextEditor';
+import Comments from '../../components/Comments';
 
 interface Ingredient {
   name: string;
@@ -412,6 +413,9 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                   </div>
                 </div>
               </div>
+
+              {/* Comments Section */}
+              <Comments postId={recipe.id} />
             </div>
           </div>
         </div>
