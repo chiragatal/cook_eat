@@ -44,7 +44,7 @@ A post is basically a recipe.
 - [x] It should expand the post when I click on it
 - [x] On expansion, show the ingredients
 - [x] Also show a button in the expanded view, to view the full recipe
-- [ ] Ingredients should be of the format "\<name> * \<quantity>"
+- [x] Ingredients should be of the format "\<name> * \<quantity>"
 
 ### Calendar
 
@@ -99,5 +99,6 @@ A post is basically a recipe.
 - [ ] When I share a user, the link is not working
 - [ ] The Full calendar is not working and not looking so nice
 - [ ] Images are not showing up
-- [ ] The post list does not show the description in rich text format
+- [x] The post list does not show the description in rich text format
 - [x] The user name is not clickable in the post list
+- [ ] Fix the logo and the favicon

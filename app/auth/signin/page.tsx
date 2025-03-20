@@ -33,20 +33,24 @@ export default function SignIn() {
     setError('');
 
     try {
+      console.log('Attempting sign in with:', email);
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
       });
 
+      console.log('Sign in result:', result);
+
       if (result?.error) {
-        setError('Invalid email or password');
+        setError(`Authentication error: ${result.error}`);
       } else {
         router.push('/');
         router.refresh();
       }
     } catch (error) {
-      setError('An error occurred. Please try again.');
+      console.error('Sign in error:', error);
+      setError(`An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }

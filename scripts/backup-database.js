@@ -26,7 +26,7 @@ async function main() {
     console.log('Exporting all tables...');
 
     // Create an array of models to export
-    const models = ['User', 'Post', 'Reaction'];
+    const models = ['User', 'Post', 'Reaction', 'Comment'];
 
     // Object to store all data
     const allData = {};
