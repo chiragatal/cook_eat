@@ -27,18 +27,26 @@ export default function Comments({ postId }: { postId: number }) {
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   // Load comments
   useEffect(() => {
     const fetchComments = async () => {
       try {
         setLoading(true);
+        setError(null);
         const res = await fetch(`/api/posts/${postId}/comments`);
-        if (!res.ok) throw new Error('Failed to fetch comments');
+
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ error: 'Failed to parse error response' }));
+          throw new Error(errorData.error || `Error ${res.status}: ${res.statusText}`);
+        }
+
         const data = await res.json();
         setComments(data);
       } catch (error) {
         console.error('Error fetching comments:', error);
+        setError(error instanceof Error ? error.message : 'Failed to load comments');
       } finally {
         setLoading(false);
       }
@@ -59,6 +67,8 @@ export default function Comments({ postId }: { postId: number }) {
 
     try {
       setSubmitting(true);
+      setError(null);
+
       const res = await fetch(`/api/posts/${postId}/comments`, {
         method: 'POST',
         headers: {
@@ -67,13 +77,17 @@ export default function Comments({ postId }: { postId: number }) {
         body: JSON.stringify({ content: newComment }),
       });
 
-      if (!res.ok) throw new Error('Failed to post comment');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Failed to parse error response' }));
+        throw new Error(errorData.error || `Error ${res.status}: ${res.statusText}`);
+      }
 
       const comment = await res.json();
       setComments([comment, ...comments]);
       setNewComment('');
     } catch (error) {
       console.error('Error posting comment:', error);
+      setError(error instanceof Error ? error.message : 'Failed to post comment');
     } finally {
       setSubmitting(false);
     }
@@ -143,6 +157,12 @@ export default function Comments({ postId }: { postId: number }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mt-8">
       <h2 className="text-2xl font-bold mb-6">Comments</h2>
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-md">
+          Error: {error}
+        </div>
+      )}
 
       {session ? (
         <form onSubmit={handleSubmit} className="mb-8">

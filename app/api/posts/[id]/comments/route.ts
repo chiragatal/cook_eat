@@ -58,6 +58,8 @@ export async function POST(
       );
     }
 
+    console.log('Session user:', session.user);
+
     const postId = parseInt(params.id);
 
     if (isNaN(postId)) {
@@ -66,6 +68,8 @@ export async function POST(
         { status: 400 }
       );
     }
+
+    console.log('Post ID:', postId);
 
     // Check if post exists
     const post = await prisma.post.findUnique({
@@ -79,8 +83,12 @@ export async function POST(
       );
     }
 
+    console.log('Post found:', post.id);
+
     const body = await request.json();
     const { content } = body;
+
+    console.log('Comment content:', content);
 
     if (!content || content.trim() === '') {
       return NextResponse.json(
@@ -90,27 +98,42 @@ export async function POST(
     }
 
     // Create comment
-    const comment = await prisma.comment.create({
-      data: {
-        content,
-        postId,
-        userId: session.user.id
-      },
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true
-          }
-        }
-      }
+    console.log('Creating comment with data:', {
+      content,
+      postId,
+      userId: session.user.id
     });
 
-    return NextResponse.json(comment);
+    try {
+      const comment = await prisma.comment.create({
+        data: {
+          content,
+          postId,
+          userId: session.user.id
+        },
+        include: {
+          user: {
+            select: {
+              name: true,
+              email: true
+            }
+          }
+        }
+      });
+
+      console.log('Comment created successfully:', comment.id);
+      return NextResponse.json(comment);
+    } catch (dbError) {
+      console.error('Database error creating comment:', dbError);
+      return NextResponse.json(
+        { error: 'Database error: ' + (dbError instanceof Error ? dbError.message : 'Unknown error') },
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    console.error('Error creating comment:', error);
+    console.error('Detailed error creating comment:', error);
     return NextResponse.json(
-      { error: 'Failed to create comment' },
+      { error: 'Error creating comment: ' + (error instanceof Error ? error.message : 'Unknown error') },
       { status: 500 }
     );
   }
