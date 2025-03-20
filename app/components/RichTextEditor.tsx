@@ -204,3 +204,41 @@ export function RichTextContent({
     />
   );
 }
+
+// Create a component for truncated rich text content with a "read more" button
+export function TruncatedRichText({
+  content,
+  maxHeight = '6rem',
+  className = "prose dark:prose-invert max-w-none",
+  onReadMore
+}: {
+  content: string;
+  maxHeight?: string;
+  className?: string;
+  onReadMore?: (e?: React.MouseEvent) => void;
+}) {
+  if (!content) return null;
+
+  return (
+    <div className="relative" style={{ maxHeight }}>
+      <div
+        className={`${className} overflow-hidden`}
+        style={{ maxHeight }}
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+      <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white dark:from-gray-800 to-transparent">
+        {onReadMore && (
+          <button
+            className="absolute bottom-0 left-1/2 transform -translate-x-1/2 text-xs text-indigo-600 dark:text-indigo-400 bg-white dark:bg-gray-800 px-2 py-1 rounded-t-md"
+            onClick={(e) => {
+              e.stopPropagation();
+              onReadMore(e);
+            }}
+          >
+            Read more
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}

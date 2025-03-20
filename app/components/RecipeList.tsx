@@ -9,7 +9,7 @@ import { useView } from '../contexts/ViewContext';
 import { useRouter } from 'next/navigation';
 import QuickReactions from './QuickReactions';
 import Image from 'next/image';
-import { RichTextContent } from './RichTextEditor';
+import { RichTextContent, TruncatedRichText } from './RichTextEditor';
 
 interface Ingredient {
   name: string;
@@ -580,16 +580,28 @@ export default function RecipeList({
                 </div>
 
                 <div
-                  className="mb-2 overflow-y-auto max-h-24 cursor-pointer"
+                  className="mb-2 cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleRecipeExpansion(recipe.id);
                   }}
                 >
-                  <RichTextContent
-                    content={recipe.description}
-                    className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300"
-                  />
+                  {!expandedRecipes.includes(recipe.id) ? (
+                    <TruncatedRichText
+                      content={recipe.description}
+                      maxHeight="6rem"
+                      className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300"
+                      onReadMore={(e) => {
+                        e?.stopPropagation();
+                        toggleRecipeExpansion(recipe.id);
+                      }}
+                    />
+                  ) : (
+                    <RichTextContent
+                      content={recipe.description}
+                      className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300"
+                    />
+                  )}
                 </div>
 
                 {/* Card expansion toggle - show collapse button only when expanded */}
@@ -619,6 +631,14 @@ export default function RecipeList({
                     }}
                     className="mt-4 border-t pt-4 border-gray-200 dark:border-gray-700 animate-fade-in-up overflow-hidden transition-all duration-300 ease-in-out"
                   >
+                    <div className="mb-4">
+                      <h4 className="font-medium text-gray-900 dark:text-white mb-2">Description:</h4>
+                      <RichTextContent
+                        content={recipe.description}
+                        className="prose dark:prose-invert max-w-none text-gray-600 dark:text-gray-300"
+                      />
+                    </div>
+
                     <h4 className="font-medium text-gray-900 dark:text-white mb-2">Ingredients:</h4>
                     <ul className="list-disc pl-5 space-y-1 mb-4">
                       {(() => {
