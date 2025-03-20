@@ -586,9 +586,10 @@ export default function RecipeList({
                     toggleRecipeExpansion(recipe.id);
                   }}
                 >
-                  <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-line">
-                    {recipe.description.replace(/<[^>]*>/g, '')}
-                  </p>
+                  <RichTextContent
+                    content={recipe.description}
+                    className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300"
+                  />
                 </div>
 
                 {/* Card expansion toggle - show collapse button only when expanded */}

@@ -188,19 +188,19 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 export default RichTextEditor;
 
 // Create a component that just renders the rich text content for viewing
-export const RichTextContent: React.FC<{ content: string; className?: string }> = ({
+export function RichTextContent({
   content,
-  className = ''
-}) => {
-  // If there's no content, don't render anything
-  if (!content || content.trim() === '') {
-    return null;
-  }
+  className = "prose dark:prose-invert max-w-none"
+}: {
+  content: string;
+  className?: string;
+}) {
+  if (!content) return null;
 
   return (
     <div
-      className={`prose prose-indigo prose-sm dark:prose-invert max-w-none ${className}`}
+      className={className}
       dangerouslySetInnerHTML={{ __html: content }}
     />
   );
-};
+}
