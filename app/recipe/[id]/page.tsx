@@ -149,6 +149,12 @@ export default function RecipePage({ params }: { params: { id: string } }) {
     });
   };
 
+  // Format ingredient with new pattern
+  const formatIngredient = (ingredient: Ingredient) => {
+    if (!ingredient.amount) return ingredient.name;
+    return `${ingredient.name} * ${ingredient.amount}`;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -346,10 +352,7 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                           •
                         </span>
                         <span className="text-gray-700 dark:text-gray-300">
-                          {ingredient.amount && (
-                            <span className="font-medium">{ingredient.amount} </span>
-                          )}
-                          {ingredient.name}
+                          {formatIngredient(ingredient)}
                         </span>
                       </li>
                     ))}

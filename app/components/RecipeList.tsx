@@ -249,7 +249,7 @@ export default function RecipeList({
 
   const formatIngredient = (ingredient: Ingredient) => {
     if (!ingredient.amount) return ingredient.name;
-    return `${ingredient.name}: ${ingredient.amount}`;
+    return `${ingredient.name} * ${ingredient.amount}`;
   };
 
   const handleUserClick = (userId: number, userName: string | undefined | null, email: string) => {
@@ -651,7 +651,7 @@ export default function RecipeList({
                           const ingredients = JSON.parse(recipe.ingredients);
                           return ingredients.map((ingredient: Ingredient, index: number) => (
                             <li key={index} className="text-gray-600 dark:text-gray-300">
-                              {ingredient.amount && <span className="font-medium">{ingredient.amount}</span>} {ingredient.name}
+                              {formatIngredient(ingredient)}
                             </li>
                           ));
                         } catch (e) {
