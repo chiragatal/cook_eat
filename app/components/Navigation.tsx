@@ -37,10 +37,19 @@ export default function Navigation() {
     <nav className="bg-white dark:bg-gray-800 shadow-sm mb-6">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 justify-between items-center">
-          <div className="flex items-center">
+          <div className="flex items-center space-x-4">
             <Link href="/" className="text-xl font-semibold text-gray-900 dark:text-white">
               Cook & Eat
             </Link>
+
+            {session && (
+              <button
+                onClick={toggleView}
+                className="rounded-md bg-gray-100 dark:bg-gray-700 px-3 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600"
+              >
+                {getViewText()}
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-4">
