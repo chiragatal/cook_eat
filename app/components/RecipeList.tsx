@@ -474,35 +474,14 @@ export default function RecipeList({
               <div className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
                   <div className="w-full">
-                    <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-start mb-2">
                       <Link
                         href={`/recipe/${recipe.id}`}
-                        className="text-lg font-medium text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                        className="text-xl sm:text-2xl font-semibold hover:text-indigo-600 transition-colors text-left"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        {recipe.title}
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">{recipe.title}</h3>
                       </Link>
-
-                      {/* Expansion toggle buttons */}
-                      <button
-                        className="ml-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleRecipeExpansion(recipe.id);
-                        }}
-                        aria-label={expandedRecipes.includes(recipe.id) ? "Collapse" : "Expand"}
-                        title={expandedRecipes.includes(recipe.id) ? "Collapse" : "Expand"}
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d={expandedRecipes.includes(recipe.id)
-                              ? "M5 15l7-7 7 7" // Up arrow when expanded
-                              : "M19 9l-7 7-7-7"} // Down arrow when collapsed
-                          />
-                        </svg>
-                      </button>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -565,24 +544,6 @@ export default function RecipeList({
                         }
                       })()}
                     </div>
-
-                    {/* Meta info */}
-                    <div className="flex flex-wrap text-sm text-gray-500 dark:text-gray-400 gap-x-4 gap-y-1 mt-1 mb-3">
-                      <div className="flex items-center">
-                        <Clock className="w-4 h-4 mr-1" />
-                        {recipe.cookingTime} min
-                      </div>
-                      <div className="flex items-center">
-                        <Users className="w-4 h-4 mr-1" />
-                        {recipe.servings} {recipe.servings === 1 ? 'serving' : 'servings'}
-                      </div>
-                      {recipe.cookedDate && (
-                        <div className="flex items-center">
-                          <CalendarCheck className="w-4 h-4 mr-1" />
-                          {formatDate(recipe.cookedDate)}
-                        </div>
-                      )}
-                    </div>
                   </div>
 
                   {session && ((String(session.user.id) === String(recipe.userId)) || session.user.isAdmin) && (
@@ -623,14 +584,46 @@ export default function RecipeList({
                 </div>
 
                 {/* Description - truncated when not expanded */}
-                {recipe.description && (
-                  <div>
+                <div
+                  className="mb-2 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleRecipeExpansion(recipe.id);
+                  }}
+                >
+                  {!expandedRecipes.includes(recipe.id) ? (
                     <TruncatedRichText
                       content={recipe.description}
-                      maxHeight={expandedRecipes.includes(recipe.id) ? "none" : "120px"}
-                      className="prose dark:prose-invert max-w-none prose-sm"
-                      onClick={() => toggleRecipeExpansion(recipe.id)}
+                      maxHeight="6rem"
+                      className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300"
+                      onReadMore={(e) => {
+                        e?.stopPropagation();
+                        toggleRecipeExpansion(recipe.id);
+                      }}
                     />
+                  ) : (
+                    <RichTextContent
+                      content={recipe.description}
+                      className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300"
+                    />
+                  )}
+                </div>
+
+                {/* Card expansion toggle - show collapse button only when expanded */}
+                {expandedRecipes.includes(recipe.id) && (
+                  <div
+                    className="flex items-center mb-2 cursor-pointer text-gray-500 text-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleRecipeExpansion(recipe.id);
+                    }}
+                  >
+                    <span>Collapse</span>
+                    <span className="ml-1">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      </svg>
+                    </span>
                   </div>
                 )}
 
