@@ -5,7 +5,8 @@ const nextConfig = {
   images: {
     domains: [
       'public.blob.vercel-storage.com',
-      'via.placeholder.com'
+      'via.placeholder.com',
+      'cujkkedxzrs8eyid.public.blob.vercel-storage.com'
     ],
   }
 }
