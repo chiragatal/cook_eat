@@ -406,6 +406,13 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
               onChange={(e) => setNewIngredient({ ...newIngredient, name: e.target.value })}
               className="col-span-5 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               disabled={isSubmitting}
+              id="ingredient-name-input"
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  document.getElementById('ingredient-amount-input')?.focus();
+                }
+              }}
             />
             <input
               type="text"
@@ -414,16 +421,27 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
               onChange={(e) => setNewIngredient({ ...newIngredient, amount: e.target.value })}
               className="col-span-5 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               disabled={isSubmitting}
+              id="ingredient-amount-input"
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
                   addIngredient();
+                  // Focus back to the name input after adding
+                  setTimeout(() => {
+                    document.getElementById('ingredient-name-input')?.focus();
+                  }, 0);
                 }
               }}
             />
             <button
               type="button"
-              onClick={addIngredient}
+              onClick={() => {
+                addIngredient();
+                // Focus back to the name input after adding
+                setTimeout(() => {
+                  document.getElementById('ingredient-name-input')?.focus();
+                }, 0);
+              }}
               className="col-span-2 px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50"
               disabled={isSubmitting || !newIngredient.name.trim()}
             >
@@ -447,15 +465,32 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
                     </svg>
                   </div>
-                  <span className="flex-grow text-gray-700 dark:text-gray-300">
-                    <span className="font-medium text-gray-900 dark:text-white">{ingredient.name}</span>
-                    {ingredient.amount && (
-                      <>
-                        <span className="mx-2 text-gray-400 dark:text-gray-500">•</span>
-                        <span className="text-gray-600 dark:text-gray-400">{ingredient.amount}</span>
-                      </>
-                    )}
-                  </span>
+                  <div className="flex-grow grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={ingredient.name}
+                      onChange={(e) => {
+                        const updatedIngredients = [...ingredients];
+                        updatedIngredients[index] = { ...ingredient, name: e.target.value };
+                        setIngredients(updatedIngredients);
+                      }}
+                      placeholder="Ingredient name"
+                      className="bg-transparent border-none dark:text-white focus:ring-0 p-0 w-full text-gray-900 dark:text-white"
+                      disabled={isSubmitting}
+                    />
+                    <input
+                      type="text"
+                      value={ingredient.amount}
+                      onChange={(e) => {
+                        const updatedIngredients = [...ingredients];
+                        updatedIngredients[index] = { ...ingredient, amount: e.target.value };
+                        setIngredients(updatedIngredients);
+                      }}
+                      placeholder="Amount"
+                      className="bg-transparent border-none dark:text-gray-400 focus:ring-0 p-0 w-full text-gray-600"
+                      disabled={isSubmitting}
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={() => removeIngredient(index)}
