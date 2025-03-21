@@ -43,8 +43,8 @@ export default function RecipePage({ params }: { params: { id: string } }) {
     }
   };
 
-  const handleUserClick = (userId: string, userName: string | null, email: string) => {
-    setSelectedUser(userId, userName || email);
+  const handleUserClick = (userId: number, userName: string | null, email: string) => {
+    setSelectedUser(String(userId), userName || email);
     router.push('/');
   };
 
@@ -265,7 +265,11 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                   {recipe.user && (
                     <span
                       className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400"
-                      onClick={() => handleUserClick(recipe.userId, recipe.user.name, recipe.user.email)}
+                      onClick={() => handleUserClick(
+                        recipe.userId,
+                        recipe.user?.name || null,
+                        recipe.user?.email || ''
+                      )}
                     >
                       By {recipe.user.name || recipe.user.email}
                     </span>
@@ -354,7 +358,7 @@ export default function RecipePage({ params }: { params: { id: string } }) {
               <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                   <div>
-                    <QuickReactions postId={recipe.id} />
+                    <QuickReactions postId={recipe.id || 0} />
                   </div>
 
                   <div className="flex flex-wrap gap-4 text-right">
@@ -364,7 +368,9 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                       </svg>
                       <div>
                         <span className="text-xs text-gray-500 dark:text-gray-400">Created</span>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">{formatDate(recipe.createdAt)}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {recipe.createdAt ? formatDate(recipe.createdAt) : '-'}
+                        </p>
                       </div>
                     </div>
 
@@ -384,7 +390,7 @@ export default function RecipePage({ params }: { params: { id: string } }) {
               </div>
 
               {/* Comments Section */}
-              <Comments postId={recipe.id} />
+              <Comments postId={recipe.id || 0} />
             </div>
           </div>
         </div>

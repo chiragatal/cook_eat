@@ -170,7 +170,15 @@ export async function POST(request: Request) {
     console.error('Detailed error creating post:', error);
 
     // More specific error handling
-    if (error.code === 'P2002' && error.meta?.target?.includes('id')) {
+    if (error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        error.code === 'P2002' &&
+        'meta' in error &&
+        error.meta &&
+        'target' in error.meta &&
+        Array.isArray(error.meta.target) &&
+        error.meta.target.includes('id')) {
       return NextResponse.json(
         { error: 'There was a conflict with an existing ID. Please try again.' },
         { status: 409 }
