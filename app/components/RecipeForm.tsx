@@ -63,37 +63,61 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showNotes, setShowNotes] = useState(recipe.notes ? true : false);
   const [showExampleModal, setShowExampleModal] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.length) return;
+  const handleImageDrop = async (e: React.DragEvent<HTMLDivElement>, dropIndex?: number) => {
+    e.preventDefault();
+    setIsDragging(false);
 
-    const files = Array.from(e.target.files);
-    const formData = new FormData();
+    // If dropIndex is provided, this is a reordering operation
+    if (typeof dropIndex === 'number') {
+      const dragIndex = parseInt(e.dataTransfer.getData('text/plain'));
+      if (dragIndex === dropIndex) return;
 
-    files.forEach((file, index) => {
-      formData.append('images', file);
-    });
+      const updatedImages = [...images];
+      const [draggedImage] = updatedImages.splice(dragIndex, 1);
+      updatedImages.splice(dropIndex, 0, draggedImage);
+      setImages(updatedImages);
+      return;
+    }
 
+    // Otherwise, this is a new file upload operation
+    const files = e.dataTransfer.files;
+    if (!files.length) return;
+
+    setIsUploading(true);
     try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload images');
-      }
-
-      const data = await response.json();
-      setImages([...images, ...data.imagePaths]);
+      const uploadedImages = await Promise.all(
+        Array.from(files).map(async (file) => {
+          const formData = new FormData();
+          formData.append('file', file);
+          const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          });
+          if (!response.ok) throw new Error('Upload failed');
+          const data = await response.json();
+          return data.url;
+        })
+      );
+      setImages([...images, ...uploadedImages]);
     } catch (error) {
       console.error('Error uploading images:', error);
-      alert('Failed to upload images');
+      alert('Failed to upload images. Please try again.');
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  const removeImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
   };
 
   const handleImageDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
@@ -104,15 +128,36 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
     e.preventDefault();
   };
 
-  const handleImageDrop = (e: React.DragEvent<HTMLDivElement>, dropIndex: number) => {
-    e.preventDefault();
-    const dragIndex = parseInt(e.dataTransfer.getData('text/plain'));
-    if (dragIndex === dropIndex) return;
+  const removeImage = (index: number) => {
+    setImages(images.filter((_, i) => i !== index));
+  };
 
-    const updatedImages = [...images];
-    const [draggedImage] = updatedImages.splice(dragIndex, 1);
-    updatedImages.splice(dropIndex, 0, draggedImage);
-    setImages(updatedImages);
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    setIsUploading(true);
+    try {
+      const uploadedImages = await Promise.all(
+        Array.from(files).map(async (file) => {
+          const formData = new FormData();
+          formData.append('file', file);
+          const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          });
+          if (!response.ok) throw new Error('Upload failed');
+          const data = await response.json();
+          return data.url;
+        })
+      );
+      setImages([...images, ...uploadedImages]);
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      alert('Failed to upload images. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -194,10 +239,6 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
 
   const handleDragStart = (e: React.DragEvent<HTMLLIElement>, index: number) => {
     e.dataTransfer.setData('text/plain', index.toString());
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLLIElement>) => {
-    e.preventDefault();
   };
 
   const handleDrop = (e: React.DragEvent<HTMLLIElement>, dropIndex: number) => {
@@ -786,60 +827,104 @@ A quick and easy dinner recipe perfect for weeknights.
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Recipe Images
+                  Images
                 </label>
-                <div className="mt-1 flex items-center gap-4">
+                <div
+                  className={`relative border-2 border-dashed rounded-lg p-8 text-center ${
+                    isDragging
+                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                      : 'border-gray-300 dark:border-gray-600'
+                  } transition-colors duration-200 ease-in-out`}
+                  onDrop={handleImageDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                >
                   <input
                     type="file"
-                    accept="image/*"
                     multiple
+                    accept="image/*"
                     onChange={handleImageUpload}
-                    className="block w-full text-sm text-gray-500 dark:text-gray-400
-                      file:mr-4 file:py-2 file:px-4
-                      file:rounded-md file:border-0
-                      file:text-sm file:font-semibold
-                      file:bg-indigo-50 file:text-indigo-700
-                      dark:file:bg-indigo-900 dark:file:text-indigo-200
-                      hover:file:bg-indigo-100 dark:hover:file:bg-indigo-800"
-                    disabled={isSubmitting}
+                    className="hidden"
+                    id="image-upload"
+                    disabled={isSubmitting || isUploading}
                   />
+                  <label
+                    htmlFor="image-upload"
+                    className={`cursor-pointer flex flex-col items-center justify-center space-y-2 ${
+                      isSubmitting || isUploading ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    <svg
+                      className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
+                      stroke="currentColor"
+                      fill="none"
+                      viewBox="0 0 48 48"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      {isUploading ? (
+                        <div className="flex items-center justify-center space-x-2">
+                          <svg className="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>Uploading...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <span className="font-medium text-indigo-600 dark:text-indigo-400">
+                            Click to upload
+                          </span>{' '}
+                          or drag and drop
+                        </>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      PNG, JPG, GIF up to 10MB
+                    </p>
+                  </label>
                 </div>
 
                 {images.length > 0 && (
-                  <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
                     {images.map((image, index) => (
                       <div
                         key={index}
-                        className="relative group"
+                        className="relative group aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800"
                         draggable
                         onDragStart={(e) => handleImageDragStart(e, index)}
                         onDragOver={handleImageDragOver}
                         onDrop={(e) => handleImageDrop(e, index)}
                       >
-                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 cursor-move">
-                          <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-                          </svg>
-                        </div>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={image}
                           alt={`Recipe image ${index + 1}`}
-                          className="w-full h-32 object-contain rounded-lg shadow-sm transition-transform duration-200 group-hover:scale-105 bg-gray-100 dark:bg-gray-800"
-                          onError={(e) => {
-                            e.currentTarget.src = 'https://via.placeholder.com/200?text=Failed+to+Load';
-                          }}
+                          className="object-cover w-full h-full group-hover:opacity-75 transition-opacity duration-200"
                         />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute top-2 right-2 bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300 rounded-full p-1.5
-                                   hover:bg-red-200 dark:hover:bg-red-800 transition-colors opacity-0 group-hover:opacity-100"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="bg-red-600/90 text-white p-2 rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                            title="Remove image"
+                          >
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                          <div className="absolute top-0 right-0 p-2">
+                            <svg className="h-6 w-6 text-white drop-shadow-lg cursor-move" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                            </svg>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
