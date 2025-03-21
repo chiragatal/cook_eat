@@ -35,7 +35,7 @@ A post is basically a recipe.
 - [ ] For ingredients, newline is automatically converted to a new ingredient
 - [ ] Also make ingredients editable, like steps
 - [ ] A big text field where I can paste the recipe from somewhere else, and it will be converted to the post format
-- [ ] Add links section
+- [x] Add links section
 - [x] On the full post, show the buttons for editing and deleting the post and public/private status
 
 ### Post list
@@ -102,5 +102,5 @@ A post is basically a recipe.
 - [x] The post list does not show the description in rich text format
 - [x] The user name is not clickable in the post list
 - [ ] Fix the logo and the favicon
-- [ ] Double description in expanded post
-- [ ] Header colors on the full recipe page in dark mode look incorrect. Also in the hamburger menu.
+- [x] Double description in expanded post
+- [x] Header colors on the full recipe page in dark mode look incorrect. Also in the hamburger menu.

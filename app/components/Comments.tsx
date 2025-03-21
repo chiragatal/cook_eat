@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { formatDistanceToNow } from 'date-fns';
+import CommentReactions from './CommentReactions';
 
 interface User {
   name: string | null;
@@ -273,6 +274,9 @@ export default function Comments({ postId }: { postId: number }) {
                   {comment.content}
                 </div>
               )}
+              <div className="mt-2">
+                <CommentReactions commentId={comment.id} />
+              </div>
             </div>
           ))}
         </div>
