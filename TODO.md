@@ -33,7 +33,7 @@ A post is basically a recipe.
 - [x] Rich text editor for the description
 - [ ] Voice input for the post
 - [ ] For ingredients, newline is automatically converted to a new ingredient
-- [ ] Also make ingredients editable, like steps
+- [x] Also make ingredients editable, like steps
 - [ ] A big text field where I can paste the recipe from somewhere else, and it will be converted to the post format
 - [x] Add links section
 - [x] On the full post, show the buttons for editing and deleting the post and public/private status
@@ -98,7 +98,7 @@ A post is basically a recipe.
 
 - [ ] When I share a user, the link is not working
 - [ ] The Full calendar is not working and not looking so nice
-- [ ] Images are not showing up
+- [x] Images are not showing up
 - [x] The post list does not show the description in rich text format
 - [x] The user name is not clickable in the post list
 - [ ] Fix the logo and the favicon
