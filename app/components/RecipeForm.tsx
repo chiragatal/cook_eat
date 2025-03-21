@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import RichTextEditor from './RichTextEditor';
 import { Recipe, Ingredient, Step } from '../types';
 
@@ -52,11 +52,9 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
   const [isPublic, setIsPublic] = useState(recipe.isPublic);
   const [isRawMode, setIsRawMode] = useState(false);
   const [rawText, setRawText] = useState('');
-  const [newIngredient, setNewIngredient] = useState<Ingredient>({
-    name: '',
-    amount: '',
-    id: '',
-  });
+  const [newIngredientName, setNewIngredientName] = useState('');
+  const [newIngredientAmount, setNewIngredientAmount] = useState('');
+  const ingredientNameInputRef = useRef<HTMLInputElement>(null);
   const [newStep, setNewStep] = useState<Step>({
     instruction: '',
     id: '',
@@ -170,15 +168,23 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
     setIngredients(updatedIngredients);
   };
 
-  const addIngredient = () => {
-    if (newIngredient.name.trim()) {
-      setIngredients([...ingredients, {
-        ...newIngredient,
-        name: newIngredient.name.trim(),
-        amount: newIngredient.amount.trim(),
-        id: Date.now().toString(),
-      }]);
-      setNewIngredient({ name: '', amount: '', id: '' });
+  const handleAddIngredient = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (newIngredientName.trim()) {
+      setIngredients([
+        ...ingredients,
+        {
+          name: capitalizeFirstLetter(newIngredientName.trim()),
+          amount: newIngredientAmount.trim(),
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        },
+      ]);
+      setNewIngredientName('');
+      setNewIngredientAmount('');
+      // Focus back on the ingredient name input
+      setTimeout(() => {
+        ingredientNameInputRef.current?.focus();
+      }, 0);
     }
   };
 
@@ -209,7 +215,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
     if (newStep.instruction.trim()) {
       setSteps([...steps, {
         instruction: newStep.instruction.trim(),
-        id: Date.now().toString(),
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       }]);
       setNewStep({ instruction: '', id: '' });
     }
@@ -845,52 +851,43 @@ A quick and easy dinner recipe perfect for weeknights.
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Ingredients
               </label>
-              <div className="grid grid-cols-12 gap-2">
+              <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Ingredient name"
-                  value={newIngredient.name}
-                  onChange={(e) => setNewIngredient({ ...newIngredient, name: e.target.value })}
-                  className="col-span-5 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  disabled={isSubmitting}
-                  id="ingredient-name-input"
-                  onKeyPress={(e) => {
+                  name="ingredientName"
+                  id="ingredientName"
+                  ref={ingredientNameInputRef}
+                  className="flex-1 rounded-l-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  placeholder="Enter ingredient name"
+                  value={newIngredientName}
+                  onChange={(e) => setNewIngredientName(e.target.value)}
+                  onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
-                      document.getElementById('ingredient-amount-input')?.focus();
+                      handleAddIngredient();
                     }
                   }}
                 />
                 <input
                   type="text"
                   placeholder="Amount (e.g., 2 cups, 1 packet)"
-                  value={newIngredient.amount}
-                  onChange={(e) => setNewIngredient({ ...newIngredient, amount: e.target.value })}
-                  className="col-span-5 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  value={newIngredientAmount}
+                  onChange={(e) => setNewIngredientAmount(e.target.value)}
+                  className="w-1/3 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   disabled={isSubmitting}
                   id="ingredient-amount-input"
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
-                      addIngredient();
-                      // Focus back to the name input after adding
-                      setTimeout(() => {
-                        document.getElementById('ingredient-name-input')?.focus();
-                      }, 0);
+                      handleAddIngredient();
                     }
                   }}
                 />
                 <button
                   type="button"
-                  onClick={() => {
-                    addIngredient();
-                    // Focus back to the name input after adding
-                    setTimeout(() => {
-                      document.getElementById('ingredient-name-input')?.focus();
-                    }, 0);
-                  }}
-                  className="col-span-2 px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50"
-                  disabled={isSubmitting || !newIngredient.name.trim()}
+                  onClick={handleAddIngredient}
+                  className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50"
+                  disabled={isSubmitting || !newIngredientName.trim()}
                 >
                   Add
                 </button>

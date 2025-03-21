@@ -34,7 +34,7 @@ A post is basically a recipe.
 - [ ] Voice input for the post
 - [ ] For ingredients, newline is automatically converted to a new ingredient
 - [x] Also make ingredients editable, like steps
-- [ ] A big text field where I can paste the recipe from somewhere else, and it will be converted to the post format
+- [x] A big text field where I can paste the recipe from somewhere else, and it will be converted to the post format
 - [x] Add links section
 - [x] On the full post, show the buttons for editing and deleting the post and public/private status
 
