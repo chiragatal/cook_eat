@@ -241,6 +241,10 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
     e.dataTransfer.setData('text/plain', index.toString());
   };
 
+  const handleStepDragOver = (e: React.DragEvent<HTMLLIElement>) => {
+    e.preventDefault();
+  };
+
   const handleDrop = (e: React.DragEvent<HTMLLIElement>, dropIndex: number) => {
     e.preventDefault();
     const dragIndex = parseInt(e.dataTransfer.getData('text/plain'));
@@ -1047,7 +1051,7 @@ A quick and easy dinner recipe perfect for weeknights.
                         key={index}
                         draggable
                         onDragStart={(e) => handleDragStart(e, index)}
-                        onDragOver={handleDragOver}
+                        onDragOver={handleStepDragOver}
                         onDrop={(e) => handleDrop(e, index)}
                         className="flex gap-2 items-center bg-gray-50 dark:bg-gray-700 p-2 rounded-lg cursor-move group hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                       >
