@@ -176,6 +176,8 @@ export async function POST(request: Request) {
         error.code === 'P2002' &&
         'meta' in error &&
         error.meta &&
+        typeof error.meta === 'object' &&
+        error.meta !== null &&
         'target' in error.meta &&
         Array.isArray(error.meta.target) &&
         error.meta.target.includes('id')) {
