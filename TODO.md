@@ -102,3 +102,5 @@ A post is basically a recipe.
 - [x] The post list does not show the description in rich text format
 - [x] The user name is not clickable in the post list
 - [ ] Fix the logo and the favicon
+- [ ] Double description in expanded post
+- [ ] Header colors on the full recipe page in dark mode look incorrect. Also in the hamburger menu.

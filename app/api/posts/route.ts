@@ -115,7 +115,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     console.log('Creating post with data:', body);
 
+    // Extract and clean data
     const {
+      id,  // Check if ID is being passed in
       title,
       description,
       ingredients = '[]',
@@ -130,6 +132,12 @@ export async function POST(request: Request) {
       cookedOn = null,
     } = body;
 
+    // Log if an ID was received
+    if (id) {
+      console.log('Warning: ID was passed in the request. This will be ignored:', id);
+    }
+
+    // Create post without specifying ID (let Prisma auto-generate it)
     const post = await prisma.post.create({
       data: {
         title,
@@ -156,9 +164,19 @@ export async function POST(request: Request) {
       }
     });
 
+    console.log('Successfully created post with ID:', post.id);
     return NextResponse.json(post);
   } catch (error) {
     console.error('Detailed error creating post:', error);
+
+    // More specific error handling
+    if (error.code === 'P2002' && error.meta?.target?.includes('id')) {
+      return NextResponse.json(
+        { error: 'There was a conflict with an existing ID. Please try again.' },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Error creating post' },
       { status: 500 }
@@ -233,6 +251,8 @@ export async function PUT(request: Request) {
     const id = parseInt(url.searchParams.get('id') || '');
     const body = await request.json();
 
+    console.log('Updating post with ID:', id);
+
     if (!id) {
       return NextResponse.json(
         { error: 'Recipe ID is required' },
@@ -254,12 +274,12 @@ export async function PUT(request: Request) {
 
     if (recipe.userId !== session.user.id && !session.user.isAdmin) {
       return NextResponse.json(
-        { error: 'Not authorized to update this recipe' },
+        { error: 'Not authorized to edit this recipe' },
         { status: 403 }
       );
     }
 
-    // Extract only the updatable fields
+    // Extract fields to update but preserve the original ID
     const {
       title,
       description,
@@ -272,10 +292,10 @@ export async function PUT(request: Request) {
       cookingTime,
       difficulty,
       isPublic,
-      cookedOn
+      cookedOn,
     } = body;
 
-    const post = await prisma.post.update({
+    const updatedRecipe = await prisma.post.update({
       where: { id },
       data: {
         title,
@@ -301,7 +321,8 @@ export async function PUT(request: Request) {
       }
     });
 
-    return NextResponse.json(post);
+    console.log('Successfully updated post with ID:', updatedRecipe.id);
+    return NextResponse.json(updatedRecipe);
   } catch (error) {
     console.error('Error updating recipe:', error);
     return NextResponse.json(

@@ -2,33 +2,7 @@
 
 import { useState } from 'react';
 import RichTextEditor from './RichTextEditor';
-
-interface Ingredient {
-  name: string;
-  amount: string;
-  id: string;
-}
-
-interface Step {
-  instruction: string;
-  id: string;
-}
-
-interface Recipe {
-  id?: number;
-  title: string;
-  description: string;
-  ingredients: string; // JSON string of Ingredient[]
-  steps: string;
-  notes: string | null;
-  images: string; // JSON string of array of image paths
-  tags: string; // JSON string of string[]
-  category: string | null;
-  cookingTime: number | null;
-  difficulty: string | null;
-  createdAt?: string;
-  isPublic: boolean;
-}
+import { Recipe, Ingredient, Step } from '../types';
 
 interface RecipeFormProps {
   recipe?: Recipe;
@@ -49,6 +23,7 @@ const emptyRecipe: Recipe = {
   cookingTime: null,
   difficulty: null,
   isPublic: false,
+  userId: 0 // This will be set by the server
 };
 
 const CATEGORIES = [
@@ -125,8 +100,11 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
     setIsSubmitting(true);
 
     try {
+      // For create mode, ensure we don't send an ID
+      const baseRecipe = mode === 'create' ? {} : recipe;
+
       const updatedRecipe = {
-        ...recipe,
+        ...baseRecipe,
         title,
         description,
         ingredients: JSON.stringify(ingredients),

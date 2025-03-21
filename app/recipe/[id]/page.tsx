@@ -11,38 +11,7 @@ import Navigation from '../../components/Navigation';
 import QuickReactions from '../../components/QuickReactions';
 import { RichTextContent } from '../../components/RichTextEditor';
 import Comments from '../../components/Comments';
-
-interface Ingredient {
-  name: string;
-  amount: string;
-}
-
-interface Step {
-  instruction: string;
-  id: string;
-}
-
-interface Recipe {
-  id: number;
-  title: string;
-  description: string;
-  ingredients: string;
-  steps: string;
-  notes: string | null;
-  images: string;
-  tags: string;
-  category: string | null;
-  cookingTime: number | null;
-  difficulty: string | null;
-  createdAt: string;
-  isPublic: boolean;
-  cookedOn: string | null;
-  userId: string;
-  user: {
-    name: string | null;
-    email: string;
-  };
-}
+import { Recipe, Ingredient, Step } from '../../types';
 
 export default function RecipePage({ params }: { params: { id: string } }) {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
@@ -325,7 +294,7 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                 </div>
 
                 <div className="mb-8">
-                  <h2 className="text-2xl font-bold mb-4">Description</h2>
+                  <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Description</h2>
                   <RichTextContent content={recipe.description} className="mb-6 recipe-description" />
                 </div>
 
@@ -377,7 +346,7 @@ export default function RecipePage({ params }: { params: { id: string } }) {
 
               {recipe.notes && (
                 <div className="mb-8">
-                  <h2 className="text-2xl font-bold mb-4">Notes</h2>
+                  <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Notes</h2>
                   <RichTextContent content={recipe.notes} className="mb-6 recipe-notes" />
                 </div>
               )}
