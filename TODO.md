@@ -24,7 +24,7 @@ A post is basically a recipe.
 
 - [x] Create a new "post" for what I cooked
 - [x] This post should have a title, description, and a list of ingredients
-- [ ] I should be able to add photos, videos, links, notes, ratings, reviews, and tags
+- [x] I should be able to add photos, videos, links, notes, ratings, reviews, and tags
 - [x] This post should be able to be edited
 - [x] Option to share a post as a link
 
