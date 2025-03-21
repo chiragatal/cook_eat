@@ -64,6 +64,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
   const [newTag, setNewTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showNotes, setShowNotes] = useState(recipe.notes ? true : false);
+  const [showExampleModal, setShowExampleModal] = useState(false);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
@@ -229,20 +230,44 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
+  const capitalizeFirstLetter = (text: string) => {
+    if (!text) return text;
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
+
   const processIngredientLine = (line: string, ingredients: Ingredient[]) => {
-    // Common cooking measurements and descriptive terms
-    const measurements = [
-      // Standard measurements
-      'cup', 'cups', 'tbsp', 'tsp', 'tablespoon', 'tablespoons', 'teaspoon', 'teaspoons',
-      'gram', 'grams', 'g', 'kg', 'ml', 'oz', 'ounce', 'ounces', 'pound', 'pounds', 'lb',
-      'piece', 'pieces', 'slice', 'slices', 'pinch', 'pinches',
-      // Descriptive amounts
-      'little', 'few', 'handful', 'dash', 'splash', 'sprinkle', 'some', 'bit',
-      // Package measurements
-      'can', 'cans', 'packet', 'packets', 'pack', 'package', 'jar', 'bottle',
-      // Loose measurements
-      'to taste', 'as needed', 'as required'
-    ].join('|');
+    // Common cooking measurements and descriptive terms with their variations
+    const measurementPairs = [
+      ['cup', 'cups'],
+      ['tbsp', 'tablespoon', 'tablespoons'],
+      ['tsp', 'teaspoon', 'teaspoons'],
+      ['gram', 'grams', 'g'],
+      ['kilogram', 'kilograms', 'kg'],
+      ['milliliter', 'milliliters', 'ml'],
+      ['ounce', 'ounces', 'oz'],
+      ['pound', 'pounds', 'lb', 'lbs'],
+      ['piece', 'pieces', 'pc', 'pcs'],
+      ['slice', 'slices'],
+      ['pinch', 'pinches'],
+      ['can', 'cans'],
+      ['packet', 'packets', 'pack', 'packs'],
+      ['package', 'packages'],
+      ['jar', 'jars'],
+      ['bottle', 'bottles'],
+      ['bunch', 'bunches'],
+      ['handful', 'handfuls'],
+      ['dash', 'dashes'],
+      ['splash', 'splashes'],
+      ['sprinkle', 'sprinkles'],
+      ['little', 'few', 'bit'],
+      ['to taste', 'as needed', 'as required']
+    ];
+
+    // Create a regex-safe measurement pattern
+    const measurements = measurementPairs
+      .flat()
+      .map(m => m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+      .join('|');
 
     // Common ingredient preparations
     const preparations = [
@@ -275,7 +300,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
 
         if (pattern === patterns[3]) {
           // Handle preparation pattern
-          name = match[1].trim();
+          name = capitalizeFirstLetter(match[1].trim());
           const prep = match[2];
           if (prep) {
             name = `${name} (${prep})`;
@@ -284,7 +309,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
         } else {
           // Handle amount patterns
           amount = match[1].trim();
-          name = match[2].trim();
+          name = capitalizeFirstLetter(match[2].trim());
 
           // Clean up amount text
           amount = amount.replace(/^(a |an |some )/, '');
@@ -306,7 +331,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
     if (!matched) {
       // If no pattern matched, use the whole line as the name
       ingredients.push({
-        name: line.trim(),
+        name: capitalizeFirstLetter(line.trim()),
         amount: '',
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       });
@@ -323,7 +348,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
       for (let i = 0; i < Math.min(3, lines.length); i++) {
         if (titlePattern.test(lines[i]) || i === 0) {
           if (!title) {
-            setTitle(lines[i]);
+            setTitle(capitalizeFirstLetter(lines[i]));
             titleFound = true;
           }
           lines.splice(i, 1);
@@ -393,7 +418,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
       // If we're in a specific section, respect that
       if (isInStepsSection) {
         detectedSteps.push({
-          instruction: content,
+          instruction: capitalizeFirstLetter(content),
           id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         });
         return;
@@ -412,7 +437,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
         processIngredientLine(content, detectedIngredients);
       } else {
         detectedSteps.push({
-          instruction: content,
+          instruction: capitalizeFirstLetter(content),
           id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         });
       }
@@ -536,24 +561,42 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
       {isRawMode ? (
         <div className="space-y-4">
           <div>
-            <label htmlFor="rawText" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Paste Your Recipe Text
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="rawText" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Paste Your Recipe Text
+              </label>
+              <button
+                type="button"
+                className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                onClick={() => setShowExampleModal(true)}
+              >
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm">See Example</span>
+                </div>
+              </button>
+            </div>
             <div className="mt-1">
               <textarea
                 id="rawText"
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
                 className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[400px] font-mono"
-                placeholder="Paste your recipe text here. The converter will try to intelligently parse:
-- Title (first line)
-- Ingredients (lines with measurements)
-- Steps (numbered or bulleted lines)
-- Description (remaining text)
-- Cooking time (if mentioned)
-- Difficulty (if mentioned)
-- Tags (if using hashtags)"
+                placeholder={`Paste your recipe text here. The converter will detect:
+
+• Title (first line)
+• Servings & Time (e.g., "Serves 4", "Prep time: 10 min")
+• Ingredients (with measurements or bullet points)
+• Steps (numbered or bullet points)
+• Tags (using #hashtags)
+
+💡 Use bullet points (-) or numbers (1.) for ingredients and steps`}
               />
+            </div>
+            <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              The converter will organize your recipe, and you can adjust any fields afterward.
             </div>
           </div>
           <div className="flex justify-end">
@@ -565,6 +608,49 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
               Convert to Form
             </button>
           </div>
+
+          {/* Example Modal */}
+          {showExampleModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 relative">
+                <button
+                  onClick={() => setShowExampleModal(false)}
+                  className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Example Recipe Format</h3>
+                <pre className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg overflow-auto text-sm font-mono text-gray-800 dark:text-gray-200">
+{`Easy Pasta Recipe
+Serves 4
+Prep time: 10 minutes
+Cooking time: 20 minutes
+
+Ingredients:
+- 2 cups pasta
+- a little olive oil
+- salt to taste
+- 3 cloves garlic, finely chopped
+- 1 can tomatoes
+- a handful of basil leaves
+
+Steps:
+- Boil water in a large pot
+- Add pasta and cook until al dente
+- Heat oil in a pan
+- Add garlic and cook until fragrant
+- Add tomatoes and simmer
+- Season with salt
+- Add basil
+
+A quick and easy dinner recipe perfect for weeknights.
+#quick #easy #vegetarian`}
+                </pre>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <>
