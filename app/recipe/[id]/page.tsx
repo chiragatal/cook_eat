@@ -201,7 +201,7 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                 <div className="relative h-96 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
                   <div
                     ref={(el) => {
-                      if (el) {
+                      if (el && recipe.id) {
                         galleryRefs.current[recipe.id] = el;
                       }
                     }}
@@ -285,7 +285,7 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                         </svg>
                       </button>
                       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
-                        {images.map((_, index) => (
+                        {images.map((_: string, index: number) => (
                           <div
                             key={index}
                             className="w-2 h-2 rounded-full bg-white bg-opacity-50"
