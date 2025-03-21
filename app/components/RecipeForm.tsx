@@ -95,6 +95,25 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
     setImages(images.filter((_, i) => i !== index));
   };
 
+  const handleImageDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+    e.dataTransfer.setData('text/plain', index.toString());
+  };
+
+  const handleImageDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
+  const handleImageDrop = (e: React.DragEvent<HTMLDivElement>, dropIndex: number) => {
+    e.preventDefault();
+    const dragIndex = parseInt(e.dataTransfer.getData('text/plain'));
+    if (dragIndex === dropIndex) return;
+
+    const updatedImages = [...images];
+    const [draggedImage] = updatedImages.splice(dragIndex, 1);
+    updatedImages.splice(dropIndex, 0, draggedImage);
+    setImages(updatedImages);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -367,7 +386,19 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
             {images.length > 0 && (
               <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {images.map((image, index) => (
-                  <div key={index} className="relative group">
+                  <div
+                    key={index}
+                    className="relative group"
+                    draggable
+                    onDragStart={(e) => handleImageDragStart(e, index)}
+                    onDragOver={handleImageDragOver}
+                    onDrop={(e) => handleImageDrop(e, index)}
+                  >
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 cursor-move">
+                      <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                      </svg>
+                    </div>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={image}
