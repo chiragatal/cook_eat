@@ -372,7 +372,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
                     <img
                       src={image}
                       alt={`Recipe image ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg"
+                      className="w-full h-32 object-contain rounded-lg shadow-sm transition-transform duration-200 group-hover:scale-105 bg-gray-100 dark:bg-gray-800"
                       onError={(e) => {
                         e.currentTarget.src = 'https://via.placeholder.com/200?text=Failed+to+Load';
                       }}

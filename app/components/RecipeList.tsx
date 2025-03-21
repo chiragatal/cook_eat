@@ -414,7 +414,7 @@ export default function RecipeList({
                                 src={image}
                                 alt={`${recipe.title} - Image ${index + 1}`}
                                 fill
-                                className="object-cover"
+                                className="object-contain bg-gray-100 dark:bg-gray-800 rounded-t-lg"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
                                   target.src = 'https://via.placeholder.com/800x400?text=No+Image';

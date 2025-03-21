@@ -179,10 +179,9 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                   src={images[activeImageIndex]}
                   alt={recipe.title}
                   fill
-                  className="object-cover"
+                  className="object-contain bg-gray-100 dark:bg-gray-800 rounded-lg"
                   onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = 'https://via.placeholder.com/800x400?text=No+Image';
+                    e.currentTarget.src = 'https://via.placeholder.com/800x600?text=Failed+to+Load';
                   }}
                 />
                 {images.length > 1 && (
