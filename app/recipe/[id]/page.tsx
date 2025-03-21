@@ -26,6 +26,71 @@ export default function RecipePage({ params }: { params: { id: string } }) {
   const images = recipe?.images ? JSON.parse(recipe.images) : [];
   const galleryRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
+  // Add scroll event handler for continuous scrolling
+  useEffect(() => {
+    const handleScroll = (e: Event) => {
+      const gallery = e.target as HTMLDivElement;
+      const recipeId = parseInt(gallery.getAttribute('data-recipe-id') || '0');
+      const images = JSON.parse(recipe?.images || '[]');
+
+      if (images.length <= 1) return;
+
+      const scrollLeft = gallery.scrollLeft;
+      const scrollWidth = gallery.scrollWidth;
+      const clientWidth = gallery.clientWidth;
+
+      // If we're at the beginning (showing the last cloned image)
+      if (scrollLeft === 0) {
+        // Wait for the scroll animation to complete
+        setTimeout(() => {
+          gallery.scrollTo({
+            left: scrollWidth - (2 * clientWidth),
+            behavior: 'instant'
+          });
+        }, 50);
+      }
+      // If we're at the end (showing the first cloned image)
+      else if (scrollLeft + clientWidth >= scrollWidth - 1) {
+        // Wait for the scroll animation to complete
+        setTimeout(() => {
+          gallery.scrollTo({
+            left: clientWidth,
+            behavior: 'instant'
+          });
+        }, 50);
+      }
+    };
+
+    // Add scroll event listeners to all galleries
+    Object.entries(galleryRefs.current).forEach(([_, gallery]) => {
+      if (gallery) {
+        gallery.addEventListener('scroll', handleScroll);
+      }
+    });
+
+    return () => {
+      // Remove scroll event listeners
+      Object.entries(galleryRefs.current).forEach(([_, gallery]) => {
+        if (gallery) {
+          gallery.removeEventListener('scroll', handleScroll);
+        }
+      });
+    };
+  }, [recipe?.images]);
+
+  // Initialize scroll position
+  useEffect(() => {
+    Object.entries(galleryRefs.current).forEach(([_, gallery]) => {
+      if (gallery && images.length > 1) {
+        // Start at the first real image (after the cloned last image)
+        gallery.scrollTo({
+          left: gallery.clientWidth,
+          behavior: 'instant'
+        });
+      }
+    });
+  }, [images.length]);
+
   useEffect(() => {
     fetchRecipe();
   }, [params.id]);
@@ -261,7 +326,12 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                           e.preventDefault();
                           const gallery = e.currentTarget.parentElement?.querySelector('.snap-x');
                           if (gallery) {
-                            gallery.scrollBy({ left: -gallery.clientWidth, behavior: 'smooth' });
+                            const currentScroll = gallery.scrollLeft;
+                            const clientWidth = gallery.clientWidth;
+                            gallery.scrollTo({
+                              left: currentScroll - clientWidth,
+                              behavior: 'smooth'
+                            });
                           }
                         }}
                         className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
@@ -275,7 +345,12 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                           e.preventDefault();
                           const gallery = e.currentTarget.parentElement?.querySelector('.snap-x');
                           if (gallery) {
-                            gallery.scrollBy({ left: gallery.clientWidth, behavior: 'smooth' });
+                            const currentScroll = gallery.scrollLeft;
+                            const clientWidth = gallery.clientWidth;
+                            gallery.scrollTo({
+                              left: currentScroll + clientWidth,
+                              behavior: 'smooth'
+                            });
                           }
                         }}
                         className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
