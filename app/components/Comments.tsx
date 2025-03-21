@@ -155,8 +155,8 @@ export default function Comments({ postId }: { postId: number }) {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mt-8">
-      <h2 className="text-2xl font-bold mb-6">Comments</h2>
+    <section className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mx-auto max-w-4xl">
+      <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Comments</h2>
 
       {error && (
         <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-md">
@@ -277,6 +277,6 @@ export default function Comments({ postId }: { postId: number }) {
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }
