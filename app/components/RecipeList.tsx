@@ -85,6 +85,7 @@ export default function RecipeList({
     visibility: 'all',
     reactionFilter: '',
   });
+  const galleryRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   // Add a ref for scrolling to expanded content
   const expandedRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -346,6 +347,58 @@ export default function RecipeList({
     });
   }, [recipes, filters, selectedDate, filterByDate, showPrivate, userReactions, session?.user?.id]);
 
+  // Add scroll event handler for continuous scrolling
+  useEffect(() => {
+    const handleScroll = (e: Event) => {
+      const gallery = e.target as HTMLDivElement;
+      const recipeId = parseInt(gallery.getAttribute('data-recipe-id') || '0');
+      const images = JSON.parse(recipes.find(r => r.id === recipeId)?.images || '[]');
+
+      if (images.length <= 1) return;
+
+      const scrollLeft = gallery.scrollLeft;
+      const scrollWidth = gallery.scrollWidth;
+      const clientWidth = gallery.clientWidth;
+
+      // If we're at the beginning (showing the last cloned image)
+      if (scrollLeft === 0) {
+        // Wait for the scroll animation to complete
+        setTimeout(() => {
+          gallery.scrollTo({
+            left: scrollWidth - clientWidth,
+            behavior: 'instant'
+          });
+        }, 50);
+      }
+      // If we're at the end (showing the first cloned image)
+      else if (scrollLeft + clientWidth >= scrollWidth - 1) {
+        // Wait for the scroll animation to complete
+        setTimeout(() => {
+          gallery.scrollTo({
+            left: clientWidth,
+            behavior: 'instant'
+          });
+        }, 50);
+      }
+    };
+
+    // Add scroll event listeners to all galleries
+    Object.entries(galleryRefs.current).forEach(([recipeId, gallery]) => {
+      if (gallery) {
+        gallery.addEventListener('scroll', handleScroll);
+      }
+    });
+
+    return () => {
+      // Remove scroll event listeners
+      Object.entries(galleryRefs.current).forEach(([recipeId, gallery]) => {
+        if (gallery) {
+          gallery.removeEventListener('scroll', handleScroll);
+        }
+      });
+    };
+  }, [recipes]);
+
   if (editingRecipe) {
     return (
       <RecipeForm
@@ -407,21 +460,59 @@ export default function RecipeList({
                   return images.length > 0 && (
                     <Link href={`/recipe/${recipe.id}`} onClick={(e) => e.stopPropagation()}>
                       <div className="relative w-full h-48 group">
-                        <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide">
+                        <div
+                          ref={(el) => {
+                            if (el) {
+                              galleryRefs.current[recipe.id] = el;
+                            }
+                          }}
+                          data-recipe-id={recipe.id}
+                          className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+                        >
+                          {/* Add last image at the beginning for smooth transition */}
+                          {images.length > 1 && (
+                            <div className="flex-none w-full h-48 snap-center relative">
+                              <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                                <img
+                                  src={images[images.length - 1]}
+                                  alt={`${recipe.title} - Image ${images.length}`}
+                                  className="max-w-full max-h-full w-auto h-auto object-contain"
+                                  onError={(e) => {
+                                    e.currentTarget.src = 'https://via.placeholder.com/400x300?text=No+Image';
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )}
                           {images.map((image: string, index: number) => (
                             <div key={index} className="flex-none w-full h-48 snap-center relative">
-                              <Image
-                                src={image}
-                                alt={`${recipe.title} - Image ${index + 1}`}
-                                fill
-                                className="object-contain bg-gray-100 dark:bg-gray-800 rounded-t-lg"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.src = 'https://via.placeholder.com/800x400?text=No+Image';
-                                }}
-                              />
+                              <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                                <img
+                                  src={image}
+                                  alt={`${recipe.title} - Image ${index + 1}`}
+                                  className="max-w-full max-h-full w-auto h-auto object-contain"
+                                  onError={(e) => {
+                                    e.currentTarget.src = 'https://via.placeholder.com/400x300?text=No+Image';
+                                  }}
+                                />
+                              </div>
                             </div>
                           ))}
+                          {/* Add first image at the end for smooth transition */}
+                          {images.length > 1 && (
+                            <div className="flex-none w-full h-48 snap-center relative">
+                              <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                                <img
+                                  src={images[0]}
+                                  alt={`${recipe.title} - Image 1`}
+                                  className="max-w-full max-h-full w-auto h-auto object-contain"
+                                  onError={(e) => {
+                                    e.currentTarget.src = 'https://via.placeholder.com/400x300?text=No+Image';
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
                         {images.length > 1 && (
                           <>

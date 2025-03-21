@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useView } from '../../contexts/ViewContext';
@@ -21,7 +21,10 @@ export default function RecipePage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { setSelectedUser } = useView();
   const { data: session } = useSession();
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const images = recipe?.images ? JSON.parse(recipe.images) : [];
+  const galleryRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   useEffect(() => {
     fetchRecipe();
@@ -125,6 +128,27 @@ export default function RecipePage({ params }: { params: { id: string } }) {
     return `${ingredient.name} · ${ingredient.amount}`;
   };
 
+  const nextImage = useCallback(() => {
+    if (!images.length) return;
+    setIsTransitioning(true);
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  }, [images.length]);
+
+  const prevImage = useCallback(() => {
+    if (!images.length) return;
+    setIsTransitioning(true);
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  }, [images.length]);
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') nextImage();
+      if (e.key === 'ArrowLeft') prevImage();
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [nextImage, prevImage]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -156,7 +180,6 @@ export default function RecipePage({ params }: { params: { id: string } }) {
 
   const ingredients: Ingredient[] = JSON.parse(recipe.ingredients);
   const steps: Step[] = JSON.parse(recipe.steps);
-  const images: string[] = JSON.parse(recipe.images);
   const tags: string[] = JSON.parse(recipe.tags);
 
   return (
@@ -174,48 +197,104 @@ export default function RecipePage({ params }: { params: { id: string } }) {
 
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
             {images.length > 0 && (
-              <div className="relative w-full h-64 sm:h-80 md:h-96 group">
-                <Image
-                  src={images[activeImageIndex]}
-                  alt={recipe.title}
-                  fill
-                  className="object-contain bg-gray-100 dark:bg-gray-800 rounded-lg"
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://via.placeholder.com/800x600?text=Failed+to+Load';
-                  }}
-                />
-                {images.length > 1 && (
-                  <>
-                    <button
-                      onClick={() => setActiveImageIndex((prevIndex) => (prevIndex === 0 ? images.length - 1 : prevIndex - 1))}
-                      className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full opacity-50 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => setActiveImageIndex((prevIndex) => (prevIndex === images.length - 1 ? 0 : prevIndex + 1))}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full opacity-50 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                    <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
-                      {images.map((_, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setActiveImageIndex(index)}
-                          className={`w-2.5 h-2.5 rounded-full ${
-                            index === activeImageIndex ? 'bg-white' : 'bg-white/50'
-                          }`}
-                          aria-label={`View image ${index + 1}`}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
+              <div className="relative mb-8 group">
+                <div className="relative h-96 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
+                  <div
+                    ref={(el) => {
+                      if (el) {
+                        galleryRefs.current[recipe.id] = el;
+                      }
+                    }}
+                    data-recipe-id={recipe.id}
+                    className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full"
+                  >
+                    {/* Add last image at the beginning for smooth transition */}
+                    {images.length > 1 && (
+                      <div className="flex-none w-full h-full snap-center relative">
+                        <div className="w-full h-full flex items-center justify-center">
+                          <img
+                            src={images[images.length - 1]}
+                            alt={`${recipe.title} - Image ${images.length}`}
+                            className="max-w-full max-h-full w-auto h-auto object-contain"
+                            onError={(e) => {
+                              e.currentTarget.src = 'https://via.placeholder.com/800x600?text=Failed+to+Load';
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    {images.map((image: string, index: number) => (
+                      <div key={index} className="flex-none w-full h-full snap-center relative">
+                        <div className="w-full h-full flex items-center justify-center">
+                          <img
+                            src={image}
+                            alt={`${recipe.title} - Image ${index + 1}`}
+                            className="max-w-full max-h-full w-auto h-auto object-contain"
+                            onError={(e) => {
+                              e.currentTarget.src = 'https://via.placeholder.com/800x600?text=Failed+to+Load';
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    {/* Add first image at the end for smooth transition */}
+                    {images.length > 1 && (
+                      <div className="flex-none w-full h-full snap-center relative">
+                        <div className="w-full h-full flex items-center justify-center">
+                          <img
+                            src={images[0]}
+                            alt={`${recipe.title} - Image 1`}
+                            className="max-w-full max-h-full w-auto h-auto object-contain"
+                            onError={(e) => {
+                              e.currentTarget.src = 'https://via.placeholder.com/800x600?text=Failed+to+Load';
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {images.length > 1 && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const gallery = e.currentTarget.parentElement?.querySelector('.snap-x');
+                          if (gallery) {
+                            gallery.scrollBy({ left: -gallery.clientWidth, behavior: 'smooth' });
+                          }
+                        }}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const gallery = e.currentTarget.parentElement?.querySelector('.snap-x');
+                          if (gallery) {
+                            gallery.scrollBy({ left: gallery.clientWidth, behavior: 'smooth' });
+                          }
+                        }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
+                        {images.map((_, index) => (
+                          <div
+                            key={index}
+                            className="w-2 h-2 rounded-full bg-white bg-opacity-50"
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             )}
 
