@@ -965,13 +965,13 @@ A quick and easy dinner recipe perfect for weeknights.
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Ingredients
               </label>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
                   name="ingredientName"
                   id="ingredientName"
                   ref={ingredientNameInputRef}
-                  className="flex-1 rounded-l-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   placeholder="Enter ingredient name"
                   value={newIngredientName}
                   onChange={(e) => setNewIngredientName(e.target.value)}
@@ -999,29 +999,56 @@ A quick and easy dinner recipe perfect for weeknights.
                     }
                   }}
                 />
-                <input
-                  type="text"
-                  placeholder="Amount (e.g., 2 cups, 1 packet)"
-                  value={newIngredientAmount}
-                  onChange={(e) => setNewIngredientAmount(e.target.value)}
-                  className="w-1/3 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  disabled={isSubmitting}
-                  id="ingredient-amount-input"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddIngredient();
+                <div className="flex gap-2 mt-2 sm:mt-0">
+                  <input
+                    type="text"
+                    placeholder="Amount (e.g., 2 cups)"
+                    value={newIngredientAmount}
+                    onChange={(e) => setNewIngredientAmount(e.target.value)}
+                    className="flex-1 rounded-l-md sm:rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    disabled={isSubmitting}
+                    id="ingredient-amount-input"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddIngredient();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddIngredient}
+                    className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50"
+                    disabled={isSubmitting || !newIngredientName.trim()}
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <textarea
+                  placeholder="Or paste multiple ingredients at once (one per line)"
+                  className="w-full h-24 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  onChange={(e) => {}}
+                  onPaste={(e) => {
+                    const pastedText = e.clipboardData.getData('text');
+                    const lines = pastedText.split('\n').map(line => line.trim()).filter(line => line);
+
+                    if (lines.length > 0) {
+                      e.preventDefault(); // Prevent default paste behavior
+
+                      // Process each line and add as an ingredient
+                      const newIngredients = [...ingredients];
+                      lines.forEach(line => {
+                        processIngredientLine(line, newIngredients);
+                      });
+
+                      setIngredients(newIngredients);
+                      e.currentTarget.value = ''; // Clear the textarea
                     }
                   }}
                 />
-                <button
-                  type="button"
-                  onClick={handleAddIngredient}
-                  className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50"
-                  disabled={isSubmitting || !newIngredientName.trim()}
-                >
-                  Add
-                </button>
               </div>
 
               {ingredients.length > 0 && (

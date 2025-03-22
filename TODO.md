@@ -116,10 +116,11 @@ A post is basically a recipe.
 
 ### Bugs
 
-- [ ] When I share a user, the link is not working
-- [ ] Fix the logo and the favicon
 - [x] Scrolling vertically by starting the scroll on images is not working
 - [x] Image upload is not working
-- [ ] Add multiple ingredients at once is not working on mobile
+- [x] Add multiple ingredients at once is not working on mobile
 - [ ] Can add multiple steps at once by copy pasting them together in new lines
-- [ ] The ingredient name and amount is not fitting well on the mobil
+- [x] The ingredient name and amount is not fitting well on the mobile
+- [ ] When I share a user, the link is not working
+- [ ] Fix the logo and the favicon
+- [ ] The drag and drop for ingredients and steps is not working well on mobile. It works, but it is not clear

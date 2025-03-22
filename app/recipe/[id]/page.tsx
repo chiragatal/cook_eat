@@ -546,9 +546,12 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                         <span className="inline-flex items-center justify-center h-5 w-5 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded-full mr-2 text-xs">
                           •
                         </span>
-                        <span className="text-gray-700 dark:text-gray-300">
-                          {formatIngredient(ingredient)}
-                        </span>
+                        <div className="text-gray-700 dark:text-gray-300">
+                          <div className="font-medium">{ingredient.name}</div>
+                          {ingredient.amount && (
+                            <div className="text-gray-500 dark:text-gray-400 text-sm">{ingredient.amount}</div>
+                          )}
+                        </div>
                       </li>
                     ))}
                   </ul>
