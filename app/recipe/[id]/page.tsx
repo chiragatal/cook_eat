@@ -547,10 +547,12 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                           •
                         </span>
                         <div className="text-gray-700 dark:text-gray-300">
-                          <div className="font-medium">{ingredient.name}</div>
-                          {ingredient.amount && (
-                            <div className="text-gray-500 dark:text-gray-400 text-sm">{ingredient.amount}</div>
-                          )}
+                          <div>
+                            <span className="font-medium">{ingredient.name}</span>
+                            {ingredient.amount && (
+                              <span className="text-gray-500 dark:text-gray-400 text-sm ml-1">· {ingredient.amount}</span>
+                            )}
+                          </div>
                         </div>
                       </li>
                     ))}
