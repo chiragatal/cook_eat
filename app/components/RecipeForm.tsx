@@ -965,6 +965,14 @@ A quick and easy dinner recipe perfect for weeknights.
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Ingredients
               </label>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                <span className="flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Tip: You can paste multiple ingredients at once (one per line)
+                </span>
+              </p>
               <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
@@ -972,7 +980,7 @@ A quick and easy dinner recipe perfect for weeknights.
                   id="ingredientName"
                   ref={ingredientNameInputRef}
                   className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  placeholder="Enter ingredient name"
+                  placeholder="Enter ingredient name (or paste multiple ingredients)"
                   value={newIngredientName}
                   onChange={(e) => setNewIngredientName(e.target.value)}
                   onKeyDown={(e) => {
@@ -1024,39 +1032,6 @@ A quick and easy dinner recipe perfect for weeknights.
                     Add
                   </button>
                 </div>
-              </div>
-
-              <div className="mt-4">
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                  <span className="flex items-center">
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    You can paste multiple ingredients at once (one per line)
-                  </span>
-                </p>
-                <textarea
-                  placeholder="Or paste multiple ingredients at once (one per line)"
-                  className="w-full h-24 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  onChange={(e) => {}}
-                  onPaste={(e) => {
-                    const pastedText = e.clipboardData.getData('text');
-                    const lines = pastedText.split('\n').map(line => line.trim()).filter(line => line);
-
-                    if (lines.length > 0) {
-                      e.preventDefault(); // Prevent default paste behavior
-
-                      // Process each line and add as an ingredient
-                      const newIngredients = [...ingredients];
-                      lines.forEach(line => {
-                        processIngredientLine(line, newIngredients);
-                      });
-
-                      setIngredients(newIngredients);
-                      e.currentTarget.value = ''; // Clear the textarea
-                    }
-                  }}
-                />
               </div>
 
               {ingredients.length > 0 && (
@@ -1120,6 +1095,14 @@ A quick and easy dinner recipe perfect for weeknights.
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Quick Steps
               </label>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                <span className="flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Tip: You can paste multiple steps at once (one per line)
+                </span>
+              </p>
               <div className="space-y-4">
                 <div className="mb-2 space-y-2">
                   <ul className="space-y-2">
@@ -1168,7 +1151,7 @@ A quick and easy dinner recipe perfect for weeknights.
                     type="text"
                     value={newStep.instruction}
                     onChange={(e) => setNewStep({ ...newStep, instruction: e.target.value })}
-                    placeholder="Add a quick step"
+                    placeholder="Add a quick step (or paste multiple steps)"
                     className="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     disabled={isSubmitting}
                     onKeyDown={(e) => {
@@ -1207,44 +1190,6 @@ A quick and easy dinner recipe perfect for weeknights.
                   >
                     Add
                   </button>
-                </div>
-
-                <div className="mt-2">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                    <span className="flex items-center">
-                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      You can paste multiple steps at once (one per line)
-                    </span>
-                  </p>
-                  <textarea
-                    placeholder="Or paste multiple steps at once (one per line)"
-                    className="w-full h-24 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    onChange={(e) => {}}
-                    onPaste={(e) => {
-                      const pastedText = e.clipboardData.getData('text');
-                      const lines = pastedText.split('\n').map(line => line.trim()).filter(line => line);
-
-                      if (lines.length > 0) {
-                        e.preventDefault(); // Prevent default paste behavior
-
-                        // Add each line as a new step
-                        const newSteps = [...steps];
-                        lines.forEach(line => {
-                          if (line.trim()) {
-                            newSteps.push({
-                              instruction: line.trim(),
-                              id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
-                            });
-                          }
-                        });
-
-                        setSteps(newSteps);
-                        e.currentTarget.value = ''; // Clear the textarea
-                      }
-                    }}
-                  />
                 </div>
               </div>
             </div>
