@@ -161,7 +161,7 @@ export default function SignIn() {
               <div className="text-center text-sm text-gray-600 dark:text-gray-400">
                 Don't have an account?{' '}
                 <Link
-                  href="/auth/signup"
+                  href={`/auth/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`}
                   className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
                 >
                   Sign up

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import Logo from '../../components/Logo';
@@ -14,6 +14,8 @@ export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
   const [theme, setTheme] = useState('light');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams?.get('callbackUrl') || '/';
 
   useEffect(() => {
     // Check if theme is stored in localStorage
@@ -65,8 +67,8 @@ export default function SignUp() {
         throw new Error('Failed to sign in after registration');
       }
 
-      // Redirect to home page
-      router.push('/');
+      // Redirect to the callback URL or home page
+      router.push(callbackUrl);
       router.refresh();
     } catch (error: any) {
       setError(error.message || 'An error occurred. Please try again.');
@@ -195,7 +197,7 @@ export default function SignUp() {
               <div className="text-center text-sm text-gray-600 dark:text-gray-400">
                 Already have an account?{' '}
                 <Link
-                  href="/auth/signin"
+                  href={`/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`}
                   className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
                 >
                   Sign in
