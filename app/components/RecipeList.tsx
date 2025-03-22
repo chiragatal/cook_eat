@@ -676,7 +676,7 @@ export default function RecipeList({
               <div className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
                   <div className="w-full">
-                    <div className="flex items-start mb-2">
+                    <div className="flex items-start justify-between mb-2">
                       <Link
                         href={`/recipe/${recipe.id}`}
                         className="text-xl sm:text-2xl font-semibold hover:text-indigo-600 transition-colors text-left"
@@ -684,6 +684,66 @@ export default function RecipeList({
                       >
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white">{recipe.title}</h3>
                       </Link>
+
+                      {session && ((String(session.user.id) === String(recipe.userId)) || session.user.isAdmin) && (
+                        <div className="relative flex-shrink-0 ml-2">
+                          <button
+                            onClick={(e) => handleMenuClick(e, recipe.id)}
+                            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 menu-dropdown"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                            </svg>
+                          </button>
+
+                          {openMenuId === recipe.id && (
+                            <div
+                              className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10 menu-dropdown"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="py-1" role="menu" aria-orientation="vertical">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenMenuId(null);
+                                    handleEdit(recipe);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-blue-700 dark:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-900/50"
+                                  role="menuitem"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenMenuId(null);
+                                    handleDelete(recipe.id);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-red-700 dark:text-red-200 hover:bg-red-50 dark:hover:bg-red-900/50"
+                                  role="menuitem"
+                                >
+                                  Delete
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenMenuId(null);
+                                    handleTogglePublic(recipe);
+                                  }}
+                                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                                    recipe.isPublic
+                                      ? 'text-green-700 dark:text-green-200 hover:bg-green-50 dark:hover:bg-green-900/50'
+                                      : 'text-gray-700 dark:text-gray-200'
+                                  }`}
+                                  role="menuitem"
+                                >
+                                  {recipe.isPublic ? 'Make Private' : 'Make Public'}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -747,66 +807,6 @@ export default function RecipeList({
                       })()}
                     </div>
                   </div>
-
-                  {session && ((String(session.user.id) === String(recipe.userId)) || session.user.isAdmin) && (
-                    <div className="relative">
-                      <button
-                        onClick={(e) => handleMenuClick(e, recipe.id)}
-                        className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 menu-dropdown"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                        </svg>
-                      </button>
-
-                      {openMenuId === recipe.id && (
-                        <div
-                          className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10 menu-dropdown"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="py-1" role="menu" aria-orientation="vertical">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenMenuId(null);
-                                handleEdit(recipe);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm text-blue-700 dark:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-900/50"
-                              role="menuitem"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenMenuId(null);
-                                handleDelete(recipe.id);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm text-red-700 dark:text-red-200 hover:bg-red-50 dark:hover:bg-red-900/50"
-                              role="menuitem"
-                            >
-                              Delete
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenMenuId(null);
-                                handleTogglePublic(recipe);
-                              }}
-                              className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                                recipe.isPublic
-                                  ? 'text-green-700 dark:text-green-200 hover:bg-green-50 dark:hover:bg-green-900/50'
-                                  : 'text-gray-700 dark:text-gray-200'
-                              }`}
-                              role="menuitem"
-                            >
-                              {recipe.isPublic ? 'Make Private' : 'Make Public'}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
 
                 {/* Description - truncated when not expanded */}
