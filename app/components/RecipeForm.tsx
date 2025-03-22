@@ -980,7 +980,7 @@ A quick and easy dinner recipe perfect for weeknights.
                   id="ingredientName"
                   ref={ingredientNameInputRef}
                   className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  placeholder="Enter ingredient name (or paste multiple ingredients)"
+                  placeholder="Enter ingredient name"
                   value={newIngredientName}
                   onChange={(e) => setNewIngredientName(e.target.value)}
                   onKeyDown={(e) => {
@@ -1151,7 +1151,7 @@ A quick and easy dinner recipe perfect for weeknights.
                     type="text"
                     value={newStep.instruction}
                     onChange={(e) => setNewStep({ ...newStep, instruction: e.target.value })}
-                    placeholder="Add a quick step (or paste multiple steps)"
+                    placeholder="Add a quick step"
                     className="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     disabled={isSubmitting}
                     onKeyDown={(e) => {
