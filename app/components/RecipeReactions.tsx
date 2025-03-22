@@ -168,7 +168,7 @@ export default function RecipeReactions({ postId, onReactionToggled }: RecipeRea
             {/* User list tooltip - shown on hover for desktop and long press for mobile */}
             {count > 0 && users.length > 0 && (
               <div className={`
-                absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2
+                absolute z-50 mb-2
                 bg-white dark:bg-gray-800 rounded-md shadow-lg p-2 text-sm
                 min-w-[150px] max-w-[250px] border border-gray-200 dark:border-gray-700
                 ${isActiveLongPress
@@ -177,26 +177,35 @@ export default function RecipeReactions({ postId, onReactionToggled }: RecipeRea
                 transition-all duration-200
                 transform origin-bottom
                 group-hover:translate-y-0
-                max-h-[300px] overflow-y-auto
-                sm:left-0 sm:-translate-x-0
+                overflow-y-auto
+
+                ${/* Positioning logic */ ''}
+                left-0 right-auto bottom-full
+                sm:left-0 sm:right-auto
                 md:left-1/2 md:-translate-x-1/2
               `}
               style={{
-                maxHeight: '40vh'
+                maxHeight: 'calc(90vh - 200px)',
               }}>
-                <div className="font-medium px-2 py-1 border-b border-gray-200 dark:border-gray-700 mb-1 text-gray-700 dark:text-gray-300 sticky top-0 bg-white dark:bg-gray-800">
+                <div className="font-medium px-2 py-1 border-b border-gray-200 dark:border-gray-700 mb-1 text-gray-700 dark:text-gray-300 sticky top-0 bg-white dark:bg-gray-800 z-10">
                   {label} • {count}
                 </div>
-                <div className="overflow-y-auto" style={{ maxHeight: 'calc(40vh - 40px)' }}>
+                <div className="overflow-y-auto" style={{ maxHeight: 'calc(90vh - 240px)' }}>
                   {users.map(user => (
                     <div key={user.id} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
                       <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs text-gray-600 dark:text-gray-300 flex-shrink-0">
                         {user.name?.charAt(0) || '?'}
                       </div>
-                      <span className="truncate">{user.name || 'Anonymous User'}</span>
+                      <span className="truncate text-gray-800 dark:text-gray-200">{user.name || 'Anonymous User'}</span>
                     </div>
                   ))}
                 </div>
+
+                {/* Triangle pointer */}
+                <div className="absolute -bottom-2 left-4 md:left-1/2 md:-ml-2 w-0 h-0
+                  border-l-[8px] border-l-transparent
+                  border-r-[8px] border-r-transparent
+                  border-t-[8px] border-t-white dark:border-t-gray-800"></div>
               </div>
             )}
           </div>
