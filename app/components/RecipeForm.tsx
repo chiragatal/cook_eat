@@ -311,7 +311,8 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
       ['splash', 'splashes'],
       ['sprinkle', 'sprinkles'],
       ['little', 'few', 'bit'],
-      ['to taste', 'as needed', 'as required']
+      ['to taste', 'as needed', 'as required'],
+      ['spoon', 'spoons']
     ];
 
     // Create a regex-safe measurement pattern
@@ -329,6 +330,15 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
 
     // Try different patterns for ingredient parsing
     const patterns = [
+      // Pattern for "ingredient - amount" format (e.g., "milk - 1 cup")
+      new RegExp(`^(.+?)\\s*[-:]\\s*(\\d+(?:\\.\\d+)?\\s*(?:${measurements})?)$`, 'i'),
+
+      // Pattern for "ingredient-amount" format without spaces (e.g., "water-2 spoons")
+      new RegExp(`^(.+?)-(\\d+(?:\\.\\d+)?\\s*(?:${measurements})?)$`, 'i'),
+
+      // Pattern for "ingredient: amount" format (e.g., "sugar: 100g")
+      new RegExp(`^(.+?):\\s*(\\d+(?:\\.\\d+)?\\s*(?:${measurements})?)$`, 'i'),
+
       // Pattern 1: Amount + measurement + ingredient (e.g., "2 cups flour")
       new RegExp(`^(\\d+(?:\\.\\d+)?\\s*(?:${measurements})?\\s*)(.+)$`, 'i'),
 
@@ -349,7 +359,11 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
         matched = true;
         let name, amount;
 
-        if (pattern === patterns[3]) {
+        if (pattern === patterns[0] || pattern === patterns[1] || pattern === patterns[2]) {
+          // Handle "ingredient - amount", "ingredient-amount", or "ingredient: amount" formats
+          name = capitalizeFirstLetter(match[1].trim());
+          amount = match[2].trim();
+        } else if (pattern === patterns[6]) {
           // Handle preparation pattern
           name = capitalizeFirstLetter(match[1].trim());
           const prep = match[2];
@@ -357,10 +371,17 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
             name = `${name} (${prep})`;
           }
           amount = '';
-        } else {
+        } else if (pattern === patterns[3] || pattern === patterns[4] || pattern === patterns[5]) {
           // Handle amount patterns
-          amount = match[1].trim();
-          name = capitalizeFirstLetter(match[2].trim());
+          if (pattern === patterns[5]) {
+            // For "ingredient amount" format, swap to get correct order
+            name = capitalizeFirstLetter(match[1].trim());
+            amount = match[2].trim();
+          } else {
+            // For "amount ingredient" format
+            amount = match[1].trim();
+            name = capitalizeFirstLetter(match[2].trim());
+          }
 
           // Clean up amount text
           amount = amount.replace(/^(a |an |some )/, '');
@@ -370,9 +391,13 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
           }
         }
 
+        // Ensure name and amount are always strings (TypeScript safety)
+        const ingredientName = name || '';
+        const ingredientAmount = amount || '';
+
         ingredients.push({
-          name,
-          amount,
+          name: ingredientName,
+          amount: ingredientAmount,
           id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         });
         break;
@@ -954,6 +979,23 @@ A quick and easy dinner recipe perfect for weeknights.
                     if (e.key === 'Enter') {
                       e.preventDefault();
                       handleAddIngredient();
+                    }
+                  }}
+                  onPaste={(e) => {
+                    const pastedText = e.clipboardData.getData('text');
+                    const lines = pastedText.split('\n').map(line => line.trim()).filter(line => line);
+
+                    if (lines.length > 1) {
+                      e.preventDefault(); // Prevent default paste behavior
+
+                      // Process each line and add as an ingredient
+                      const newIngredients = [...ingredients];
+                      lines.forEach(line => {
+                        processIngredientLine(line, newIngredients);
+                      });
+
+                      setIngredients(newIngredients);
+                      setNewIngredientName(''); // Clear the input
                     }
                   }}
                 />
