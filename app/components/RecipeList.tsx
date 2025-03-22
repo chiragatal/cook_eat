@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import QuickReactions from './QuickReactions';
 import Image from 'next/image';
 import { RichTextContent, TruncatedRichText } from './RichTextEditor';
-import { Clock, Users, CalendarCheck } from 'lucide-react';
+import { Clock, Users, CalendarCheck, MessageCircle } from 'lucide-react';
 import { formatDate } from '../../lib/utils';
 
 interface Ingredient {
@@ -79,6 +79,7 @@ export default function RecipeList({
   const [shareButtonText, setShareButtonText] = useState('Share Collection');
   const [userReactions, setUserReactions] = useState<Record<number, string[]>>({});
   const [expandedRecipes, setExpandedRecipes] = useState<number[]>([]);
+  const [commentCounts, setCommentCounts] = useState<Record<number, number>>({});
   const [filters, setFilters] = useState<SearchFilters>({
     query: '',
     category: '',
@@ -136,6 +137,25 @@ export default function RecipeList({
     }
   };
 
+  // Fetch comment counts for all recipes
+  const fetchCommentCounts = async (recipeIds: number[]) => {
+    try {
+      const counts: Record<number, number> = {};
+
+      await Promise.all(recipeIds.map(async (recipeId) => {
+        const response = await fetch(`/api/posts/${recipeId}/comments/count`);
+        if (response.ok) {
+          const data = await response.json();
+          counts[recipeId] = data.count || 0;
+        }
+      }));
+
+      setCommentCounts(counts);
+    } catch (error) {
+      console.error('Error fetching comment counts:', error);
+    }
+  };
+
   useEffect(() => {
     const fetchRecipes = async () => {
       try {
@@ -163,6 +183,9 @@ export default function RecipeList({
         if (session?.user?.id) {
           await fetchUserReactions(data.map((recipe: Recipe) => recipe.id));
         }
+
+        // Fetch comment counts for all recipes
+        await fetchCommentCounts(data.map((recipe: Recipe) => recipe.id));
       } catch (err) {
         console.error('Error fetching recipes:', err);
         setError('Failed to load recipes');
@@ -894,7 +917,20 @@ export default function RecipeList({
                 )}
 
                 <div className="mt-4" onClick={(e) => e.stopPropagation()}>
-                  <QuickReactions postId={recipe.id} onReactionToggled={() => handleReactionToggled(recipe.id)} />
+                  <div className="flex justify-between items-center">
+                    <QuickReactions postId={recipe.id} onReactionToggled={() => handleReactionToggled(recipe.id)} />
+
+                    {commentCounts[recipe.id] > 0 && (
+                      <Link
+                        href={`/recipe/${recipe.id}#comments`}
+                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 text-sm transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MessageCircle size={14} />
+                        <span>{commentCounts[recipe.id]}</span>
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
