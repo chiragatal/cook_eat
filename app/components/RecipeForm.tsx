@@ -66,6 +66,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
   const [showExampleModal, setShowExampleModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [compressionMessage, setCompressionMessage] = useState<string | null>(null);
 
   const handleImageDrop = async (e: React.DragEvent<HTMLDivElement>, dropIndex?: number) => {
     e.preventDefault();
@@ -89,6 +90,15 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
 
     setIsUploading(true);
     try {
+      // Check if any files are large and show a message
+      const largeFiles = Array.from(files).filter(file => file.size > 4 * 1024 * 1024);
+      if (largeFiles.length > 0) {
+        const message = `${largeFiles.length} large image(s) will be automatically compressed`;
+        console.log(message);
+        setCompressionMessage(message);
+        setTimeout(() => setCompressionMessage(null), 5000); // Clear after 5 seconds
+      }
+
       const uploadedImages = await Promise.all(
         Array.from(files).map(async (file) => {
           const formData = new FormData();
@@ -139,6 +149,15 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
 
     setIsUploading(true);
     try {
+      // Check if any files are large and show a message
+      const largeFiles = Array.from(files).filter(file => file.size > 4 * 1024 * 1024);
+      if (largeFiles.length > 0) {
+        const message = `${largeFiles.length} large image(s) will be automatically compressed`;
+        console.log(message);
+        setCompressionMessage(message);
+        setTimeout(() => setCompressionMessage(null), 5000); // Clear after 5 seconds
+      }
+
       const uploadedImages = await Promise.all(
         Array.from(files).map(async (file) => {
           const formData = new FormData();
@@ -611,58 +630,78 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
     setIsRawMode(false);
   };
 
+  // Render the toast notification
+  const renderCompressionToast = () => {
+    if (!compressionMessage) return null;
+
+    return (
+      <div className="fixed bottom-5 right-5 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in">
+        <div className="flex items-center space-x-2">
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <span>{compressionMessage}</span>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center space-x-4">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{mode === 'create' ? 'Create New Recipe' : 'Edit Recipe'}</h2>
+    <div className="max-w-5xl mx-auto py-6 sm:px-6 lg:px-8">
+      {/* Compression toast notification */}
+      {renderCompressionToast()}
+
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-4xl mx-auto">
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center space-x-4">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{mode === 'create' ? 'Create New Recipe' : 'Edit Recipe'}</h2>
+            <button
+              type="button"
+              onClick={() => setIsRawMode(!isRawMode)}
+              className={`px-3 py-1 rounded-md text-sm font-medium ${
+                isRawMode
+                  ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200'
+                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+              }`}
+            >
+              {isRawMode ? 'Switch to Form' : 'Switch to Raw Mode'}
+            </button>
+          </div>
           <button
-            type="button"
-            onClick={() => setIsRawMode(!isRawMode)}
-            className={`px-3 py-1 rounded-md text-sm font-medium ${
-              isRawMode
-                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200'
-                : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-            }`}
+            onClick={onCancel}
+            className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
           >
-            {isRawMode ? 'Switch to Form' : 'Switch to Raw Mode'}
+            Cancel
           </button>
         </div>
-        <button
-          onClick={onCancel}
-          className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-        >
-          Cancel
-        </button>
-      </div>
 
-      {isRawMode ? (
-        <div className="space-y-4">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label htmlFor="rawText" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Paste Your Recipe Text
-              </label>
-              <button
-                type="button"
-                className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                onClick={() => setShowExampleModal(true)}
-              >
-                <div className="flex items-center">
-                  <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-sm">See Example</span>
-                </div>
-              </button>
-            </div>
-            <div className="mt-1">
-              <textarea
-                id="rawText"
-                value={rawText}
-                onChange={(e) => setRawText(e.target.value)}
-                className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[400px] font-mono"
-                placeholder={`Paste your recipe text here. The converter will detect:
+        {isRawMode ? (
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="rawText" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Paste Your Recipe Text
+                </label>
+                <button
+                  type="button"
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                  onClick={() => setShowExampleModal(true)}
+                >
+                  <div className="flex items-center">
+                    <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm">See Example</span>
+                  </div>
+                </button>
+              </div>
+              <div className="mt-1">
+                <textarea
+                  id="rawText"
+                  value={rawText}
+                  onChange={(e) => setRawText(e.target.value)}
+                  className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[400px] font-mono"
+                  placeholder={`Paste your recipe text here. The converter will detect:
 
 • Title (first line)
 • Servings & Time (e.g., "Serves 4", "Prep time: 10 min")
@@ -671,36 +710,36 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
 • Tags (using #hashtags)
 
 💡 Use bullet points (-) or numbers (1.) for ingredients and steps`}
-              />
+                />
+              </div>
+              <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                The converter will organize your recipe, and you can adjust any fields afterward.
+              </div>
             </div>
-            <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              The converter will organize your recipe, and you can adjust any fields afterward.
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={convertRawText}
+                className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+              >
+                Convert to Form
+              </button>
             </div>
-          </div>
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={convertRawText}
-              className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-            >
-              Convert to Form
-            </button>
-          </div>
 
-          {/* Example Modal */}
-          {showExampleModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 relative">
-                <button
-                  onClick={() => setShowExampleModal(false)}
-                  className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Example Recipe Format</h3>
-                <pre className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg overflow-auto text-sm font-mono text-gray-800 dark:text-gray-200">
+            {/* Example Modal */}
+            {showExampleModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 relative">
+                  <button
+                    onClick={() => setShowExampleModal(false)}
+                    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Example Recipe Format</h3>
+                  <pre className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg overflow-auto text-sm font-mono text-gray-800 dark:text-gray-200">
 {`Easy Pasta Recipe
 Serves 4
 Prep time: 10 minutes
@@ -725,433 +764,262 @@ Steps:
 
 A quick and easy dinner recipe perfect for weeknights.
 #quick #easy #vegetarian`}
-                </pre>
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="flex justify-between items-start gap-4">
-              <div className="flex-1">
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  required
-                  disabled={isSubmitting}
-                />
-              </div>
-              <div className="flex items-center mt-6">
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isPublic}
-                    onChange={(e) => setIsPublic(e.target.checked)}
-                    className="sr-only peer"
-                    disabled={isSubmitting}
-                  />
-                  <div className="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                  <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">Make Public</span>
-                </label>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Category
-                </label>
-                <select
-                  id="category"
-                  value={category || ''}
-                  onChange={(e) => setCategory(e.target.value || null)}
-                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  disabled={isSubmitting}
-                >
-                  <option value="">Select a category</option>
-                  {CATEGORIES.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="cookingTime" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Cooking Time (minutes)
-                </label>
-                <input
-                  type="number"
-                  id="cookingTime"
-                  value={cookingTime || ''}
-                  onChange={(e) => setCookingTime(e.target.value ? parseInt(e.target.value) : null)}
-                  min="1"
-                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="difficulty" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Difficulty
-                </label>
-                <select
-                  id="difficulty"
-                  value={difficulty || ''}
-                  onChange={(e) => setDifficulty(e.target.value || null)}
-                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  disabled={isSubmitting}
-                >
-                  <option value="">Select difficulty</option>
-                  {DIFFICULTIES.map(diff => (
-                    <option key={diff} value={diff}>{diff}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="cookedOn" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Cooked On
-                </label>
-                <input
-                  type="date"
-                  id="cookedOn"
-                  value={cookedOn || ''}
-                  onChange={(e) => setCookedOn(e.target.value || null)}
-                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  disabled={isSubmitting}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Description
-              </label>
-              <div className="mt-1">
-                <RichTextEditor
-                  value={description}
-                  onChange={setDescription}
-                  placeholder="Describe your recipe, including any history or special tips..."
-                  className="min-h-[200px]"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Images
-                </label>
-                <div
-                  className={`relative border-2 border-dashed rounded-lg p-8 text-center ${
-                    isDragging
-                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
-                      : 'border-gray-300 dark:border-gray-600'
-                  } transition-colors duration-200 ease-in-out`}
-                  onDrop={handleImageDrop}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                >
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                    id="image-upload"
-                    disabled={isSubmitting || isUploading}
-                  />
-                  <label
-                    htmlFor="image-upload"
-                    className={`cursor-pointer flex flex-col items-center justify-center space-y-2 ${
-                      isSubmitting || isUploading ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    <svg
-                      className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
-                      stroke="currentColor"
-                      fill="none"
-                      viewBox="0 0 48 48"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      {isUploading ? (
-                        <div className="flex items-center justify-center space-x-2">
-                          <svg className="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          <span>Uploading...</span>
-                        </div>
-                      ) : (
-                        <>
-                          <span className="font-medium text-indigo-600 dark:text-indigo-400">
-                            Click to upload
-                          </span>{' '}
-                          or drag and drop
-                        </>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      PNG, JPG, GIF up to 10MB
-                    </p>
-                  </label>
+                  </pre>
                 </div>
-
-                {images.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
-                    {images.map((image, index) => (
-                      <div
-                        key={index}
-                        className="relative group aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800"
-                        draggable
-                        onDragStart={(e) => handleImageDragStart(e, index)}
-                        onDragOver={handleImageDragOver}
-                        onDrop={(e) => handleImageDrop(e, index)}
-                      >
-                        <img
-                          src={image}
-                          alt={`Recipe image ${index + 1}`}
-                          className="object-cover w-full h-full group-hover:opacity-75 transition-opacity duration-200"
-                          style={{ pointerEvents: 'none' }}
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="bg-red-600/90 text-white p-2 rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                            title="Remove image"
-                          >
-                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                          <div className="absolute top-0 right-0 p-2">
-                            <svg className="h-6 w-6 text-white drop-shadow-lg cursor-move" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Ingredients
-              </label>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                <span className="flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Tip: You can paste multiple ingredients at once (one per line)
-                </span>
-              </p>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  type="text"
-                  name="ingredientName"
-                  id="ingredientName"
-                  ref={ingredientNameInputRef}
-                  className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  placeholder="Enter ingredient name"
-                  value={newIngredientName}
-                  onChange={(e) => setNewIngredientName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddIngredient();
-                    }
-                  }}
-                  onPaste={(e) => {
-                    const pastedText = e.clipboardData.getData('text');
-                    const lines = pastedText.split('\n').map(line => line.trim()).filter(line => line);
-
-                    if (lines.length > 1) {
-                      e.preventDefault(); // Prevent default paste behavior
-
-                      // Process each line and add as an ingredient
-                      const newIngredients = [...ingredients];
-                      lines.forEach(line => {
-                        processIngredientLine(line, newIngredients);
-                      });
-
-                      setIngredients(newIngredients);
-                      setNewIngredientName(''); // Clear the input
-                    }
-                  }}
-                />
-                <div className="flex gap-2 mt-2 sm:mt-0">
+            )}
+          </div>
+        ) : (
+          <>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="flex justify-between items-start gap-4">
+                <div className="flex-1">
+                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Title
+                  </label>
                   <input
                     type="text"
-                    placeholder="Amount (e.g., 2 cups)"
-                    value={newIngredientAmount}
-                    onChange={(e) => setNewIngredientAmount(e.target.value)}
-                    className="flex-1 rounded-l-md sm:rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    id="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    required
                     disabled={isSubmitting}
-                    id="ingredient-amount-input"
+                  />
+                </div>
+                <div className="flex items-center mt-6">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isPublic}
+                      onChange={(e) => setIsPublic(e.target.checked)}
+                      className="sr-only peer"
+                      disabled={isSubmitting}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                    <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">Make Public</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Category
+                  </label>
+                  <select
+                    id="category"
+                    value={category || ''}
+                    onChange={(e) => setCategory(e.target.value || null)}
+                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    disabled={isSubmitting}
+                  >
+                    <option value="">Select a category</option>
+                    {CATEGORIES.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="cookingTime" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Cooking Time (minutes)
+                  </label>
+                  <input
+                    type="number"
+                    id="cookingTime"
+                    value={cookingTime || ''}
+                    onChange={(e) => setCookingTime(e.target.value ? parseInt(e.target.value) : null)}
+                    min="1"
+                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    disabled={isSubmitting}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="difficulty" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Difficulty
+                  </label>
+                  <select
+                    id="difficulty"
+                    value={difficulty || ''}
+                    onChange={(e) => setDifficulty(e.target.value || null)}
+                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    disabled={isSubmitting}
+                  >
+                    <option value="">Select difficulty</option>
+                    {DIFFICULTIES.map(diff => (
+                      <option key={diff} value={diff}>{diff}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="cookedOn" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Cooked On
+                  </label>
+                  <input
+                    type="date"
+                    id="cookedOn"
+                    value={cookedOn || ''}
+                    onChange={(e) => setCookedOn(e.target.value || null)}
+                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Description
+                </label>
+                <div className="mt-1">
+                  <RichTextEditor
+                    value={description}
+                    onChange={setDescription}
+                    placeholder="Describe your recipe, including any history or special tips..."
+                    className="min-h-[200px]"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Images
+                  </label>
+                  <div
+                    className={`relative border-2 border-dashed rounded-lg p-8 text-center ${
+                      isDragging
+                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                        : 'border-gray-300 dark:border-gray-600'
+                    } transition-colors duration-200 ease-in-out`}
+                    onDrop={handleImageDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                  >
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="image-upload"
+                      disabled={isSubmitting || isUploading}
+                    />
+                    <label
+                      htmlFor="image-upload"
+                      className={`cursor-pointer flex flex-col items-center justify-center space-y-2 ${
+                        isSubmitting || isUploading ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      <svg
+                        className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
+                        stroke="currentColor"
+                        fill="none"
+                        viewBox="0 0 48 48"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                          strokeWidth={2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        {isUploading ? (
+                          <div className="flex items-center justify-center space-x-2">
+                            <svg className="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Uploading...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <span className="font-medium text-indigo-600 dark:text-indigo-400">
+                              Click to upload
+                            </span>{' '}
+                            or drag and drop
+                          </>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        PNG, JPG, GIF up to 10MB
+                      </p>
+                    </label>
+                  </div>
+
+                  {images.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
+                      {images.map((image, index) => (
+                        <div
+                          key={index}
+                          className="relative group aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800"
+                          draggable
+                          onDragStart={(e) => handleImageDragStart(e, index)}
+                          onDragOver={handleImageDragOver}
+                          onDrop={(e) => handleImageDrop(e, index)}
+                        >
+                          <img
+                            src={image}
+                            alt={`Recipe image ${index + 1}`}
+                            className="object-cover w-full h-full group-hover:opacity-75 transition-opacity duration-200"
+                            style={{ pointerEvents: 'none' }}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              className="bg-red-600/90 text-white p-2 rounded-full hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                              title="Remove image"
+                            >
+                              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                            <div className="absolute top-0 right-0 p-2">
+                              <svg className="h-6 w-6 text-white drop-shadow-lg cursor-move" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Ingredients
+                </label>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                  <span className="flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Tip: You can paste multiple ingredients at once (one per line)
+                  </span>
+                </p>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    name="ingredientName"
+                    id="ingredientName"
+                    ref={ingredientNameInputRef}
+                    className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    placeholder="Enter ingredient name"
+                    value={newIngredientName}
+                    onChange={(e) => setNewIngredientName(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         handleAddIngredient();
-                      }
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddIngredient}
-                    className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50"
-                    disabled={isSubmitting || !newIngredientName.trim()}
-                  >
-                    Add
-                  </button>
-                </div>
-              </div>
-
-              {ingredients.length > 0 && (
-                <ul className="mt-4 space-y-2">
-                  {ingredients.map((ingredient, index) => (
-                    <li
-                      key={index}
-                      draggable
-                      onDragStart={(e) => handleIngredientDragStart(e, index)}
-                      onDragOver={handleIngredientDragOver}
-                      onDrop={(e) => handleIngredientDrop(e, index)}
-                      className="flex items-center gap-2 py-1 px-2 bg-gray-50 dark:bg-gray-700 rounded cursor-move group hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                    >
-                      <div className="flex-shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-                        </svg>
-                      </div>
-                      <div className="flex-grow grid grid-cols-2 gap-2">
-                        <input
-                          type="text"
-                          value={ingredient.name}
-                          onChange={(e) => {
-                            const updatedIngredients = [...ingredients];
-                            updatedIngredients[index] = { ...ingredient, name: e.target.value };
-                            setIngredients(updatedIngredients);
-                          }}
-                          placeholder="Ingredient name"
-                          className="bg-transparent border-none dark:text-white focus:ring-0 p-0 w-full text-gray-900 dark:text-white"
-                          disabled={isSubmitting}
-                        />
-                        <input
-                          type="text"
-                          value={ingredient.amount}
-                          onChange={(e) => {
-                            const updatedIngredients = [...ingredients];
-                            updatedIngredients[index] = { ...ingredient, amount: e.target.value };
-                            setIngredients(updatedIngredients);
-                          }}
-                          placeholder="Amount"
-                          className="bg-transparent border-none dark:text-gray-400 focus:ring-0 p-0 w-full text-gray-600"
-                          disabled={isSubmitting}
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeIngredient(index)}
-                        className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 disabled:opacity-50 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Quick Steps
-              </label>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                <span className="flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Tip: You can paste multiple steps at once (one per line)
-                </span>
-              </p>
-              <div className="space-y-4">
-                <div className="mb-2 space-y-2">
-                  <ul className="space-y-2">
-                    {steps.map((step, index) => (
-                      <li
-                        key={index}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, index)}
-                        onDragOver={handleStepDragOver}
-                        onDrop={(e) => handleDrop(e, index)}
-                        className="flex gap-2 items-center bg-gray-50 dark:bg-gray-700 p-2 rounded-lg cursor-move group hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                      >
-                        <div className="flex-shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-                          </svg>
-                        </div>
-                        <input
-                          type="text"
-                          value={step.instruction}
-                          onChange={(e) => {
-                            const updatedSteps = [...steps];
-                            updatedSteps[index] = { ...step, instruction: e.target.value };
-                            setSteps(updatedSteps);
-                          }}
-                          placeholder="Step instruction"
-                          className="flex-1 bg-transparent border-none dark:text-white focus:ring-0 p-0"
-                          disabled={isSubmitting}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeStep(index)}
-                          className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 disabled:opacity-50 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newStep.instruction}
-                    onChange={(e) => setNewStep({ ...newStep, instruction: e.target.value })}
-                    placeholder="Add a quick step"
-                    className="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    disabled={isSubmitting}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        addStep();
                       }
                     }}
                     onPaste={(e) => {
@@ -1161,116 +1029,288 @@ A quick and easy dinner recipe perfect for weeknights.
                       if (lines.length > 1) {
                         e.preventDefault(); // Prevent default paste behavior
 
-                        // Add each line as a new step
-                        const newSteps = [...steps];
+                        // Process each line and add as an ingredient
+                        const newIngredients = [...ingredients];
                         lines.forEach(line => {
-                          if (line.trim()) {
-                            newSteps.push({
-                              instruction: line.trim(),
-                              id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
-                            });
-                          }
+                          processIngredientLine(line, newIngredients);
                         });
 
-                        setSteps(newSteps);
+                        setIngredients(newIngredients);
+                        setNewIngredientName(''); // Clear the input
                       }
                     }}
                   />
+                  <div className="flex gap-2 mt-2 sm:mt-0">
+                    <input
+                      type="text"
+                      placeholder="Amount (e.g., 2 cups)"
+                      value={newIngredientAmount}
+                      onChange={(e) => setNewIngredientAmount(e.target.value)}
+                      className="flex-1 rounded-l-md sm:rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                      disabled={isSubmitting}
+                      id="ingredient-amount-input"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddIngredient();
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddIngredient}
+                      className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50"
+                      disabled={isSubmitting || !newIngredientName.trim()}
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+
+                {ingredients.length > 0 && (
+                  <ul className="mt-4 space-y-2">
+                    {ingredients.map((ingredient, index) => (
+                      <li
+                        key={index}
+                        draggable
+                        onDragStart={(e) => handleIngredientDragStart(e, index)}
+                        onDragOver={handleIngredientDragOver}
+                        onDrop={(e) => handleIngredientDrop(e, index)}
+                        className="flex items-center gap-2 py-1 px-2 bg-gray-50 dark:bg-gray-700 rounded cursor-move group hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        <div className="flex-shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                          </svg>
+                        </div>
+                        <div className="flex-grow grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            value={ingredient.name}
+                            onChange={(e) => {
+                              const updatedIngredients = [...ingredients];
+                              updatedIngredients[index] = { ...ingredient, name: e.target.value };
+                              setIngredients(updatedIngredients);
+                            }}
+                            placeholder="Ingredient name"
+                            className="bg-transparent border-none dark:text-white focus:ring-0 p-0 w-full text-gray-900 dark:text-white"
+                            disabled={isSubmitting}
+                          />
+                          <input
+                            type="text"
+                            value={ingredient.amount}
+                            onChange={(e) => {
+                              const updatedIngredients = [...ingredients];
+                              updatedIngredients[index] = { ...ingredient, amount: e.target.value };
+                              setIngredients(updatedIngredients);
+                            }}
+                            placeholder="Amount"
+                            className="bg-transparent border-none dark:text-gray-400 focus:ring-0 p-0 w-full text-gray-600"
+                            disabled={isSubmitting}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeIngredient(index)}
+                          className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 disabled:opacity-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Quick Steps
+                </label>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                  <span className="flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Tip: You can paste multiple steps at once (one per line)
+                  </span>
+                </p>
+                <div className="space-y-4">
+                  <div className="mb-2 space-y-2">
+                    <ul className="space-y-2">
+                      {steps.map((step, index) => (
+                        <li
+                          key={index}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, index)}
+                          onDragOver={handleStepDragOver}
+                          onDrop={(e) => handleDrop(e, index)}
+                          className="flex gap-2 items-center bg-gray-50 dark:bg-gray-700 p-2 rounded-lg cursor-move group hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                        >
+                          <div className="flex-shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                            </svg>
+                          </div>
+                          <input
+                            type="text"
+                            value={step.instruction}
+                            onChange={(e) => {
+                              const updatedSteps = [...steps];
+                              updatedSteps[index] = { ...step, instruction: e.target.value };
+                              setSteps(updatedSteps);
+                            }}
+                            placeholder="Step instruction"
+                            className="flex-1 bg-transparent border-none dark:text-white focus:ring-0 p-0"
+                            disabled={isSubmitting}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeStep(index)}
+                            className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 disabled:opacity-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newStep.instruction}
+                      onChange={(e) => setNewStep({ ...newStep, instruction: e.target.value })}
+                      placeholder="Add a quick step"
+                      className="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      disabled={isSubmitting}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addStep();
+                        }
+                      }}
+                      onPaste={(e) => {
+                        const pastedText = e.clipboardData.getData('text');
+                        const lines = pastedText.split('\n').map(line => line.trim()).filter(line => line);
+
+                        if (lines.length > 1) {
+                          e.preventDefault(); // Prevent default paste behavior
+
+                          // Add each line as a new step
+                          const newSteps = [...steps];
+                          lines.forEach(line => {
+                            if (line.trim()) {
+                              newSteps.push({
+                                instruction: line.trim(),
+                                id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
+                              });
+                            }
+                          });
+
+                          setSteps(newSteps);
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={addStep}
+                      className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50"
+                      disabled={isSubmitting || !newStep.instruction.trim()}
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Notes
+                </label>
+                <RichTextEditor
+                  value={notes}
+                  onChange={setNotes}
+                  placeholder="Add any notes about the recipe, such as variations, substitutions, or serving suggestions..."
+                  className="min-h-[200px]"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="tags" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Tags
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    id="tags"
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addTag();
+                      }
+                    }}
+                    placeholder="Add a tag"
+                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    disabled={isSubmitting}
+                  />
                   <button
                     type="button"
-                    onClick={addStep}
-                    className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50"
-                    disabled={isSubmitting || !newStep.instruction.trim()}
+                    onClick={addTag}
+                    className="mt-1 px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50"
+                    disabled={isSubmitting || !newTag.trim()}
                   >
                     Add
                   </button>
                 </div>
+                {tags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => removeTag(tag)}
+                          className="ml-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-200 focus:outline-none"
+                          disabled={isSubmitting}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Notes
-              </label>
-              <RichTextEditor
-                value={notes}
-                onChange={setNotes}
-                placeholder="Add any notes about the recipe, such as variations, substitutions, or serving suggestions..."
-                className="min-h-[200px]"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="tags" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Tags
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  id="tags"
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addTag();
-                    }
-                  }}
-                  placeholder="Add a tag"
-                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  disabled={isSubmitting}
-                />
+              <div className="flex justify-end space-x-3 pt-4">
                 <button
                   type="button"
-                  onClick={addTag}
-                  className="mt-1 px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50"
-                  disabled={isSubmitting || !newTag.trim()}
+                  onClick={onCancel}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                  disabled={isSubmitting}
                 >
-                  Add
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Saving...' : mode === 'create' ? 'Create Recipe' : 'Save Changes'}
                 </button>
               </div>
-              {tags.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200"
-                    >
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => removeTag(tag)}
-                        className="ml-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-200 focus:outline-none"
-                        disabled={isSubmitting}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={onCancel}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-                disabled={isSubmitting}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Saving...' : mode === 'create' ? 'Create Recipe' : 'Save Changes'}
-              </button>
-            </div>
-          </form>
-        </>
-      )}
+            </form>
+          </>
+        )}
+      </div>
     </div>
   );
 }
