@@ -36,6 +36,7 @@
     "react": "^18.2.0",
     "react-day-picker": "^9.5.1",
     "react-dom": "^18.2.0",
+    "sharp": "^0.33.5",
     "tailwind-merge": "^3.0.2",
     "ts-node": "^10.9.2"
   },
@@ -44,6 +45,7 @@
     "@types/nodemailer": "^6.4.17",
     "@types/react": "^18.2.58",
     "@types/react-dom": "^18.2.19",
+    "@types/sharp": "^0.31.1",
     "autoprefixer": "^10.4.17",
     "eslint": "^8.56.0",
     "eslint-config-next": "14.1.0",
