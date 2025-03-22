@@ -1170,6 +1170,18 @@ A quick and easy dinner recipe perfect for weeknights.
             </div>
 
             <div>
+              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Notes
+              </label>
+              <RichTextEditor
+                value={notes}
+                onChange={setNotes}
+                placeholder="Add any notes about the recipe, such as variations, substitutions, or serving suggestions..."
+                className="min-h-[200px]"
+              />
+            </div>
+
+            <div>
               <label htmlFor="tags" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Tags
               </label>
@@ -1218,18 +1230,6 @@ A quick and easy dinner recipe perfect for weeknights.
                   ))}
                 </div>
               )}
-            </div>
-
-            <div>
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Notes
-              </label>
-              <RichTextEditor
-                value={notes}
-                onChange={setNotes}
-                placeholder="Add any notes about the recipe, such as variations, substitutions, or serving suggestions..."
-                className="min-h-[200px]"
-              />
             </div>
 
             <div className="flex justify-end space-x-3 pt-4">
