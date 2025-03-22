@@ -40,23 +40,39 @@ export default function RecipePage({ params }: { params: { id: string } }) {
       const clientWidth = gallery.clientWidth;
 
       // If we're at the beginning (showing the last cloned image)
-      if (scrollLeft === 0) {
-        // Wait for the scroll animation to complete
+      if (Math.abs(scrollLeft) < 10) {
+        // Prevent rapid re-triggering
+        gallery.removeEventListener('scroll', handleScroll);
+
+        // Jump to the real last image (second to last in the DOM because of the clones)
         setTimeout(() => {
           gallery.scrollTo({
             left: scrollWidth - (2 * clientWidth),
             behavior: 'instant'
           });
+
+          // Re-add the event listener after the jump
+          setTimeout(() => {
+            gallery.addEventListener('scroll', handleScroll);
+          }, 100);
         }, 50);
       }
       // If we're at the end (showing the first cloned image)
-      else if (scrollLeft + clientWidth >= scrollWidth - 1) {
-        // Wait for the scroll animation to complete
+      else if (scrollLeft + clientWidth >= scrollWidth - 10) {
+        // Prevent rapid re-triggering
+        gallery.removeEventListener('scroll', handleScroll);
+
+        // Jump to the real first image
         setTimeout(() => {
           gallery.scrollTo({
             left: clientWidth,
             behavior: 'instant'
           });
+
+          // Re-add the event listener after the jump
+          setTimeout(() => {
+            gallery.addEventListener('scroll', handleScroll);
+          }, 100);
         }, 50);
       }
     };
@@ -271,7 +287,8 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                       }
                     }}
                     data-recipe-id={recipe.id}
-                    className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full"
+                    className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full touch-pan-x"
+                    style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
                   >
                     {/* Add last image at the beginning for smooth transition */}
                     {images.length > 1 && (
@@ -324,17 +341,20 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                       <button
                         onClick={(e) => {
                           e.preventDefault();
+                          e.stopPropagation();
                           const gallery = e.currentTarget.parentElement?.querySelector('.snap-x');
                           if (gallery) {
-                            const currentScroll = gallery.scrollLeft;
-                            const clientWidth = gallery.clientWidth;
+                            // Use a more precise scroll behavior to avoid skipping slides
+                            const currentIndex = Math.round(gallery.scrollLeft / gallery.clientWidth);
+                            const targetIndex = Math.max(currentIndex - 1, 0);
                             gallery.scrollTo({
-                              left: currentScroll - clientWidth,
+                              left: targetIndex * gallery.clientWidth,
                               behavior: 'smooth'
                             });
                           }
                         }}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full z-10 transition-all duration-200"
+                        aria-label="Previous image"
                       >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -343,17 +363,20 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                       <button
                         onClick={(e) => {
                           e.preventDefault();
+                          e.stopPropagation();
                           const gallery = e.currentTarget.parentElement?.querySelector('.snap-x');
                           if (gallery) {
-                            const currentScroll = gallery.scrollLeft;
-                            const clientWidth = gallery.clientWidth;
+                            // Use a more precise scroll behavior to avoid skipping slides
+                            const currentIndex = Math.round(gallery.scrollLeft / gallery.clientWidth);
+                            const targetIndex = Math.min(currentIndex + 1, images.length + 1);
                             gallery.scrollTo({
-                              left: currentScroll + clientWidth,
+                              left: targetIndex * gallery.clientWidth,
                               behavior: 'smooth'
                             });
                           }
                         }}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full z-10 transition-all duration-200"
+                        aria-label="Next image"
                       >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
