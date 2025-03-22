@@ -6,6 +6,7 @@ import { useView } from '../contexts/ViewContext';
 import UserSearch from './UserSearch';
 import { useState, useEffect, useRef } from 'react';
 import Logo from './Logo';
+import { usePathname } from 'next/navigation';
 
 export default function Navigation() {
   const { data: session } = useSession();
@@ -13,6 +14,19 @@ export default function Navigation() {
   const [theme, setTheme] = useState('light');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+
+  // Path patterns where we don't want to show the "Viewing" button
+  const hideViewingButtonPaths = [
+    /^\/recipe\/[^\/]+$/,     // Single recipe view: /recipe/123
+    /^\/recipe\/[^\/]+\/edit$/, // Recipe edit: /recipe/123/edit
+    /^\/recipes\/new$/        // New recipe page
+  ];
+
+  const shouldShowViewingButton = () => {
+    // Don't show for specific paths
+    return !hideViewingButtonPaths.some(pattern => pattern.test(pathname || ''));
+  };
 
   useEffect(() => {
     // Check if theme is stored in localStorage
@@ -84,7 +98,7 @@ export default function Navigation() {
           </div>
 
           {/* View toggle button - on a new line for mobile */}
-          {session && (
+          {session && shouldShowViewingButton() && (
             <div className="flex w-full sm:w-auto mt-3 sm:mt-0">
               <button
                 onClick={toggleView}
