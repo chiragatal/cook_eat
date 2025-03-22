@@ -199,13 +199,17 @@ export default function QuickReactions({ postId, onReactionToggled }: QuickReact
                 transition-all duration-200
                 transform origin-bottom
 
-                ${/* Positioning logic */ ''}
-                left-0 right-auto bottom-full
-                sm:left-0 sm:right-auto
+                ${/* Position relative to viewport on mobile, centered on desktop */ ''}
+                left-0 right-auto bottom-full translate-x-0
+                sm:left-0 sm:right-auto sm:translate-x-0
                 md:left-1/2 md:-translate-x-1/2
+
+                ${/* Prevent going beyond left edge of screen */ ''}
+                min-w-0 w-auto
               `}
               style={{
                 maxHeight: 'calc(90vh - 200px)',
+                maxWidth: 'calc(100vw - 16px)'
               }}>
                 <div className="font-medium px-2 py-1 border-b border-gray-200 dark:border-gray-700 mb-1 text-gray-700 dark:text-gray-300 sticky top-0 bg-white dark:bg-gray-800 z-10">
                   {REACTION_EMOJIS[reaction.type].label} • {reaction.count}
