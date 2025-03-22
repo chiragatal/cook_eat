@@ -1027,6 +1027,14 @@ A quick and easy dinner recipe perfect for weeknights.
               </div>
 
               <div className="mt-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                  <span className="flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    You can paste multiple ingredients at once (one per line)
+                  </span>
+                </p>
                 <textarea
                   placeholder="Or paste multiple ingredients at once (one per line)"
                   className="w-full h-24 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
@@ -1163,10 +1171,31 @@ A quick and easy dinner recipe perfect for weeknights.
                     placeholder="Add a quick step"
                     className="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     disabled={isSubmitting}
-                    onKeyPress={(e) => {
+                    onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         addStep();
+                      }
+                    }}
+                    onPaste={(e) => {
+                      const pastedText = e.clipboardData.getData('text');
+                      const lines = pastedText.split('\n').map(line => line.trim()).filter(line => line);
+
+                      if (lines.length > 1) {
+                        e.preventDefault(); // Prevent default paste behavior
+
+                        // Add each line as a new step
+                        const newSteps = [...steps];
+                        lines.forEach(line => {
+                          if (line.trim()) {
+                            newSteps.push({
+                              instruction: line.trim(),
+                              id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
+                            });
+                          }
+                        });
+
+                        setSteps(newSteps);
                       }
                     }}
                   />
@@ -1178,6 +1207,44 @@ A quick and easy dinner recipe perfect for weeknights.
                   >
                     Add
                   </button>
+                </div>
+
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                    <span className="flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      You can paste multiple steps at once (one per line)
+                    </span>
+                  </p>
+                  <textarea
+                    placeholder="Or paste multiple steps at once (one per line)"
+                    className="w-full h-24 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    onChange={(e) => {}}
+                    onPaste={(e) => {
+                      const pastedText = e.clipboardData.getData('text');
+                      const lines = pastedText.split('\n').map(line => line.trim()).filter(line => line);
+
+                      if (lines.length > 0) {
+                        e.preventDefault(); // Prevent default paste behavior
+
+                        // Add each line as a new step
+                        const newSteps = [...steps];
+                        lines.forEach(line => {
+                          if (line.trim()) {
+                            newSteps.push({
+                              instruction: line.trim(),
+                              id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
+                            });
+                          }
+                        });
+
+                        setSteps(newSteps);
+                        e.currentTarget.value = ''; // Clear the textarea
+                      }
+                    }}
+                  />
                 </div>
               </div>
             </div>

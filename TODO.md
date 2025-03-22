@@ -119,7 +119,7 @@ A post is basically a recipe.
 - [x] Scrolling vertically by starting the scroll on images is not working
 - [x] Image upload is not working
 - [x] Add multiple ingredients at once is not working on mobile
-- [ ] Can add multiple steps at once by copy pasting them together in new lines
+- [x] Can add multiple steps at once by copy pasting them together in new lines
 - [x] The ingredient name and amount is not fitting well on the mobile
 - [ ] When I share a user, the link is not working
 - [ ] Fix the logo and the favicon
