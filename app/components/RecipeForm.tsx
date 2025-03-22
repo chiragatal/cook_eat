@@ -61,7 +61,6 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
   });
   const [newTag, setNewTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showNotes, setShowNotes] = useState(recipe.notes ? true : false);
   const [showExampleModal, setShowExampleModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -828,31 +827,6 @@ A quick and easy dinner recipe perfect for weeknights.
               </div>
             </div>
 
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Notes</h3>
-              <button
-                type="button"
-                onClick={() => setShowNotes(!showNotes)}
-                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-sm font-medium"
-              >
-                {showNotes ? 'Hide Notes' : 'Show Notes'}
-              </button>
-            </div>
-
-            {showNotes && (
-              <div className="mb-6">
-                <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Notes
-                </label>
-                <RichTextEditor
-                  value={notes}
-                  onChange={setNotes}
-                  placeholder="Add any notes about the recipe, such as variations, substitutions, or serving suggestions..."
-                  className="min-h-[200px]"
-                />
-              </div>
-            )}
-
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -936,6 +910,7 @@ A quick and easy dinner recipe perfect for weeknights.
                           src={image}
                           alt={`Recipe image ${index + 1}`}
                           className="object-cover w-full h-full group-hover:opacity-75 transition-opacity duration-200"
+                          style={{ pointerEvents: 'none' }}
                         />
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           <button
@@ -1243,6 +1218,18 @@ A quick and easy dinner recipe perfect for weeknights.
                   ))}
                 </div>
               )}
+            </div>
+
+            <div>
+              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Notes
+              </label>
+              <RichTextEditor
+                value={notes}
+                onChange={setNotes}
+                placeholder="Add any notes about the recipe, such as variations, substitutions, or serving suggestions..."
+                className="min-h-[200px]"
+              />
             </div>
 
             <div className="flex justify-end space-x-3 pt-4">
