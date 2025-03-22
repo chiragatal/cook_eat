@@ -85,6 +85,7 @@ export default function RecipeList({
     visibility: 'all',
     reactionFilter: '',
   });
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const galleryRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   // Add a ref for scrolling to expanded content
@@ -281,6 +282,26 @@ export default function RecipeList({
     if (!session?.user?.id) return;
     await fetchUserReactions([postId]);
   };
+
+  const handleMenuClick = (e: React.MouseEvent, recipeId: number) => {
+    e.stopPropagation();
+    setOpenMenuId(openMenuId === recipeId ? null : recipeId);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      // Check if the click is outside the menu
+      if (openMenuId !== null && !target.closest('.menu-dropdown')) {
+        setOpenMenuId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openMenuId]);
 
   const filteredRecipes = useMemo(() => {
     return recipes.filter(recipe => {
@@ -638,38 +659,62 @@ export default function RecipeList({
                   </div>
 
                   {session && ((String(session.user.id) === String(recipe.userId)) || session.user.isAdmin) && (
-                    <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto">
+                    <div className="relative">
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(recipe);
-                        }}
-                        className="flex-1 sm:flex-none px-4 py-3 sm:py-2 text-base sm:text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                        onClick={(e) => handleMenuClick(e, recipe.id)}
+                        className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 menu-dropdown"
                       >
-                        Edit
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                        </svg>
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(recipe.id);
-                        }}
-                        className="flex-1 sm:flex-none px-4 py-3 sm:py-2 text-base sm:text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
-                      >
-                        Delete
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleTogglePublic(recipe);
-                        }}
-                        className={`flex-1 sm:flex-none px-4 py-3 sm:py-2 text-base sm:text-sm rounded-md transition-colors ${
-                          recipe.isPublic
-                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        {recipe.isPublic ? 'Public' : 'Private'}
-                      </button>
+
+                      {openMenuId === recipe.id && (
+                        <div
+                          className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10 menu-dropdown"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="py-1" role="menu" aria-orientation="vertical">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuId(null);
+                                handleEdit(recipe);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-blue-700 dark:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-900/50"
+                              role="menuitem"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuId(null);
+                                handleDelete(recipe.id);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-red-700 dark:text-red-200 hover:bg-red-50 dark:hover:bg-red-900/50"
+                              role="menuitem"
+                            >
+                              Delete
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuId(null);
+                                handleTogglePublic(recipe);
+                              }}
+                              className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                                recipe.isPublic
+                                  ? 'text-green-700 dark:text-green-200 hover:bg-green-50 dark:hover:bg-green-900/50'
+                                  : 'text-gray-700 dark:text-gray-200'
+                              }`}
+                              role="menuitem"
+                            >
+                              {recipe.isPublic ? 'Make Private' : 'Make Public'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
