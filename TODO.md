@@ -31,7 +31,6 @@ A post is basically a recipe.
 ### Post Create++
 
 - [x] Rich text editor for the description
-- [ ] Voice input for the post
 - [x] For ingredients, newline is automatically converted to a new ingredient, basically adding multiple ingredients at once by copy pasting
 - [x] Also make ingredients editable, like steps
 - [x] A big text field where I can paste the recipe from somewhere else, and it will be converted to the post format
@@ -45,13 +44,6 @@ A post is basically a recipe.
 - [x] On expansion, show the ingredients
 - [x] Also show a button in the expanded view, to view the full recipe
 - [x] Ingredients should be of the format "\<name> * \<quantity>"
-
-### Calendar
-
-- [x] Add a calendar for tracking
-- [x] The post should show up in the calendar
-- [ ] The "what I cooked" and "what I want to cook" should be per user
-- [ ] Add support to make the cooked date for the same recipe multiple times
 
 ### Deployment
 
@@ -68,18 +60,46 @@ A post is basically a recipe.
 - [x] There should be a "what I want to cook" page
 - [x] This can be automatically done based on the reactions
 
-### Search
-
-- [x] Add search functionality
-- [ ] Multiple filters
-- [ ] There should be sections, the top one would be all filters matching, and the second one would be some filters matching
-
 ### Bookmarks (Favorites)
 
 - [x] This can be automatically done based on the reactions
 - [x] Users should be able to bookmark posts
 - [x] Users should be able to unbookmark posts
 - [x] Users should be able to view all their bookmarks
+
+### Usability improvements
+
+- [x] Mobile friendly
+- [x] Dark mode
+
+## Old Bugs
+
+- [x] Images are not showing up
+- [x] The post list does not show the description in rich text format
+- [x] The user name is not clickable in the post list
+- [x] Double description in expanded post
+- [x] Header colors on the full recipe page in dark mode look incorrect. Also in the hamburger menu.
+
+### Calendar
+
+- [x] Add a calendar for tracking
+- [x] The post should show up in the calendar
+- [ ] The Full calendar is not working and not looking so nice
+- [ ] The "what I cooked" and "what I want to cook" should be per user
+- [ ] Add support to make the cooked date for the same recipe multiple times
+
+### Search
+
+- [x] Add search functionality
+- [ ] Multiple filters
+- [ ] There should be sections, the top one would be all filters matching, and the second one would be some filters matching
+
+### Notifications
+
+- [ ] Allow users to disable notifications for specific types of notifications
+- [ ] Reaction notifications
+- [ ] Comment notifications
+- [ ] Reactions on comments notifications
 
 ### Shopping list
 
@@ -89,18 +109,11 @@ A post is basically a recipe.
 - [ ] Users should be able to clear their shopping list
 - [ ] Users should be able to add some/all items to the shopping list from a post
 
-### Usability improvements
+### Smart features
 
-- [x] Mobile friendly
-- [x] Dark mode
+- [ ] Voice input for creating recipes
 
-## Bugs
+### Bugs
 
 - [ ] When I share a user, the link is not working
-- [ ] The Full calendar is not working and not looking so nice
-- [x] Images are not showing up
-- [x] The post list does not show the description in rich text format
-- [x] The user name is not clickable in the post list
 - [ ] Fix the logo and the favicon
-- [x] Double description in expanded post
-- [x] Header colors on the full recipe page in dark mode look incorrect. Also in the hamburger menu.
