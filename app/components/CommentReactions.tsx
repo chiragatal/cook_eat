@@ -10,7 +10,6 @@ interface Reaction {
   users?: Array<{
     id: number;
     name: string | null;
-    image?: string | null;
   }>;
 }
 
@@ -205,13 +204,9 @@ export default function CommentReactions({ commentId, onReactionToggled }: Comme
                 <div className="max-h-[120px] overflow-y-auto">
                   {reaction.users.map(user => (
                     <div key={user.id} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
-                      {user.image ? (
-                        <img src={user.image} alt={user.name || 'User'} className="w-5 h-5 rounded-full" />
-                      ) : (
-                        <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs text-gray-600 dark:text-gray-300">
-                          {user.name?.charAt(0) || '?'}
-                        </div>
-                      )}
+                      <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs text-gray-600 dark:text-gray-300">
+                        {user.name?.charAt(0) || '?'}
+                      </div>
                       <span className="truncate">{user.name || 'Anonymous User'}</span>
                     </div>
                   ))}

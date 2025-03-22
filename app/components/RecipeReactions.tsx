@@ -10,7 +10,6 @@ interface Reaction {
   users?: Array<{
     id: number;
     name: string | null;
-    image?: string | null;
   }>;
 }
 
@@ -183,13 +182,9 @@ export default function RecipeReactions({ postId, onReactionToggled }: RecipeRea
                 <div className="max-h-[150px] overflow-y-auto">
                   {users.map(user => (
                     <div key={user.id} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
-                      {user.image ? (
-                        <img src={user.image} alt={user.name || 'User'} className="w-6 h-6 rounded-full" />
-                      ) : (
-                        <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs text-gray-600 dark:text-gray-300">
-                          {user.name?.charAt(0) || '?'}
-                        </div>
-                      )}
+                      <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs text-gray-600 dark:text-gray-300">
+                        {user.name?.charAt(0) || '?'}
+                      </div>
                       <span className="truncate">{user.name || 'Anonymous User'}</span>
                     </div>
                   ))}

@@ -27,16 +27,14 @@ export async function GET(
         user: {
           select: {
             id: true,
-            name: true,
-            // Ensure image is available in the User model
-            // image comes from next-auth, not directly from the db
+            name: true
           }
         }
       }
     });
 
     // Group reactions by type with user info
-    const reactionsByType: Record<string, { count: number, users: Array<{ id: number, name: string | null, image?: string | null }> }> = {};
+    const reactionsByType: Record<string, { count: number, users: Array<{ id: number, name: string | null }> }> = {};
 
     allReactions.forEach(reaction => {
       if (!reactionsByType[reaction.type]) {
@@ -49,8 +47,7 @@ export async function GET(
       reactionsByType[reaction.type].count++;
       reactionsByType[reaction.type].users.push({
         id: reaction.user.id,
-        name: reaction.user.name,
-        // Only include image if available from next-auth session
+        name: reaction.user.name
       });
     });
 
