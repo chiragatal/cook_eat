@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import RichTextEditor from './RichTextEditor';
 import { Recipe, Ingredient, Step } from '../types';
 
@@ -38,6 +38,79 @@ const CATEGORIES = [
 ];
 
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
+
+// Add this compression utility function before the RecipeForm component
+const compressImageBeforeUpload = async (file: File, maxSizeMB = 4): Promise<File> => {
+  // If file is already smaller than maxSizeMB, return it as is
+  if (file.size <= maxSizeMB * 1024 * 1024) {
+    return file;
+  }
+
+  // Create an image object to get dimensions
+  const image = await createImageBitmap(file);
+  const { width, height } = image;
+  image.close();
+
+  // Create a canvas for compression
+  const canvas = document.createElement('canvas');
+
+  // Determine scaling factor based on file size
+  let scale = 1;
+  if (file.size > 10 * 1024 * 1024) {
+    scale = 0.5; // 50% for very large files
+  } else if (file.size > 5 * 1024 * 1024) {
+    scale = 0.7; // 70% for large files
+  }
+
+  // Set canvas dimensions
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+
+  // Draw and compress the image
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    return file; // Fallback if canvas context is not available
+  }
+
+  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+  // Determine quality based on file size
+  let quality = 0.7; // default
+  if (file.size > 10 * 1024 * 1024) {
+    quality = 0.5;
+  } else if (file.size > 5 * 1024 * 1024) {
+    quality = 0.6;
+  }
+
+  // Get the compressed image as blob
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          console.error('Canvas to Blob conversion failed');
+          resolve(file); // Fallback to original file
+          return;
+        }
+
+        const newFile = new File([blob], file.name, {
+          type: file.type,
+          lastModified: Date.now(),
+        });
+
+        // If still too large, compress again with more aggressive settings
+        if (newFile.size > maxSizeMB * 1024 * 1024) {
+          compressImageBeforeUpload(newFile, maxSizeMB)
+            .then(resolve)
+            .catch(() => resolve(newFile));
+        } else {
+          resolve(newFile);
+        }
+      },
+      file.type,
+      quality
+    );
+  });
+};
 
 export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mode }: RecipeFormProps) {
   const [title, setTitle] = useState(recipe.title);
@@ -101,12 +174,28 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
 
       const uploadedImages = await Promise.all(
         Array.from(files).map(async (file) => {
+          // Compress image on client-side before uploading
+          let fileToUpload = file;
+
+          if (file.type.startsWith('image/')) {
+            try {
+              console.log(`Client-side compression for: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`);
+              fileToUpload = await compressImageBeforeUpload(file, 4);
+              console.log(`Compressed size: ${(fileToUpload.size / (1024 * 1024)).toFixed(2)} MB`);
+            } catch (err) {
+              console.error('Error compressing image on client:', err);
+              // Continue with original file if compression fails
+            }
+          }
+
           const formData = new FormData();
-          formData.append('images', file);
+          formData.append('images', fileToUpload);
+
           const response = await fetch('/api/upload', {
             method: 'POST',
             body: formData,
           });
+
           if (!response.ok) throw new Error('Upload failed');
           const data = await response.json();
           return data.imagePaths[0];
@@ -160,12 +249,28 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
 
       const uploadedImages = await Promise.all(
         Array.from(files).map(async (file) => {
+          // Compress image on client-side before uploading
+          let fileToUpload = file;
+
+          if (file.type.startsWith('image/')) {
+            try {
+              console.log(`Client-side compression for: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`);
+              fileToUpload = await compressImageBeforeUpload(file, 4);
+              console.log(`Compressed size: ${(fileToUpload.size / (1024 * 1024)).toFixed(2)} MB`);
+            } catch (err) {
+              console.error('Error compressing image on client:', err);
+              // Continue with original file if compression fails
+            }
+          }
+
           const formData = new FormData();
-          formData.append('images', file);
+          formData.append('images', fileToUpload);
+
           const response = await fetch('/api/upload', {
             method: 'POST',
             body: formData,
           });
+
           if (!response.ok) throw new Error('Upload failed');
           const data = await response.json();
           return data.imagePaths[0];
