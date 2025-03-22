@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Logo from '../../components/Logo';
 
@@ -13,6 +13,8 @@ export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
   const [theme, setTheme] = useState('light');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams?.get('callbackUrl') || '/';
 
   useEffect(() => {
     // Check if theme is stored in localStorage
@@ -46,7 +48,7 @@ export default function SignIn() {
       if (result?.error) {
         setError(`Authentication error: ${result.error}`);
       } else {
-        router.push('/');
+        router.push(callbackUrl);
         router.refresh();
       }
     } catch (error) {

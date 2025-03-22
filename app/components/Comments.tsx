@@ -189,7 +189,7 @@ export default function Comments({ postId }: { postId: number }) {
         </form>
       ) : (
         <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg mb-6 text-center">
-          <p>Please <a href="/api/auth/signin" className="text-blue-600 dark:text-blue-400 hover:underline">sign in</a> to leave a comment.</p>
+          <p>Please <a href={`/api/auth/signin?callbackUrl=${encodeURIComponent(window.location.href)}`} className="text-blue-600 dark:text-blue-400 hover:underline">sign in</a> to leave a comment.</p>
         </div>
       )}
 
