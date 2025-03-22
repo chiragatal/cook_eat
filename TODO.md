@@ -61,7 +61,7 @@ A post is basically a recipe.
 ### Reactions
 
 - [x] Users should be able to react to a post
-- [ ] Reaction users list
+- [x] Reaction users list
 
 ### What I want to cook
 
