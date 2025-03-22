@@ -32,7 +32,7 @@ A post is basically a recipe.
 
 - [x] Rich text editor for the description
 - [ ] Voice input for the post
-- [ ] For ingredients, newline is automatically converted to a new ingredient
+- [x] For ingredients, newline is automatically converted to a new ingredient, basically adding multiple ingredients at once by copy pasting
 - [x] Also make ingredients editable, like steps
 - [x] A big text field where I can paste the recipe from somewhere else, and it will be converted to the post format
 - [x] Add links section

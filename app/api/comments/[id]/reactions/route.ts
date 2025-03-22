@@ -20,35 +20,53 @@ export async function GET(
 
     const session = await getServerSession(authOptions);
 
-    // Get all reactions for the comment
+    // Get all reactions for the comment with user info
     const allReactions = await prisma.commentReaction.findMany({
       where: { commentId },
-      select: { type: true },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            // Ensure image is available in the User model
+            // image comes from next-auth, not directly from the db
+          }
+        }
+      }
     });
 
-    // Count reactions by type
-    const reactionCounts = allReactions.reduce((acc, { type }) => {
-      acc[type] = (acc[type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    // Group reactions by type with user info
+    const reactionsByType: Record<string, { count: number, users: Array<{ id: number, name: string | null, image?: string | null }> }> = {};
+
+    allReactions.forEach(reaction => {
+      if (!reactionsByType[reaction.type]) {
+        reactionsByType[reaction.type] = {
+          count: 0,
+          users: []
+        };
+      }
+
+      reactionsByType[reaction.type].count++;
+      reactionsByType[reaction.type].users.push({
+        id: reaction.user.id,
+        name: reaction.user.name,
+        // Only include image if available from next-auth session
+      });
+    });
 
     // Format reactions for response
-    const reactions = Object.entries(reactionCounts).map(([type, count]) => ({
+    const reactions = Object.entries(reactionsByType).map(([type, data]) => ({
       type,
-      count,
+      count: data.count,
+      users: data.users,
     }));
 
     // If user is logged in, get their reactions
     let userReactions: string[] = [];
     if (session?.user?.id) {
-      const userReactionsData = await prisma.commentReaction.findMany({
-        where: {
-          commentId,
-          userId: session.user.id,
-        },
-        select: { type: true },
-      });
-      userReactions = userReactionsData.map(r => r.type);
+      userReactions = allReactions
+        .filter(r => r.userId === session.user.id)
+        .map(r => r.type);
     }
 
     return NextResponse.json({
