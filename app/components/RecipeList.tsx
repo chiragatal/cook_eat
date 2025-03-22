@@ -924,7 +924,7 @@ export default function RecipeList({
                         className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 text-sm transition-colors"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <MessageCircle size={14} />
+                        <MessageCircle size={16} />
                         <span>{commentCounts[recipe.id]}</span>
                       </Link>
                     )}
