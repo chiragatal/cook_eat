@@ -91,14 +91,14 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
       const uploadedImages = await Promise.all(
         Array.from(files).map(async (file) => {
           const formData = new FormData();
-          formData.append('file', file);
+          formData.append('images', file);
           const response = await fetch('/api/upload', {
             method: 'POST',
             body: formData,
           });
           if (!response.ok) throw new Error('Upload failed');
           const data = await response.json();
-          return data.url;
+          return data.imagePaths[0];
         })
       );
       setImages([...images, ...uploadedImages]);
@@ -141,14 +141,14 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
       const uploadedImages = await Promise.all(
         Array.from(files).map(async (file) => {
           const formData = new FormData();
-          formData.append('file', file);
+          formData.append('images', file);
           const response = await fetch('/api/upload', {
             method: 'POST',
             body: formData,
           });
           if (!response.ok) throw new Error('Upload failed');
           const data = await response.json();
-          return data.url;
+          return data.imagePaths[0];
         })
       );
       setImages([...images, ...uploadedImages]);

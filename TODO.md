@@ -44,6 +44,7 @@ A post is basically a recipe.
 - [x] On expansion, show the ingredients
 - [x] Also show a button in the expanded view, to view the full recipe
 - [x] Ingredients should be of the format "\<name> * \<quantity>"
+- [x] Add search functionality
 
 ### Deployment
 
@@ -88,9 +89,8 @@ A post is basically a recipe.
 - [ ] The "what I cooked" and "what I want to cook" should be per user
 - [ ] Add support to make the cooked date for the same recipe multiple times
 
-### Search
+### Filters
 
-- [x] Add search functionality
 - [ ] Multiple filters
 - [ ] There should be sections, the top one would be all filters matching, and the second one would be some filters matching
 
@@ -100,6 +100,7 @@ A post is basically a recipe.
 - [ ] Reaction notifications
 - [ ] Comment notifications
 - [ ] Reactions on comments notifications
+- [ ] Tagging other users in comments
 
 ### Shopping list
 
@@ -117,3 +118,8 @@ A post is basically a recipe.
 
 - [ ] When I share a user, the link is not working
 - [ ] Fix the logo and the favicon
+- [ ] Scrolling vertically by starting the scroll on images is not working
+- [x] Image upload is not working
+- [ ] Add multiple ingredients at once is not working on mobile
+- [ ] Can add multiple steps at once by copy pasting them together in new lines
+- [ ] The ingredient name and amount is not fitting well on the mobile
