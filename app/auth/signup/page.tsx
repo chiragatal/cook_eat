@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
+import Logo from '../../components/Logo';
 
 export default function SignUp() {
   const [name, setName] = useState('');
@@ -95,6 +96,10 @@ export default function SignUp() {
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <Link href="/" className="flex items-center justify-center gap-2 mb-6">
+          <Logo size={36} />
+          <span className="text-2xl font-bold text-gray-900 dark:text-white">Cook-Eat</span>
+        </Link>
         <h2 className="mt-6 text-center text-3xl font-bold text-gray-900 dark:text-white">
           Create a new account
         </h2>
