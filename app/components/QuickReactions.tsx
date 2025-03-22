@@ -200,7 +200,7 @@ export default function QuickReactions({ postId, onReactionToggled }: QuickReact
                 transform origin-bottom
 
                 ${/* Position relative to viewport on mobile, centered on desktop */ ''}
-                right-0 bottom-full
+                left-0 bottom-full
 
                 ${/* Prevent going beyond edge of screen */ ''}
                 min-w-0 w-auto
@@ -224,7 +224,7 @@ export default function QuickReactions({ postId, onReactionToggled }: QuickReact
                 </div>
 
                 {/* Triangle pointer */}
-                <div className="absolute -bottom-2 right-4 w-0 h-0
+                <div className="absolute -bottom-2 left-4 w-0 h-0
                   border-l-[8px] border-l-transparent
                   border-r-[8px] border-r-transparent
                   border-t-[8px] border-t-white dark:border-t-gray-800"></div>
