@@ -7,43 +7,54 @@ const MAX_FILE_SIZE_MB = 4;
 
 // Helper function to compress images using Sharp
 async function compressImage(buffer: Buffer, mimeType: string): Promise<Buffer> {
-  let sharpInstance = sharp(buffer);
+  try {
+    let sharpInstance = sharp(buffer);
 
-  // Get image metadata
-  const metadata = await sharpInstance.metadata();
+    // Get image metadata
+    const metadata = await sharpInstance.metadata();
 
-  // Calculate target dimensions and quality based on size
-  let quality = 80;
-  let resize = false;
+    // Calculate target dimensions and quality based on size
+    let quality = 80;
+    let resize = false;
 
-  // If image is large, apply more aggressive compression
-  if (buffer.length > 8 * 1024 * 1024) {
-    quality = 60;
-    resize = true;
-  } else if (buffer.length > 5 * 1024 * 1024) {
-    quality = 70;
-    resize = true;
-  }
+    // If image is large, apply more aggressive compression
+    if (buffer.length > 8 * 1024 * 1024) {
+      quality = 60;
+      resize = true;
+    } else if (buffer.length > 5 * 1024 * 1024) {
+      quality = 70;
+      resize = true;
+    }
 
-  // Resize if needed
-  if (resize && metadata.width && metadata.height) {
-    const width = metadata.width;
-    const height = metadata.height;
-    const targetWidth = Math.round(width * 0.8);
+    // Resize if needed
+    if (resize && metadata.width && metadata.height) {
+      const width = metadata.width;
+      const targetWidth = Math.round(width * 0.8);
 
-    sharpInstance = sharpInstance.resize(targetWidth);
-  }
+      sharpInstance = sharpInstance.resize(targetWidth);
+    }
 
-  // Apply compression based on image type
-  if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') {
-    return sharpInstance.jpeg({ quality }).toBuffer();
-  } else if (mimeType === 'image/png') {
-    return sharpInstance.png({ quality }).toBuffer();
-  } else if (mimeType === 'image/webp') {
-    return sharpInstance.webp({ quality }).toBuffer();
-  } else {
-    // For other formats, just resize if needed but don't compress
-    return sharpInstance.toBuffer();
+    // Apply compression based on image type
+    if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') {
+      return await sharpInstance.jpeg({ quality }).toBuffer();
+    } else if (mimeType === 'image/png') {
+      // For PNG, Sharp doesn't use the same quality parameter
+      // Instead, we use compression level 9 (max) for best compression
+      return await sharpInstance.png({
+        compressionLevel: 9,
+        adaptiveFiltering: true,
+        palette: true
+      }).toBuffer();
+    } else if (mimeType === 'image/webp') {
+      return await sharpInstance.webp({ quality }).toBuffer();
+    } else {
+      // For other formats, just resize if needed but don't compress
+      return await sharpInstance.toBuffer();
+    }
+  } catch (error) {
+    console.error("Error in compression function:", error);
+    // If compression fails, return original buffer
+    return buffer;
   }
 }
 
