@@ -177,12 +177,10 @@ export default function RecipeReactions({ postId, onReactionToggled }: RecipeRea
                 transition-all duration-200
                 transform origin-bottom
 
-                ${/* Position relative to viewport on mobile, centered on desktop */ ''}
-                left-0 right-auto bottom-full translate-x-0
-                sm:left-0 sm:right-auto sm:translate-x-0
-                md:left-1/2 md:-translate-x-1/2
+                ${/* Position towards the right on all screen sizes */ ''}
+                right-0 bottom-full
 
-                ${/* Prevent going beyond left edge of screen */ ''}
+                ${/* Prevent going beyond edge of screen */ ''}
                 min-w-0 w-auto
               `}
               style={{
@@ -204,7 +202,7 @@ export default function RecipeReactions({ postId, onReactionToggled }: RecipeRea
                 </div>
 
                 {/* Triangle pointer */}
-                <div className="absolute -bottom-2 left-4 md:left-1/2 md:-ml-2 w-0 h-0
+                <div className="absolute -bottom-2 right-4 w-0 h-0
                   border-l-[8px] border-l-transparent
                   border-r-[8px] border-r-transparent
                   border-t-[8px] border-t-white dark:border-t-gray-800"></div>
