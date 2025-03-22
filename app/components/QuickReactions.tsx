@@ -7,6 +7,10 @@ import { REACTION_TYPES, ReactionType } from '../api/posts/[id]/reactions/types'
 interface Reaction {
   type: ReactionType;
   count: number;
+  users?: Array<{
+    id: number;
+    name: string | null;
+  }>;
 }
 
 interface QuickReactionsProps {
@@ -28,9 +32,11 @@ export default function QuickReactions({ postId, onReactionToggled }: QuickReact
   const [userReactions, setUserReactions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const [activeLongPressType, setActiveLongPressType] = useState<string | null>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const longPressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetchReactions();
@@ -40,12 +46,42 @@ export default function QuickReactions({ postId, onReactionToggled }: QuickReact
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setShowReactionPicker(false);
+        setActiveLongPressType(null);
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      if (longPressTimeoutRef.current) {
+        clearTimeout(longPressTimeoutRef.current);
+        longPressTimeoutRef.current = null;
+      }
+    };
   }, []);
+
+  const handleLongPress = (type: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setActiveLongPressType(prev => prev === type ? null : type);
+  };
+
+  const handleTouchStart = (type: string) => {
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+    }
+
+    longPressTimeoutRef.current = setTimeout(() => {
+      setActiveLongPressType(type);
+    }, 500); // 500ms for long press
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
+    }
+  };
 
   const fetchReactions = async () => {
     try {
@@ -131,20 +167,53 @@ export default function QuickReactions({ postId, onReactionToggled }: QuickReact
     <div ref={containerRef} className="flex items-center gap-2">
       <div className="flex flex-wrap gap-1">
         {activeReactions.map(reaction => (
-          <button
-            key={reaction.type}
-            onClick={() => session && handleReaction(reaction.type)}
-            className={`
-              inline-flex items-center gap-0.5 px-2 py-1 rounded-full text-sm
-              transition-colors duration-200
-              ${userReactions.includes(reaction.type) ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-700'}
-              ${session ? 'hover:bg-gray-200 cursor-pointer' : 'cursor-default'}
-            `}
-            title={`${REACTION_EMOJIS[reaction.type as ReactionType].label}${!session ? ' - Sign in to react' : ''}`}
-          >
-            <span>{REACTION_EMOJIS[reaction.type as ReactionType].emoji}</span>
-            <span className="text-xs font-medium ml-0.5">{reaction.count}</span>
-          </button>
+          <div key={reaction.type} className="relative group">
+            <button
+              onClick={() => session && handleReaction(reaction.type)}
+              onContextMenu={(e) => reaction.users && reaction.users.length > 0 && handleLongPress(reaction.type, e)}
+              onTouchStart={() => reaction.users && reaction.users.length > 0 && handleTouchStart(reaction.type)}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
+              className={`
+                inline-flex items-center gap-0.5 px-2 py-1 rounded-full text-sm
+                transition-colors duration-200
+                ${userReactions.includes(reaction.type) ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-700'}
+                ${session ? 'hover:bg-gray-200 cursor-pointer' : 'cursor-default'}
+                ${activeLongPressType === reaction.type ? 'ring-2 ring-blue-400' : ''}
+              `}
+              title={`${REACTION_EMOJIS[reaction.type as ReactionType].label}${!session ? ' - Sign in to react' : ''}`}
+            >
+              <span>{REACTION_EMOJIS[reaction.type as ReactionType].emoji}</span>
+              <span className="text-xs font-medium ml-0.5">{reaction.count}</span>
+            </button>
+
+            {/* User list tooltip - shown on hover for desktop and on long press for mobile */}
+            {reaction.users && reaction.users.length > 0 && (
+              <div className={`
+                absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2
+                bg-white dark:bg-gray-800 rounded-md shadow-lg p-2 text-xs
+                min-w-[120px] max-w-[200px] border border-gray-200 dark:border-gray-700
+                ${activeLongPressType === reaction.type
+                  ? 'visible opacity-100'
+                  : 'invisible group-hover:visible opacity-0 group-hover:opacity-100 md:block hidden'}
+                transition-all duration-200
+              `}>
+                <div className="font-medium px-2 py-1 border-b border-gray-200 dark:border-gray-700 mb-1 text-gray-700 dark:text-gray-300">
+                  {REACTION_EMOJIS[reaction.type as ReactionType].label} • {reaction.count}
+                </div>
+                <div className="max-h-[120px] overflow-y-auto">
+                  {reaction.users.map(user => (
+                    <div key={user.id} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                      <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs text-gray-600 dark:text-gray-300">
+                        {user.name?.charAt(0) || '?'}
+                      </div>
+                      <span className="truncate">{user.name || 'Anonymous User'}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         ))}
       </div>
 

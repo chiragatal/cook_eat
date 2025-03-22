@@ -147,32 +147,52 @@ export async function POST(
       });
     }
 
-    // Get updated reactions
+    // Get updated reactions with user info
     const allReactions = await prisma.commentReaction.findMany({
       where: { commentId },
-      select: { type: true },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
     });
 
-    const reactionCounts = allReactions.reduce((acc, { type: reactionType }) => {
-      acc[reactionType] = (acc[reactionType] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    // Group reactions by type with user info
+    const reactionsByType: Record<string, { count: number, users: Array<{ id: number, name: string | null }> }> = {};
+
+    allReactions.forEach(reaction => {
+      if (!reactionsByType[reaction.type]) {
+        reactionsByType[reaction.type] = {
+          count: 0,
+          users: []
+        };
+      }
+
+      reactionsByType[reaction.type].count++;
+      reactionsByType[reaction.type].users.push({
+        id: reaction.user.id,
+        name: reaction.user.name
+      });
+    });
+
+    // Format reactions for response
+    const reactions = Object.entries(reactionsByType).map(([type, data]) => ({
+      type,
+      count: data.count,
+      users: data.users,
+    }));
 
     // Get user's reactions
-    const userReactionsData = await prisma.commentReaction.findMany({
-      where: {
-        commentId,
-        userId: session.user.id,
-      },
-      select: { type: true },
-    });
+    const userReactions = allReactions
+      .filter(r => r.userId === session.user.id)
+      .map(r => r.type);
 
     return NextResponse.json({
-      reactions: Object.entries(reactionCounts).map(([type, count]) => ({
-        type,
-        count,
-      })),
-      userReactions: userReactionsData.map(r => r.type),
+      reactions,
+      userReactions,
     });
   } catch (error) {
     console.error('Error toggling comment reaction:', error);
