@@ -39,77 +39,93 @@ const CATEGORIES = [
 
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
 
-// Add this compression utility function before the RecipeForm component
+// Modify the compression utility function to fix the "image source is detached" error
 const compressImageBeforeUpload = async (file: File, maxSizeMB = 4): Promise<File> => {
   // If file is already smaller than maxSizeMB, return it as is
   if (file.size <= maxSizeMB * 1024 * 1024) {
     return file;
   }
 
-  // Create an image object to get dimensions
-  const image = await createImageBitmap(file);
-  const { width, height } = image;
-  image.close();
+  try {
+    // Create an image element instead of ImageBitmap
+    const img = document.createElement('img');
+    const objectUrl = URL.createObjectURL(file);
 
-  // Create a canvas for compression
-  const canvas = document.createElement('canvas');
+    // Create a promise to wait for the image to load
+    const loadPromise = new Promise<HTMLImageElement>((resolve, reject) => {
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = objectUrl;
+    });
 
-  // Determine scaling factor based on file size
-  let scale = 1;
-  if (file.size > 10 * 1024 * 1024) {
-    scale = 0.5; // 50% for very large files
-  } else if (file.size > 5 * 1024 * 1024) {
-    scale = 0.7; // 70% for large files
+    // Wait for the image to load
+    const loadedImg = await loadPromise;
+
+    // Create a canvas for compression
+    const canvas = document.createElement('canvas');
+
+    // Determine scaling factor based on file size
+    let scale = 1;
+    if (file.size > 10 * 1024 * 1024) {
+      scale = 0.5; // 50% for very large files
+    } else if (file.size > 5 * 1024 * 1024) {
+      scale = 0.7; // 70% for large files
+    }
+
+    // Set canvas dimensions
+    canvas.width = loadedImg.naturalWidth * scale;
+    canvas.height = loadedImg.naturalHeight * scale;
+
+    // Draw and compress the image
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      URL.revokeObjectURL(objectUrl);
+      return file; // Fallback if canvas context is not available
+    }
+
+    ctx.drawImage(loadedImg, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(objectUrl); // Clean up the object URL
+
+    // Determine quality based on file size
+    let quality = 0.7; // default
+    if (file.size > 10 * 1024 * 1024) {
+      quality = 0.5;
+    } else if (file.size > 5 * 1024 * 1024) {
+      quality = 0.6;
+    }
+
+    // Get the compressed image as blob
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            console.error('Canvas to Blob conversion failed');
+            resolve(file); // Fallback to original file
+            return;
+          }
+
+          const newFile = new File([blob], file.name, {
+            type: 'image/jpeg', // Convert to JPEG for better compression
+            lastModified: Date.now(),
+          });
+
+          // If still too large, compress again with more aggressive settings
+          if (newFile.size > maxSizeMB * 1024 * 1024) {
+            compressImageBeforeUpload(newFile, maxSizeMB)
+              .then(resolve)
+              .catch(() => resolve(newFile));
+          } else {
+            resolve(newFile);
+          }
+        },
+        'image/jpeg', // Use JPEG format for better compression
+        quality
+      );
+    });
+  } catch (error) {
+    console.error('Compression error:', error);
+    return file; // Return original file on any error
   }
-
-  // Set canvas dimensions
-  canvas.width = width * scale;
-  canvas.height = height * scale;
-
-  // Draw and compress the image
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return file; // Fallback if canvas context is not available
-  }
-
-  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-  // Determine quality based on file size
-  let quality = 0.7; // default
-  if (file.size > 10 * 1024 * 1024) {
-    quality = 0.5;
-  } else if (file.size > 5 * 1024 * 1024) {
-    quality = 0.6;
-  }
-
-  // Get the compressed image as blob
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) {
-          console.error('Canvas to Blob conversion failed');
-          resolve(file); // Fallback to original file
-          return;
-        }
-
-        const newFile = new File([blob], file.name, {
-          type: file.type,
-          lastModified: Date.now(),
-        });
-
-        // If still too large, compress again with more aggressive settings
-        if (newFile.size > maxSizeMB * 1024 * 1024) {
-          compressImageBeforeUpload(newFile, maxSizeMB)
-            .then(resolve)
-            .catch(() => resolve(newFile));
-        } else {
-          resolve(newFile);
-        }
-      },
-      file.type,
-      quality
-    );
-  });
 };
 
 export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mode }: RecipeFormProps) {
