@@ -198,8 +198,6 @@ export default function CommentReactions({ commentId, onReactionToggled }: Comme
                   : 'invisible group-hover:visible opacity-0 group-hover:opacity-100 md:block hidden'}
                 transition-all duration-200
                 transform origin-bottom
-                group-hover:translate-y-0
-                overflow-y-auto
 
                 ${/* Positioning logic */ ''}
                 left-0 right-auto bottom-full
@@ -212,7 +210,7 @@ export default function CommentReactions({ commentId, onReactionToggled }: Comme
                 <div className="font-medium px-2 py-1 border-b border-gray-200 dark:border-gray-700 mb-1 text-gray-700 dark:text-gray-300 sticky top-0 bg-white dark:bg-gray-800 z-10">
                   {REACTION_EMOJIS[reaction.type as CommentReactionType].label} • {reaction.count}
                 </div>
-                <div className="overflow-y-auto" style={{ maxHeight: 'calc(90vh - 240px)' }}>
+                <div className={`${reaction.users.length > 5 ? 'overflow-y-auto' : ''}`} style={{ maxHeight: reaction.users.length > 5 ? 'calc(90vh - 240px)' : 'auto' }}>
                   {reaction.users.map(user => (
                     <div key={user.id} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
                       <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs text-gray-600 dark:text-gray-300 flex-shrink-0">
