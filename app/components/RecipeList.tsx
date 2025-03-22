@@ -899,10 +899,12 @@ export default function RecipeList({
                           const ingredients = JSON.parse(recipe.ingredients);
                           return ingredients.map((ingredient: Ingredient, index: number) => (
                             <li key={index} className="text-gray-600 dark:text-gray-300">
-                              <div className="font-medium">{ingredient.name}</div>
-                              {ingredient.amount && (
-                                <div className="text-gray-500 dark:text-gray-400 text-sm">{ingredient.amount}</div>
-                              )}
+                              <div>
+                                <span className="font-medium">{ingredient.name}</span>
+                                {ingredient.amount && (
+                                  <span className="text-gray-500 dark:text-gray-400 text-sm ml-1">· {ingredient.amount}</span>
+                                )}
+                              </div>
                             </li>
                           ));
                         } catch (e) {
