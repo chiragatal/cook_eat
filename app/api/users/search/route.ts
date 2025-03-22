@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 
+export const dynamic = 'force-dynamic'; // Mark this route as dynamic
+
 export async function GET(request: Request) {
   try {
-    const searchParams = new URL(request.url, process.env.NEXTAUTH_URL).searchParams;
-    const query = searchParams.get('q');
+    // Use URL constructor to parse the request URL properly
+    const url = new URL(request.url);
+    const query = url.searchParams.get('q');
 
     if (!query) {
       return NextResponse.json([]);
