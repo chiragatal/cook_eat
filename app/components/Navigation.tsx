@@ -129,6 +129,7 @@ export default function Navigation() {
               </>
             ) : (
               <div className="flex items-center gap-3">
+                <UserSearch />
                 <button
                   onClick={toggleTheme}
                   className="rounded-md bg-gray-100 dark:bg-gray-700 p-2 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -199,6 +200,7 @@ export default function Navigation() {
                   </>
                 ) : (
                   <>
+                    <UserSearch />
                     <button
                       onClick={toggleTheme}
                       className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useView } from '../contexts/ViewContext';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -17,7 +16,6 @@ export default function UserSearch() {
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const { setSelectedUser } = useView();
-  const { data: session } = useSession();
   const searchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
