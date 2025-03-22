@@ -917,19 +917,18 @@ export default function RecipeList({
                 )}
 
                 <div className="mt-4" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex justify-between items-center">
-                    <QuickReactions postId={recipe.id} onReactionToggled={() => handleReactionToggled(recipe.id)} />
-
+                  <div className="flex items-center gap-2">
                     {commentCounts[recipe.id] > 0 && (
                       <Link
                         href={`/recipe/${recipe.id}#comments`}
-                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 text-sm transition-colors"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 text-sm transition-colors"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <MessageCircle size={14} />
                         <span>{commentCounts[recipe.id]}</span>
                       </Link>
                     )}
+                    <QuickReactions postId={recipe.id} onReactionToggled={() => handleReactionToggled(recipe.id)} />
                   </div>
                 </div>
               </div>
