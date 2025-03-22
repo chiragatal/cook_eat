@@ -344,8 +344,27 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                           e.stopPropagation();
                           const gallery = e.currentTarget.parentElement?.querySelector('.snap-x');
                           if (gallery) {
-                            // Use a more precise scroll behavior to avoid skipping slides
+                            // Ensure we're at a proper position first
                             const currentIndex = Math.round(gallery.scrollLeft / gallery.clientWidth);
+                            // If we're at the first position (the cloned last image), jump to the real first image
+                            if (currentIndex === 0) {
+                              // Set to the first real image position
+                              gallery.scrollTo({
+                                left: gallery.clientWidth,
+                                behavior: 'instant'
+                              });
+                              // Give time for the scroll to complete
+                              setTimeout(() => {
+                                // Then scroll to the last real image
+                                gallery.scrollTo({
+                                  left: (images.length) * gallery.clientWidth,
+                                  behavior: 'smooth'
+                                });
+                              }, 50);
+                              return;
+                            }
+
+                            // Normal previous behavior
                             const targetIndex = Math.max(currentIndex - 1, 0);
                             gallery.scrollTo({
                               left: targetIndex * gallery.clientWidth,
@@ -366,8 +385,27 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                           e.stopPropagation();
                           const gallery = e.currentTarget.parentElement?.querySelector('.snap-x');
                           if (gallery) {
-                            // Use a more precise scroll behavior to avoid skipping slides
+                            // Ensure we're at a proper position first
                             const currentIndex = Math.round(gallery.scrollLeft / gallery.clientWidth);
+                            // If we're at the last position (the cloned first image), jump to the real last image
+                            if (currentIndex >= images.length + 1) {
+                              // Set to the last real image position
+                              gallery.scrollTo({
+                                left: images.length * gallery.clientWidth,
+                                behavior: 'instant'
+                              });
+                              // Give time for the scroll to complete
+                              setTimeout(() => {
+                                // Then scroll to the first real image
+                                gallery.scrollTo({
+                                  left: gallery.clientWidth,
+                                  behavior: 'smooth'
+                                });
+                              }, 50);
+                              return;
+                            }
+
+                            // Normal next behavior
                             const targetIndex = Math.min(currentIndex + 1, images.length + 1);
                             gallery.scrollTo({
                               left: targetIndex * gallery.clientWidth,
