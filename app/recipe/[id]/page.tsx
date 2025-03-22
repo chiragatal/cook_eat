@@ -288,7 +288,11 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                     }}
                     data-recipe-id={recipe.id}
                     className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full touch-pan-x"
-                    style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
+                    style={{
+                      scrollSnapType: 'x mandatory',
+                      WebkitOverflowScrolling: 'touch',
+                      touchAction: 'pan-x pan-y'
+                    }}
                   >
                     {/* Add last image at the beginning for smooth transition */}
                     {images.length > 1 && (
@@ -298,6 +302,7 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                             src={images[images.length - 1]}
                             alt={`${recipe.title} - Image ${images.length}`}
                             className="max-w-full max-h-full w-auto h-auto object-contain"
+                            style={{ pointerEvents: 'none' }}
                             onError={(e) => {
                               e.currentTarget.src = 'https://via.placeholder.com/800x600?text=Failed+to+Load';
                             }}
@@ -312,6 +317,7 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                             src={image}
                             alt={`${recipe.title} - Image ${index + 1}`}
                             className="max-w-full max-h-full w-auto h-auto object-contain"
+                            style={{ pointerEvents: 'none' }}
                             onError={(e) => {
                               e.currentTarget.src = 'https://via.placeholder.com/800x600?text=Failed+to+Load';
                             }}
@@ -327,6 +333,7 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                             src={images[0]}
                             alt={`${recipe.title} - Image 1`}
                             className="max-w-full max-h-full w-auto h-auto object-contain"
+                            style={{ pointerEvents: 'none' }}
                             onError={(e) => {
                               e.currentTarget.src = 'https://via.placeholder.com/800x600?text=Failed+to+Load';
                             }}

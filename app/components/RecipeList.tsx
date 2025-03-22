@@ -549,7 +549,11 @@ export default function RecipeList({
                           }}
                           data-recipe-id={recipe.id}
                           className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide touch-pan-x"
-                          style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
+                          style={{
+                            scrollSnapType: 'x mandatory',
+                            WebkitOverflowScrolling: 'touch',
+                            touchAction: 'pan-x pan-y'
+                          }}
                         >
                           {/* Add last image at the beginning for smooth transition */}
                           {images.length > 1 && (
@@ -559,6 +563,7 @@ export default function RecipeList({
                                   src={images[images.length - 1]}
                                   alt={`${recipe.title} - Image ${images.length}`}
                                   className="max-w-full max-h-full w-auto h-auto object-contain"
+                                  style={{ pointerEvents: 'none' }}
                                   onError={(e) => {
                                     e.currentTarget.src = 'https://via.placeholder.com/400x300?text=No+Image';
                                   }}
@@ -573,6 +578,7 @@ export default function RecipeList({
                                   src={image}
                                   alt={`${recipe.title} - Image ${index + 1}`}
                                   className="max-w-full max-h-full w-auto h-auto object-contain"
+                                  style={{ pointerEvents: 'none' }}
                                   onError={(e) => {
                                     e.currentTarget.src = 'https://via.placeholder.com/400x300?text=No+Image';
                                   }}
@@ -588,6 +594,7 @@ export default function RecipeList({
                                   src={images[0]}
                                   alt={`${recipe.title} - Image 1`}
                                   className="max-w-full max-h-full w-auto h-auto object-contain"
+                                  style={{ pointerEvents: 'none' }}
                                   onError={(e) => {
                                     e.currentTarget.src = 'https://via.placeholder.com/400x300?text=No+Image';
                                   }}
