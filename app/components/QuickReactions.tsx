@@ -197,14 +197,21 @@ export default function QuickReactions({ postId, onReactionToggled }: QuickReact
                   ? 'visible opacity-100'
                   : 'invisible group-hover:visible opacity-0 group-hover:opacity-100 md:block hidden'}
                 transition-all duration-200
-              `}>
-                <div className="font-medium px-2 py-1 border-b border-gray-200 dark:border-gray-700 mb-1 text-gray-700 dark:text-gray-300">
+                transform origin-bottom
+                group-hover:translate-y-0
+                sm:left-0 sm:-translate-x-0
+                md:left-1/2 md:-translate-x-1/2
+              `}
+              style={{
+                maxHeight: '40vh'
+              }}>
+                <div className="font-medium px-2 py-1 border-b border-gray-200 dark:border-gray-700 mb-1 text-gray-700 dark:text-gray-300 sticky top-0 bg-white dark:bg-gray-800">
                   {REACTION_EMOJIS[reaction.type as ReactionType].label} • {reaction.count}
                 </div>
-                <div className="max-h-[120px] overflow-y-auto">
+                <div className="overflow-y-auto" style={{ maxHeight: 'calc(40vh - 40px)' }}>
                   {reaction.users.map(user => (
                     <div key={user.id} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
-                      <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs text-gray-600 dark:text-gray-300">
+                      <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs text-gray-600 dark:text-gray-300 flex-shrink-0">
                         {user.name?.charAt(0) || '?'}
                       </div>
                       <span className="truncate">{user.name || 'Anonymous User'}</span>
