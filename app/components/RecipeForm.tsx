@@ -166,7 +166,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
 
     try {
       // For create mode, ensure we don't send an ID
-      const baseRecipe = mode === 'create' ? {} : recipe;
+      const baseRecipe = mode === 'create' ? {} : { id: recipe.id };
 
       const updatedRecipe = {
         ...baseRecipe,

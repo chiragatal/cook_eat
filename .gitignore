@@ -48,3 +48,4 @@ prisma/*.db
 
 # backup files
 *.backup
+backups/

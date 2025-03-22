@@ -117,7 +117,6 @@ export async function POST(request: Request) {
 
     // Extract and clean data
     const {
-      id,  // Check if ID is being passed in
       title,
       description,
       ingredients = '[]',
@@ -132,9 +131,9 @@ export async function POST(request: Request) {
       cookedOn = null,
     } = body;
 
-    // Log if an ID was received
-    if (id) {
-      console.log('Warning: ID was passed in the request. This will be ignored:', id);
+    // Remove any ID that might be in the request body to avoid conflicts
+    if (body.id) {
+      console.log('Warning: ID was passed in the request. This will be ignored:', body.id);
     }
 
     // Create post without specifying ID (let Prisma auto-generate it)
