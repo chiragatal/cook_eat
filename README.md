@@ -37,7 +37,17 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Testing
 
-The Cook-Eat application includes comprehensive automated testing to ensure reliability and prevent regressions. See [TESTING.md](TESTING.md) for detailed documentation and [IMPLEMENTED_TESTS.md](IMPLEMENTED_TESTS.md) for a complete list of all implemented tests.
+This project includes a comprehensive test suite with Jest and Playwright. Run tests with:
+
+```bash
+# Run Jest unit tests
+npm test
+
+# Run end-to-end tests
+npm run test:e2e
+```
+
+See [TESTING.md](./TESTING.md) for more details.
 
 ### Testing Stack
 
@@ -45,25 +55,6 @@ The Cook-Eat application includes comprehensive automated testing to ensure reli
 - **End-to-End Tests**: Playwright for full application testing in real browsers
 - **Mobile Testing**: Playwright device emulation for responsive design testing
 - **Visual Regression**: Screenshot comparison to detect unexpected UI changes
-
-### Running Tests
-
-```bash
-# Run unit tests
-npm test
-
-# Run unit tests in watch mode (for development)
-npm run test:watch
-
-# Run end-to-end tests
-npm run test:e2e
-
-# Run end-to-end tests with UI mode
-npm run test:e2e:ui
-
-# Run all tests
-npm run test:all
-```
 
 ### Pre-commit Hooks
 
