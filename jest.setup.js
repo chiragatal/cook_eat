@@ -37,3 +37,6 @@ jest.mock('next-auth/react', () => ({
   signIn: jest.fn(),
   signOut: jest.fn(),
 }));
+
+// Import setup file
+require('./__tests__/setup');

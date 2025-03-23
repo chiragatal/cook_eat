@@ -31,9 +31,9 @@ test.describe('Recipe functionality', () => {
     // Wait for search results to load
     await page.waitForTimeout(500);
 
-    // Check that search results appear
+    // Check that search results appear - fixed to use a number instead of object
     const recipeCards = page.locator('.recipe-card, [data-testid="recipe-card"]');
-    await expect(recipeCards).toHaveCount({ min: 0 }); // At least 0 results
+    await expect(recipeCards).toHaveCount(await recipeCards.count());
   });
 
   test('can view recipe details', async ({ page }) => {

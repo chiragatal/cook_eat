@@ -4,10 +4,9 @@ import Navigation from '@/app/components/Navigation';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
-// Explicitly mock next/navigation
-jest.mock('next/navigation', () => ({
-  ...jest.requireActual('next/navigation'),
-  usePathname: jest.fn().mockReturnValue('/'),
+// Mock next-auth/react
+jest.mock('next-auth/react', () => ({
+  useSession: jest.fn(),
 }));
 
 // Mock the ViewContext
@@ -45,8 +44,9 @@ describe('Navigation Component', () => {
     // Reset mocks
     jest.clearAllMocks();
 
-    // Mock basic path for tests (no need to cast since we mocked it at the top)
-    usePathname.mockReturnValue('/');
+    // Set mocked path value
+    const usePathnameFunc = usePathname as jest.MockedFunction<typeof usePathname>;
+    usePathnameFunc.mockReturnValue('/');
 
     // Set up document element for theme toggle tests
     document.documentElement.classList.remove('dark');

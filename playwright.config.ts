@@ -7,7 +7,7 @@ export default defineConfig({
   forbidOnly: false,
   retries: 1,
   workers: undefined,
-  reporter: ['html', 'list'],
+  reporter: [['html'], ['list']],
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
