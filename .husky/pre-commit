@@ -1,8 +1,7 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+#!/bin/sh
 
-# Run lint-staged
+# Run lint-staged for code quality checks
 npx lint-staged
 
-# Run unit tests (Jest)
-npm test -- --findRelatedTests $(git diff --staged --name-only)
+# Run tests on staged files
+npm test -- --findRelatedTests $(git diff --staged --name-only | grep -E '\\.(js|jsx|ts|tsx)$')
