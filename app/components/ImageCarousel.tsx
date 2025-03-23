@@ -146,10 +146,7 @@ export default function ImageCarousel({
 
   // Add touch event handlers with improved reliability
   const handleTouchStart = (e: TouchEvent) => {
-    if (preventEventsRef.current) {
-      e.preventDefault();
-      return;
-    }
+    if (preventEventsRef.current) return;
 
     // Record start position for both X and Y
     touchStartXRef.current = e.touches[0].clientX;
@@ -160,10 +157,7 @@ export default function ImageCarousel({
   };
 
   const handleTouchMove = (e: TouchEvent) => {
-    if (preventEventsRef.current) {
-      e.preventDefault();
-      return;
-    }
+    if (preventEventsRef.current) return;
 
     if (isHorizontalSwipeRef.current === null) {
       // Determine swipe direction on first move
@@ -173,7 +167,6 @@ export default function ImageCarousel({
       // If horizontal movement is dominant, it's a horizontal swipe
       if (diffX > diffY && diffX > 10) {
         isHorizontalSwipeRef.current = true;
-        e.preventDefault(); // Prevent page scroll only for horizontal swipes
       } else if (diffY > diffX && diffY > 10) {
         isHorizontalSwipeRef.current = false; // It's a vertical swipe
       }
@@ -183,23 +176,21 @@ export default function ImageCarousel({
     if (isHorizontalSwipeRef.current === true) {
       e.preventDefault(); // Prevent scrolling the page
       touchMoveXRef.current = e.touches[0].clientX;
+      touchEndXRef.current = e.touches[0].clientX;
 
       // For smoother swipe effect, directly update scroll position
       if (galleryRef.current) {
-        const moveDiff = touchStartXRef.current - touchMoveXRef.current;
+        const moveDiff = touchMoveXRef.current - touchStartXRef.current; // Changed direction
         const gallery = galleryRef.current;
         const currentScroll = gallery.scrollLeft;
-        gallery.scrollLeft = currentScroll + moveDiff / 3; // Reduced divisor for more responsive feeling
+        gallery.scrollLeft = currentScroll - moveDiff / 2; // Negative for correct direction
         touchStartXRef.current = touchMoveXRef.current;
       }
     }
   };
 
   const handleTouchEnd = (e: TouchEvent) => {
-    if (preventEventsRef.current || !galleryRef.current || images.length <= 1) {
-      e.preventDefault();
-      return;
-    }
+    if (preventEventsRef.current || !galleryRef.current || images.length <= 1) return;
 
     // Only process horizontal swipes
     if (isHorizontalSwipeRef.current !== true) {
@@ -208,8 +199,8 @@ export default function ImageCarousel({
 
     const gallery = galleryRef.current;
 
-    // Calculate swipe distance
-    const swipeDistance = touchStartXRef.current - touchEndXRef.current;
+    // Calculate swipe distance - changed direction to match natural swipe direction
+    const swipeDistance = touchEndXRef.current - touchStartXRef.current;
     const clientWidth = gallery.clientWidth;
     const scrollLeft = gallery.scrollLeft;
 
@@ -218,12 +209,12 @@ export default function ImageCarousel({
     let targetIndex = Math.round(rawIndex);
 
     // Adjust target based on swipe direction if significant swipe detected
-    const SWIPE_THRESHOLD = 40; // Reduced threshold for easier swiping
+    const SWIPE_THRESHOLD = 30; // Reduced threshold for easier swiping
     if (Math.abs(swipeDistance) > SWIPE_THRESHOLD) {
-      if (swipeDistance > 0) {
+      if (swipeDistance < 0) { // Changed: negative means swiped left (next)
         // Swiped left, go to next
         targetIndex = Math.ceil(rawIndex);
-      } else {
+      } else { // Changed: positive means swiped right (previous)
         // Swiped right, go to previous
         targetIndex = Math.floor(rawIndex);
       }
@@ -375,9 +366,9 @@ export default function ImageCarousel({
 
     // Setup event listeners
     gallery.addEventListener('scroll', handleScroll, { passive: true });
-    gallery.addEventListener('touchstart', handleTouchStart as EventListener, { passive: false });
+    gallery.addEventListener('touchstart', handleTouchStart as EventListener, { passive: true });
     gallery.addEventListener('touchmove', handleTouchMove as EventListener, { passive: false });
-    gallery.addEventListener('touchend', handleTouchEnd as EventListener, { passive: false });
+    gallery.addEventListener('touchend', handleTouchEnd as EventListener, { passive: true });
 
     // Reset behavior after positioning and ensure indicators are correct
     setTimeout(() => {
