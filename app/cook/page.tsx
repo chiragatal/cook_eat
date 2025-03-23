@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Recipe, Ingredient, Step } from '../types';
 import ImageCarousel from '../components/ImageCarousel';
@@ -12,7 +12,8 @@ interface ParsedRecipe extends Omit<Recipe, 'steps' | 'ingredients' | 'images'> 
   images: string[];
 }
 
-export default function CookPage() {
+// Create a client component that uses useSearchParams
+function CookPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const recipeId = searchParams.get('id');
@@ -223,5 +224,23 @@ export default function CookPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+// Create a loading fallback component for Suspense
+function CookPageFallback() {
+  return (
+    <div className="flex justify-center items-center h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+    </div>
+  );
+}
+
+// Main component that uses Suspense to wrap the component using useSearchParams
+export default function CookPage() {
+  return (
+    <Suspense fallback={<CookPageFallback />}>
+      <CookPageContent />
+    </Suspense>
   );
 }
