@@ -28,9 +28,6 @@ export default function ImageCarousel({
   const preventEventsRef = useRef<boolean>(false);
   const touchStartXRef = useRef<number>(0);
   const touchStartYRef = useRef<number>(0);
-  const touchEndXRef = useRef<number>(0);
-  const touchMoveXRef = useRef<number>(0);
-  const isHorizontalSwipeRef = useRef<boolean | null>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const uniqueId = `carousel-${carouselId}`;
 
@@ -144,115 +141,22 @@ export default function ImageCarousel({
     }
   };
 
-  // Add touch event handlers with improved reliability
-  const handleTouchStart = (e: TouchEvent) => {
-    if (preventEventsRef.current) return;
-
-    // Record start position for both X and Y
-    touchStartXRef.current = e.touches[0].clientX;
-    touchStartYRef.current = e.touches[0].clientY;
-    touchEndXRef.current = e.touches[0].clientX;
-    touchMoveXRef.current = e.touches[0].clientX;
-    isHorizontalSwipeRef.current = null;
-  };
-
-  const handleTouchMove = (e: TouchEvent) => {
-    if (preventEventsRef.current) return;
-
-    // Always update the current position regardless of direction
-    touchEndXRef.current = e.touches[0].clientX;
-
-    if (isHorizontalSwipeRef.current === null) {
-      // Determine swipe direction on first move
-      const diffX = Math.abs(e.touches[0].clientX - touchStartXRef.current);
-      const diffY = Math.abs(e.touches[0].clientY - touchStartYRef.current);
-
-      // If horizontal movement is dominant, it's a horizontal swipe
-      if (diffX > diffY && diffX > 10) {
-        isHorizontalSwipeRef.current = true;
-      } else if (diffY > diffX && diffY > 10) {
-        isHorizontalSwipeRef.current = false; // It's a vertical swipe
-      }
-    }
-
-    // Only process movement for horizontal swipes
-    if (isHorizontalSwipeRef.current === true) {
-      e.preventDefault(); // Prevent scrolling the page
-      touchMoveXRef.current = e.touches[0].clientX;
-
-      // For smoother swipe effect, directly update scroll position
-      if (galleryRef.current) {
-        const moveDiff = touchMoveXRef.current - touchStartXRef.current;
-        const gallery = galleryRef.current;
-        const currentScroll = gallery.scrollLeft;
-        gallery.scrollLeft = currentScroll - moveDiff / 1.5;
-        touchStartXRef.current = touchMoveXRef.current;
-      }
-    }
-  };
-
-  const handleTouchEnd = (e: TouchEvent) => {
-    if (preventEventsRef.current || !galleryRef.current || images.length <= 1) return;
-
-    // Only process horizontal swipes
-    if (isHorizontalSwipeRef.current !== true) {
-      return;
-    }
+  const goToSlide = (index: number) => {
+    if (!galleryRef.current || preventEventsRef.current) return;
 
     const gallery = galleryRef.current;
-
-    // Calculate total swipe distance from start to end
-    const swipeDistance = touchEndXRef.current - touchStartXRef.current;
     const clientWidth = gallery.clientWidth;
-    const scrollLeft = gallery.scrollLeft;
 
-    // Determine target based on scroll position and swipe direction
-    const rawIndex = scrollLeft / clientWidth;
-    let targetIndex = Math.round(rawIndex);
+    // Account for the clone slide at the beginning
+    const actualIndex = index + 1;
 
-    // Adjust target based on swipe direction if significant swipe detected
-    const SWIPE_THRESHOLD = 20;
-    if (Math.abs(swipeDistance) > SWIPE_THRESHOLD) {
-      if (swipeDistance < 0) {
-        // Swiped left, go to next
-        targetIndex += 1;
-      } else {
-        // Swiped right, go to previous
-        targetIndex -= 1;
-      }
-    }
-
-    // Ensure we're within bounds
-    targetIndex = Math.max(0, Math.min(targetIndex, images.length + 1));
-
-    // Smooth scroll to the target
     gallery.style.scrollBehavior = 'smooth';
-    gallery.scrollLeft = targetIndex * clientWidth;
+    gallery.scrollLeft = actualIndex * clientWidth;
 
-    // Reset touch tracking
-    touchStartXRef.current = 0;
-    touchEndXRef.current = 0;
-    touchMoveXRef.current = 0;
-    isHorizontalSwipeRef.current = null;
-
-    // Update indicator based on target index
-    setTimeout(() => {
-      // Calculate the actual image index (accounting for the clone slides)
-      let imageIndex;
-      if (targetIndex === 0) {
-        imageIndex = images.length - 1; // Clone of last slide
-      } else if (targetIndex === images.length + 1) {
-        imageIndex = 0; // Clone of first slide
-      } else {
-        imageIndex = targetIndex - 1; // Regular slides (offset by 1 due to clone)
-      }
-
-      // Update indicator state
-      setCurrentImageIndex(imageIndex);
-      if (onIndicatorChange) {
-        onIndicatorChange(imageIndex);
-      }
-    }, 300);
+    setCurrentImageIndex(index);
+    if (onIndicatorChange) {
+      onIndicatorChange(index);
+    }
   };
 
   const handlePrevClick = (e: React.MouseEvent) => {
@@ -261,49 +165,8 @@ export default function ImageCarousel({
 
     if (preventEventsRef.current || !galleryRef.current || images.length <= 1) return;
 
-    const gallery = galleryRef.current;
-    // Get current position
-    const clientWidth = gallery.clientWidth;
-    const scrollLeft = gallery.scrollLeft;
-    const scrollWidth = gallery.scrollWidth;
-
-    // Calculate current index
-    const rawIndex = scrollLeft / clientWidth;
-    const currentIndex = Math.round(rawIndex);
-
-    // Handle edge cases
-    if (currentIndex <= 0) {
-      // At the cloned last image, go to the real last image
-      preventEventsRef.current = true;
-      gallery.style.scrollBehavior = 'auto';
-      gallery.scrollLeft = scrollWidth - (clientWidth * 2);
-      setTimeout(() => {
-        gallery.style.scrollBehavior = 'smooth';
-        preventEventsRef.current = false;
-
-        // Force update to last image indicator
-        setCurrentImageIndex(images.length - 1);
-        if (onIndicatorChange) {
-          onIndicatorChange(images.length - 1);
-        }
-      }, 50);
-      return;
-    }
-
-    // Normal previous behavior
-    gallery.style.scrollBehavior = 'smooth';
-    gallery.scrollLeft = (currentIndex - 1) * clientWidth;
-
-    // Update indicator for normal navigation
-    const newIndex = currentIndex === 1 ? images.length - 1 : (currentIndex - 2);
-    if (newIndex >= 0 && newIndex < images.length) {
-      setTimeout(() => {
-        setCurrentImageIndex(newIndex);
-        if (onIndicatorChange) {
-          onIndicatorChange(newIndex);
-        }
-      }, 300);
-    }
+    const newIndex = (currentImageIndex - 1 + images.length) % images.length;
+    goToSlide(newIndex);
   };
 
   const handleNextClick = (e: React.MouseEvent) => {
@@ -312,52 +175,11 @@ export default function ImageCarousel({
 
     if (preventEventsRef.current || !galleryRef.current || images.length <= 1) return;
 
-    const gallery = galleryRef.current;
-    // Get current position
-    const clientWidth = gallery.clientWidth;
-    const scrollLeft = gallery.scrollLeft;
-    const scrollWidth = gallery.scrollWidth;
-
-    // Calculate current index
-    const rawIndex = scrollLeft / clientWidth;
-    const currentIndex = Math.round(rawIndex);
-
-    // Handle edge cases
-    if (currentIndex >= images.length + 1) {
-      // At the cloned first image, go to the real first image
-      preventEventsRef.current = true;
-      gallery.style.scrollBehavior = 'auto';
-      gallery.scrollLeft = clientWidth;
-      setTimeout(() => {
-        gallery.style.scrollBehavior = 'smooth';
-        preventEventsRef.current = false;
-
-        // Force update to first image indicator
-        setCurrentImageIndex(0);
-        if (onIndicatorChange) {
-          onIndicatorChange(0);
-        }
-      }, 50);
-      return;
-    }
-
-    // Normal next behavior
-    gallery.style.scrollBehavior = 'smooth';
-    gallery.scrollLeft = (currentIndex + 1) * clientWidth;
-
-    // Update indicator for normal navigation
-    const newIndex = currentIndex === images.length ? 0 : currentIndex;
-    if (newIndex >= 0 && newIndex < images.length) {
-      setTimeout(() => {
-        setCurrentImageIndex(newIndex);
-        if (onIndicatorChange) {
-          onIndicatorChange(newIndex);
-        }
-      }, 300);
-    }
+    const newIndex = (currentImageIndex + 1) % images.length;
+    goToSlide(newIndex);
   };
 
-  // Set up event listeners
+  // Set up mouse and touch event handlers
   useEffect(() => {
     const gallery = galleryRef.current;
     if (!gallery || images.length <= 1) return;
@@ -366,11 +188,60 @@ export default function ImageCarousel({
     gallery.style.scrollBehavior = 'auto';
     gallery.scrollLeft = gallery.clientWidth;
 
-    // Setup event listeners
+    // Setup scroll listener
     gallery.addEventListener('scroll', handleScroll, { passive: true });
-    gallery.addEventListener('touchstart', handleTouchStart as EventListener, { passive: true });
-    gallery.addEventListener('touchmove', handleTouchMove as EventListener, { passive: false });
-    gallery.addEventListener('touchend', handleTouchEnd as EventListener, { passive: true });
+
+    let startX = 0;
+    let startY = 0;
+    let isHorizontalSwipe = false;
+    let hasMoved = false;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (preventEventsRef.current) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      isHorizontalSwipe = false;
+      hasMoved = false;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (preventEventsRef.current) return;
+      if (!hasMoved) {
+        const diffX = Math.abs(e.touches[0].clientX - startX);
+        const diffY = Math.abs(e.touches[0].clientY - startY);
+
+        // If it's clearly a horizontal swipe, prevent default
+        if (diffX > diffY && diffX > 10) {
+          isHorizontalSwipe = true;
+          e.preventDefault();
+        }
+        hasMoved = true;
+      } else if (isHorizontalSwipe) {
+        e.preventDefault();
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (preventEventsRef.current || !isHorizontalSwipe) return;
+
+      const endX = e.changedTouches[0].clientX;
+      const diffX = endX - startX;
+
+      if (Math.abs(diffX) > 50) { // Threshold for swipe
+        if (diffX > 0) {
+          // Swiped right, go to previous
+          handlePrevClick(new MouseEvent('click') as any);
+        } else {
+          // Swiped left, go to next
+          handleNextClick(new MouseEvent('click') as any);
+        }
+      }
+    };
+
+    // Setup event listeners
+    gallery.addEventListener('touchstart', onTouchStart, { passive: true });
+    gallery.addEventListener('touchmove', onTouchMove, { passive: false });
+    gallery.addEventListener('touchend', onTouchEnd, { passive: true });
 
     // Reset behavior after positioning and ensure indicators are correct
     setTimeout(() => {
@@ -394,9 +265,9 @@ export default function ImageCarousel({
       // Remove event listeners
       if (gallery) {
         gallery.removeEventListener('scroll', handleScroll);
-        gallery.removeEventListener('touchstart', handleTouchStart as EventListener);
-        gallery.removeEventListener('touchmove', handleTouchMove as EventListener);
-        gallery.removeEventListener('touchend', handleTouchEnd as EventListener);
+        gallery.removeEventListener('touchstart', onTouchStart);
+        gallery.removeEventListener('touchmove', onTouchMove);
+        gallery.removeEventListener('touchend', onTouchEnd);
       }
     };
   }, [images.length]);
@@ -413,7 +284,6 @@ export default function ImageCarousel({
         style={{
           scrollSnapType: 'x mandatory',
           WebkitOverflowScrolling: 'touch',
-          touchAction: 'none',
           msOverflowStyle: 'none',
           scrollbarWidth: 'none'
         }}
