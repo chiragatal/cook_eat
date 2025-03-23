@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prepare": "husky install",
+    "prepare": "husky",
     "type-check": "tsc --noEmit",
     "pre-push": "npm run type-check",
     "test": "jest",
@@ -65,6 +65,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "lint-staged": "^15.5.0",
     "postcss": "^8.4.35",
+    "prettier": "^3.5.3",
     "prisma": "5.10.2",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.8.2"
