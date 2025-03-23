@@ -51,6 +51,14 @@ jest.mock('react-dropzone', () => ({
   ),
 }));
 
+// Mock image rendering for recipe form
+jest.mock('next/image', () => ({
+  __esModule: true,
+  default: ({ src, alt }: { src: string; alt: string }) => {
+    return <img data-testid="mock-image" src={src} alt={alt} />;
+  },
+}));
+
 // Mock URL.createObjectURL and URL.revokeObjectURL
 global.URL.createObjectURL = jest.fn(() => 'mock-url');
 global.URL.revokeObjectURL = jest.fn();
@@ -77,17 +85,27 @@ Object.defineProperty(global.document, 'createElement', {
     try {
       if (tag === 'canvas') return mockCanvas;
       if (tag === 'img') {
-        const img = {
-          onload: null as unknown as (() => void) | null,
-          onerror: null,
-          src: '',
-          naturalWidth: 100,
-          naturalHeight: 100,
-        };
-        // Simulate onload in the next tick
-        setTimeout(() => {
-          if (img.onload) img.onload();
+        const img = originalCreateElement('img');
+
+        // Prevent actual loading of images
+        Object.defineProperty(img, 'src', {
+          set: function() {
+            // Simulate successful load asynchronously
+            setTimeout(() => {
+              const event = new Event('load');
+              img.dispatchEvent(event);
+            }, 0);
+            return '';
+          },
+          get: function() {
+            return '';
+          }
         });
+
+        // Add dimensions
+        Object.defineProperty(img, 'naturalWidth', { value: 100 });
+        Object.defineProperty(img, 'naturalHeight', { value: 100 });
+
         return img;
       }
 
@@ -166,7 +184,7 @@ describe('RecipeForm Component', () => {
         { id: '1', text: 'Ingredient 1', quantity: '1', unit: 'cup' }
       ]),
       steps: JSON.stringify([
-        { id: '1', text: 'Step 1' }
+        { id: '1', instruction: 'Step 1' }
       ]),
       images: JSON.stringify(['image1.jpg']),
       tags: JSON.stringify(['tag1', 'tag2']),
@@ -179,6 +197,14 @@ describe('RecipeForm Component', () => {
       cookedOn: '2023-01-01',
     };
 
+    // Mock fetch to return a blob for images
+    (global.fetch as jest.Mock).mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        blob: () => Promise.resolve(new Blob([''], { type: 'image/jpeg' })),
+      } as Response)
+    );
+
     render(
       <RecipeForm
         mode="edit"
@@ -188,11 +214,31 @@ describe('RecipeForm Component', () => {
       />
     );
 
-    // Wait for any async operations to complete
+    // Wait for the component to fully render and handle any async operations
     await waitFor(() => {
       // Check that form elements are populated with recipe data
       expect(screen.getByLabelText(/title/i)).toHaveValue('Test Recipe');
+
+      // Check category dropdown is set to correct value
+      const categorySelect = screen.getByLabelText(/category/i);
+      expect(categorySelect).toHaveValue('Dinner');
+
+      // Check difficulty dropdown is set to correct value
+      const difficultySelect = screen.getByLabelText(/difficulty/i);
+      expect(difficultySelect).toHaveValue('Medium');
+
+      // Check cooking time is set
+      const cookingTimeInput = screen.getByLabelText(/cooking time/i);
+      expect(cookingTimeInput).toHaveValue(30);
+
+      // Check isPublic checkbox
+      const publicCheckbox = screen.getByLabelText(/make public/i);
+      expect(publicCheckbox).toBeChecked();
     });
+
+    // Look for the heading that indicates images section
+    const imageHeading = screen.getByText(/images/i, { selector: 'label, h3' });
+    expect(imageHeading).toBeInTheDocument();
   });
 
   it('calls onSave with form data when submitting', async () => {
