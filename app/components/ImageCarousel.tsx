@@ -42,6 +42,9 @@ export default function ImageCarousel({
 
   const buttonSize = getButtonSize();
 
+  // Create a modified array with duplicated images for seamless scrolling
+  const extendedImages = [...images, ...images, ...images];
+
   // Update active indicator based on scroll position
   const handleIndicatorUpdate = () => {
     if (preventEventsRef.current || !galleryRef.current || images.length <= 1) return;
@@ -49,30 +52,16 @@ export default function ImageCarousel({
     const gallery = galleryRef.current;
     const scrollLeft = gallery.scrollLeft;
     const clientWidth = gallery.clientWidth;
-    const scrollWidth = gallery.scrollWidth;
     const rawIndex = scrollLeft / clientWidth;
     const roundedIndex = Math.round(rawIndex);
 
-    let imageIndex = 0;
+    // Calculate the actual image index in the original array
+    const actualIndex = ((roundedIndex % images.length) + images.length) % images.length;
 
-    // Convert from scroll position to image index (accounting for clones)
-    if (roundedIndex === 0) {
-      // At clone of last image
-      imageIndex = images.length - 1;
-    } else if (roundedIndex >= images.length + 1) {
-      // At clone of first image
-      imageIndex = 0;
-    } else {
-      imageIndex = roundedIndex - 1;
-    }
-
-    // Ensure index is within bounds
-    imageIndex = Math.max(0, Math.min(imageIndex, images.length - 1));
-
-    if (currentImageIndex !== imageIndex) {
-      setCurrentImageIndex(imageIndex);
+    if (currentImageIndex !== actualIndex) {
+      setCurrentImageIndex(actualIndex);
       if (onIndicatorChange) {
-        onIndicatorChange(imageIndex);
+        onIndicatorChange(actualIndex);
       }
     }
   };
@@ -80,78 +69,126 @@ export default function ImageCarousel({
   const handleScroll = () => {
     if (preventEventsRef.current || !galleryRef.current || images.length <= 1) return;
 
-    const gallery = galleryRef.current;
-    const scrollLeft = gallery.scrollLeft;
-    const scrollWidth = gallery.scrollWidth;
-    const clientWidth = gallery.clientWidth;
-
-    // Clear any existing timeout
+    // Schedule indicator update to run for scrolling
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
     }
 
-    // Check if we're at the beginning or end edge
-    if (Math.abs(scrollLeft) < 20) {
-      // We're at the clone of the last image, prevent further interaction
-      preventEventsRef.current = true;
-
-      // Jump to the real last image
-      gallery.style.scrollBehavior = 'auto';
-
-      // Calculate real last image position (total width - 2 slides)
-      const targetPosition = scrollWidth - (clientWidth * 2);
-      gallery.scrollLeft = targetPosition;
-
-      // Reset scroll behavior and re-enable events after a delay
-      setTimeout(() => {
-        gallery.style.scrollBehavior = 'smooth';
-        preventEventsRef.current = false;
-
-        // Force indicator update to last image
-        setCurrentImageIndex(images.length - 1);
-        if (onIndicatorChange) {
-          onIndicatorChange(images.length - 1);
-        }
-      }, 150);
-    }
-    else if (scrollLeft + clientWidth >= scrollWidth - 20) {
-      // We're at the clone of the first image, prevent further interaction
-      preventEventsRef.current = true;
-
-      // Jump to the real first image
-      gallery.style.scrollBehavior = 'auto';
-      gallery.scrollLeft = clientWidth;
-
-      // Reset scroll behavior and re-enable events after a delay
-      setTimeout(() => {
-        gallery.style.scrollBehavior = 'smooth';
-        preventEventsRef.current = false;
-
-        // Force indicator update to first image
-        setCurrentImageIndex(0);
-        if (onIndicatorChange) {
-          onIndicatorChange(0);
-        }
-      }, 150);
-    } else {
-      // Schedule indicator update to run for normal scrolling
-      scrollTimeoutRef.current = setTimeout(() => {
-        handleIndicatorUpdate();
-      }, 50);
-    }
+    scrollTimeoutRef.current = setTimeout(() => {
+      handleIndicatorUpdate();
+    }, 50);
   };
 
+  // Position the gallery in the middle set of images initially
+  useEffect(() => {
+    if (!galleryRef.current || images.length <= 1) return;
+
+    const gallery = galleryRef.current;
+    const clientWidth = gallery.clientWidth;
+
+    // Position at the start of the middle set of images
+    gallery.style.scrollBehavior = 'auto';
+    gallery.scrollLeft = images.length * clientWidth;
+
+    // Force render at correct position
+    setCurrentImageIndex(0);
+    if (onIndicatorChange) {
+      onIndicatorChange(0);
+    }
+
+    // Reset scroll behavior to smooth
+    setTimeout(() => {
+      gallery.style.scrollBehavior = 'smooth';
+    }, 100);
+  }, [images.length]);
+
+  // Check and reset position to middle set if we reach the edge
+  useEffect(() => {
+    const gallery = galleryRef.current;
+    if (!gallery || images.length <= 1) return;
+
+    const checkScrollPosition = () => {
+      if (preventEventsRef.current) return;
+
+      const clientWidth = gallery.clientWidth;
+      const scrollLeft = gallery.scrollLeft;
+      const totalWidth = gallery.scrollWidth;
+
+      // Calculate which set we're in (first, middle, last)
+      const firstSetEnd = images.length * clientWidth;
+      const middleSetEnd = 2 * images.length * clientWidth;
+
+      // Calculate precise image index
+      const currentRawIndex = scrollLeft / clientWidth;
+
+      // If we're in the first set (before the middle set)
+      if (scrollLeft < firstSetEnd) {
+        // Calculate exact position within the set
+        const indexInSet = currentRawIndex;
+        const isNearSetBoundary = indexInSet < 0.1 || indexInSet > images.length - 0.1;
+
+        if (isNearSetBoundary) {
+          preventEventsRef.current = true;
+          requestAnimationFrame(() => {
+            gallery.style.scrollBehavior = 'auto';
+            // Jump to the same position in the middle set
+            gallery.scrollLeft += images.length * clientWidth;
+
+            // Use a slight delay to ensure the jump is not visible
+            setTimeout(() => {
+              preventEventsRef.current = false;
+              gallery.style.scrollBehavior = 'smooth';
+            }, 50);
+          });
+        }
+      }
+      // If we're in the third set (after the middle set)
+      else if (scrollLeft >= middleSetEnd) {
+        // Calculate exact position within the set
+        const indexInSet = (scrollLeft - middleSetEnd) / clientWidth;
+        const isNearSetBoundary = indexInSet < 0.1 || indexInSet > images.length - 0.1;
+
+        if (isNearSetBoundary) {
+          preventEventsRef.current = true;
+          requestAnimationFrame(() => {
+            gallery.style.scrollBehavior = 'auto';
+            // Jump to the same position in the middle set
+            gallery.scrollLeft -= images.length * clientWidth;
+
+            // Use a slight delay to ensure the jump is not visible
+            setTimeout(() => {
+              preventEventsRef.current = false;
+              gallery.style.scrollBehavior = 'smooth';
+            }, 50);
+          });
+        }
+      }
+    };
+
+    // Use only the scroll event for smoother detection
+    gallery.addEventListener('scroll', checkScrollPosition, { passive: true });
+
+    return () => {
+      gallery.removeEventListener('scroll', checkScrollPosition);
+    };
+  }, [images.length]);
+
+  // Improved goToSlide for better dot navigation
   const goToSlide = (index: number) => {
     if (!galleryRef.current || preventEventsRef.current) return;
 
     const gallery = galleryRef.current;
     const clientWidth = gallery.clientWidth;
 
-    // Account for the clone slide at the beginning
-    const actualIndex = index + 1;
+    // Get the current approximate position within all sets
+    const currentScrollPosition = gallery.scrollLeft;
+    const currentSetIndex = Math.floor(currentScrollPosition / (clientWidth * images.length));
+
+    // Always navigate in the middle set of images
+    const middleOffset = images.length * currentSetIndex;
 
     gallery.style.scrollBehavior = 'smooth';
-    gallery.scrollLeft = actualIndex * clientWidth;
+    gallery.scrollLeft = (middleOffset + index) * clientWidth;
 
     setCurrentImageIndex(index);
     if (onIndicatorChange) {
@@ -159,14 +196,27 @@ export default function ImageCarousel({
     }
   };
 
+  // Modified navigation handlers for smoother transitions
   const handlePrevClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (preventEventsRef.current || !galleryRef.current || images.length <= 1) return;
 
+    const gallery = galleryRef.current;
+    const clientWidth = gallery.clientWidth;
+    const currentScrollLeft = gallery.scrollLeft;
+
+    // Simply scroll one width to the left for smooth experience
+    gallery.style.scrollBehavior = 'smooth';
+    gallery.scrollLeft = currentScrollLeft - clientWidth;
+
+    // Update the indicator to match
     const newIndex = (currentImageIndex - 1 + images.length) % images.length;
-    goToSlide(newIndex);
+    setCurrentImageIndex(newIndex);
+    if (onIndicatorChange) {
+      onIndicatorChange(newIndex);
+    }
   };
 
   const handleNextClick = (e: React.MouseEvent) => {
@@ -175,18 +225,26 @@ export default function ImageCarousel({
 
     if (preventEventsRef.current || !galleryRef.current || images.length <= 1) return;
 
+    const gallery = galleryRef.current;
+    const clientWidth = gallery.clientWidth;
+    const currentScrollLeft = gallery.scrollLeft;
+
+    // Simply scroll one width to the right for smooth experience
+    gallery.style.scrollBehavior = 'smooth';
+    gallery.scrollLeft = currentScrollLeft + clientWidth;
+
+    // Update the indicator to match
     const newIndex = (currentImageIndex + 1) % images.length;
-    goToSlide(newIndex);
+    setCurrentImageIndex(newIndex);
+    if (onIndicatorChange) {
+      onIndicatorChange(newIndex);
+    }
   };
 
   // Set up mouse and touch event handlers
   useEffect(() => {
     const gallery = galleryRef.current;
     if (!gallery || images.length <= 1) return;
-
-    // Start at the first real image (after the cloned last image)
-    gallery.style.scrollBehavior = 'auto';
-    gallery.scrollLeft = gallery.clientWidth;
 
     // Setup scroll listener
     gallery.addEventListener('scroll', handleScroll, { passive: true });
@@ -243,19 +301,6 @@ export default function ImageCarousel({
     gallery.addEventListener('touchmove', onTouchMove, { passive: false });
     gallery.addEventListener('touchend', onTouchEnd, { passive: true });
 
-    // Reset behavior after positioning and ensure indicators are correct
-    setTimeout(() => {
-      if (gallery) {
-        gallery.style.scrollBehavior = 'smooth';
-
-        // Force update to the first image indicator
-        setCurrentImageIndex(0);
-        if (onIndicatorChange) {
-          onIndicatorChange(0);
-        }
-      }
-    }, 100);
-
     return () => {
       // Clean up timeouts
       if (scrollTimeoutRef.current) {
@@ -288,29 +333,13 @@ export default function ImageCarousel({
           scrollbarWidth: 'none'
         }}
       >
-        {/* Add last image at the beginning for smooth transition */}
-        {images.length > 1 && (
-          <div className="flex-none w-full h-full snap-center relative">
-            <div className="w-full h-full flex items-center justify-center">
-              <img
-                src={images[images.length - 1]}
-                alt={`${title} - Image ${images.length}`}
-                className={imageClassName}
-                style={{ pointerEvents: 'none' }}
-                onError={(e) => {
-                  e.currentTarget.src = 'https://via.placeholder.com/800x600?text=Failed+to+Load';
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        {images.map((image, index) => (
+        {/* Render tripled set of images for seamless scrolling */}
+        {extendedImages.map((image, index) => (
           <div key={index} className="flex-none w-full h-full snap-center relative">
             <div className="w-full h-full flex items-center justify-center">
               <img
                 src={image}
-                alt={`${title} - Image ${index + 1}`}
+                alt={`${title} - Image ${(index % images.length) + 1}`}
                 className={imageClassName}
                 style={{ pointerEvents: 'none' }}
                 onError={(e) => {
@@ -320,23 +349,6 @@ export default function ImageCarousel({
             </div>
           </div>
         ))}
-
-        {/* Add first image at the end for smooth transition */}
-        {images.length > 1 && (
-          <div className="flex-none w-full h-full snap-center relative">
-            <div className="w-full h-full flex items-center justify-center">
-              <img
-                src={images[0]}
-                alt={`${title} - Image 1`}
-                className={imageClassName}
-                style={{ pointerEvents: 'none' }}
-                onError={(e) => {
-                  e.currentTarget.src = 'https://via.placeholder.com/800x600?text=Failed+to+Load';
-                }}
-              />
-            </div>
-          </div>
-        )}
       </div>
 
       {images.length > 1 && (
@@ -368,6 +380,8 @@ export default function ImageCarousel({
                     ? 'bg-white'
                     : 'bg-white bg-opacity-50'
                 }`}
+                onClick={() => goToSlide(index)}
+                style={{ cursor: 'pointer' }}
               />
             ))}
           </div>

@@ -113,6 +113,7 @@ A post is basically a recipe.
 ### Smart features
 
 - [ ] Voice input for creating recipes
+- [ ] Cook along
 
 ### Tests
 
