@@ -1,5 +1,4 @@
 #!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
 
-echo "Running TypeScript check..."
-npm run type-check
+# Run type checking and unit tests before push
+npm run type-check && npm test
