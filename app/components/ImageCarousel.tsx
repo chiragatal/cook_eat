@@ -159,6 +159,9 @@ export default function ImageCarousel({
   const handleTouchMove = (e: TouchEvent) => {
     if (preventEventsRef.current) return;
 
+    // Always update the current position regardless of direction
+    touchEndXRef.current = e.touches[0].clientX;
+
     if (isHorizontalSwipeRef.current === null) {
       // Determine swipe direction on first move
       const diffX = Math.abs(e.touches[0].clientX - touchStartXRef.current);
@@ -176,14 +179,13 @@ export default function ImageCarousel({
     if (isHorizontalSwipeRef.current === true) {
       e.preventDefault(); // Prevent scrolling the page
       touchMoveXRef.current = e.touches[0].clientX;
-      touchEndXRef.current = e.touches[0].clientX;
 
       // For smoother swipe effect, directly update scroll position
       if (galleryRef.current) {
-        const moveDiff = touchMoveXRef.current - touchStartXRef.current; // Changed direction
+        const moveDiff = touchMoveXRef.current - touchStartXRef.current;
         const gallery = galleryRef.current;
         const currentScroll = gallery.scrollLeft;
-        gallery.scrollLeft = currentScroll - moveDiff / 2; // Negative for correct direction
+        gallery.scrollLeft = currentScroll - moveDiff / 1.5;
         touchStartXRef.current = touchMoveXRef.current;
       }
     }
@@ -199,7 +201,7 @@ export default function ImageCarousel({
 
     const gallery = galleryRef.current;
 
-    // Calculate swipe distance - changed direction to match natural swipe direction
+    // Calculate total swipe distance from start to end
     const swipeDistance = touchEndXRef.current - touchStartXRef.current;
     const clientWidth = gallery.clientWidth;
     const scrollLeft = gallery.scrollLeft;
@@ -209,14 +211,14 @@ export default function ImageCarousel({
     let targetIndex = Math.round(rawIndex);
 
     // Adjust target based on swipe direction if significant swipe detected
-    const SWIPE_THRESHOLD = 30; // Reduced threshold for easier swiping
+    const SWIPE_THRESHOLD = 20;
     if (Math.abs(swipeDistance) > SWIPE_THRESHOLD) {
-      if (swipeDistance < 0) { // Changed: negative means swiped left (next)
+      if (swipeDistance < 0) {
         // Swiped left, go to next
-        targetIndex = Math.ceil(rawIndex);
-      } else { // Changed: positive means swiped right (previous)
+        targetIndex += 1;
+      } else {
         // Swiped right, go to previous
-        targetIndex = Math.floor(rawIndex);
+        targetIndex -= 1;
       }
     }
 
@@ -407,11 +409,11 @@ export default function ImageCarousel({
     <div className={`relative group overflow-hidden bg-gray-100 dark:bg-gray-800 ${className}`} id={uniqueId}>
       <div
         ref={galleryRef}
-        className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full touch-pan-x"
+        className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full"
         style={{
           scrollSnapType: 'x mandatory',
           WebkitOverflowScrolling: 'touch',
-          touchAction: 'pan-x',
+          touchAction: 'none',
           msOverflowStyle: 'none',
           scrollbarWidth: 'none'
         }}
