@@ -12,6 +12,7 @@ import Image from 'next/image';
 import { RichTextContent, TruncatedRichText } from './RichTextEditor';
 import { Clock, Users, CalendarCheck, MessageCircle } from 'lucide-react';
 import { formatDate } from '../../lib/utils';
+import ImageCarousel from './ImageCarousel';
 
 interface Ingredient {
   name: string;
@@ -87,7 +88,6 @@ export default function RecipeList({
     reactionFilter: '',
   });
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
-  const galleryRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const [currentImageIndices, setCurrentImageIndices] = useState<Record<number, number>>({});
 
   // Add a ref for scrolling to expanded content
@@ -392,196 +392,23 @@ export default function RecipeList({
     });
   }, [recipes, filters, selectedDate, filterByDate, showPrivate, userReactions, session?.user?.id]);
 
-  // Scroll event handler with debounce
-  useEffect(() => {
-    let isScrolling = false;
-    let scrollTimeout: NodeJS.Timeout | null = null;
-    let preventEvents = false;
-
-    // Update active indicator based on scroll position
-    const handleIndicatorUpdate = (e: Event) => {
-      if (preventEvents) return;
-
-      const gallery = e.target as HTMLDivElement;
-      const recipeId = parseInt(gallery.getAttribute('data-recipe-id') || '0');
-      const images = JSON.parse(recipes.find(r => r.id === recipeId)?.images || '[]');
-
-      if (images.length <= 1) return;
-
-      const scrollLeft = gallery.scrollLeft;
-      const clientWidth = gallery.clientWidth;
-      const rawIndex = scrollLeft / clientWidth;
-      const roundedIndex = Math.round(rawIndex);
-
-      let currentImageIndex = 0;
-
-      // Convert from scroll position to image index (accounting for clones)
-      if (roundedIndex === 0) {
-        currentImageIndex = images.length - 1;
-      } else if (roundedIndex > images.length) {
-        currentImageIndex = 0;
-      } else {
-        currentImageIndex = roundedIndex - 1;
-      }
-
-      setCurrentImageIndices(prev => ({
-        ...prev,
-        [recipeId]: currentImageIndex
-      }));
-    };
-
-    const handleScroll = (e: Event) => {
-      if (preventEvents) return;
-
-      const gallery = e.target as HTMLDivElement;
-      const recipeId = parseInt(gallery.getAttribute('data-recipe-id') || '0');
-      const images = JSON.parse(recipes.find(r => r.id === recipeId)?.images || '[]');
-
-      if (images.length <= 1) return;
-
-      const scrollLeft = gallery.scrollLeft;
-      const scrollWidth = gallery.scrollWidth;
-      const clientWidth = gallery.clientWidth;
-
-      // Clear any existing timeout
-      if (scrollTimeout) {
-        clearTimeout(scrollTimeout);
-      }
-
-      // Check if we're at the beginning or end edge
-      if (Math.abs(scrollLeft) < 20) {
-        // We're at the clone of the last image, prevent further interaction
-        preventEvents = true;
-
-        // Jump to the real last image
-        gallery.style.scrollBehavior = 'auto';
-
-        // Calculate real last image position (total width - 2 slides)
-        const targetPosition = scrollWidth - (clientWidth * 2);
-        gallery.scrollLeft = targetPosition;
-
-        // Reset scroll behavior and re-enable events after a delay
-        setTimeout(() => {
-          gallery.style.scrollBehavior = 'smooth';
-          preventEvents = false;
-        }, 100);
-      }
-      else if (scrollLeft + clientWidth >= scrollWidth - 20) {
-        // We're at the clone of the first image, prevent further interaction
-        preventEvents = true;
-
-        // Jump to the real first image
-        gallery.style.scrollBehavior = 'auto';
-        gallery.scrollLeft = clientWidth;
-
-        // Reset scroll behavior and re-enable events after a delay
-        setTimeout(() => {
-          gallery.style.scrollBehavior = 'smooth';
-          preventEvents = false;
-        }, 100);
-      }
-
-      // Update indicators
-      handleIndicatorUpdate(e);
-    };
-
-    // Add touch event handlers
-    const handleTouchStart = (e: TouchEvent) => {
-      if (preventEvents) {
-        e.preventDefault();
-        return;
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (preventEvents) {
-        e.preventDefault();
-        return;
-      }
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (preventEvents) {
-        e.preventDefault();
-        return;
-      }
-
-      const gallery = e.currentTarget as HTMLDivElement;
-      const recipeId = parseInt(gallery.getAttribute('data-recipe-id') || '0');
-      const images = JSON.parse(recipes.find(r => r.id === recipeId)?.images || '[]');
-
-      if (images.length <= 1) return;
-
-      // Force snapping to the nearest slide
-      const clientWidth = gallery.clientWidth;
-      const scrollLeft = gallery.scrollLeft;
-      const rawIndex = scrollLeft / clientWidth;
-      const targetIndex = Math.round(rawIndex);
-
-      gallery.style.scrollBehavior = 'smooth';
-      gallery.scrollLeft = targetIndex * clientWidth;
-    };
-
-    // Set up event listeners for all galleries
-    Object.entries(galleryRefs.current).forEach(([recipeId, gallery]) => {
-      if (gallery) {
-        gallery.style.scrollBehavior = 'smooth';
-        gallery.addEventListener('scroll', handleScroll);
-        gallery.addEventListener('touchstart', handleTouchStart as EventListener);
-        gallery.addEventListener('touchmove', handleTouchMove as EventListener);
-        gallery.addEventListener('touchend', handleTouchEnd as EventListener);
-      }
-    });
-
-    // Make preventEvents available globally to the component
-    (window as any).recipeListCarouselPreventEvents = {
-      get: () => preventEvents,
-      set: (value: boolean) => { preventEvents = value; }
-    };
-
-    return () => {
-      // Clean up timeouts
-      if (scrollTimeout) {
-        clearTimeout(scrollTimeout);
-      }
-
-      // Remove event listeners
-      Object.entries(galleryRefs.current).forEach(([recipeId, gallery]) => {
-        if (gallery) {
-          gallery.removeEventListener('scroll', handleScroll);
-          gallery.removeEventListener('touchstart', handleTouchStart as EventListener);
-          gallery.removeEventListener('touchmove', handleTouchMove as EventListener);
-          gallery.removeEventListener('touchend', handleTouchEnd as EventListener);
-        }
-      });
-
-      // Clean up global reference
-      delete (window as any).recipeListCarouselPreventEvents;
-    };
-  }, [recipes]);
-
   // Initialize all galleries when recipes are loaded or changed
   useEffect(() => {
-    // Set initial position for all galleries to show the first real image (after the cloned last image)
-    Object.entries(galleryRefs.current).forEach(([recipeId, gallery]) => {
-      if (gallery) {
-        try {
-          const recipeImages = JSON.parse(recipes.find(r => r.id === parseInt(recipeId))?.images || '[]');
-          if (recipeImages.length > 1) {
-            // Position at the first real image (after the cloned last image)
-            gallery.style.scrollBehavior = 'auto';
-            gallery.scrollLeft = gallery.clientWidth;
-            // Reset behavior after positioning
-            setTimeout(() => {
-              gallery.style.scrollBehavior = 'smooth';
-            }, 100);
-          }
-        } catch (e) {
-          console.error('Error initializing gallery position:', e);
-        }
+    // Ensure current image indices are initialized for all recipes
+    const initialIndices: Record<number, number> = {};
+    filteredRecipes.forEach(recipe => {
+      if (!currentImageIndices[recipe.id]) {
+        initialIndices[recipe.id] = 0;
       }
     });
-  }, [recipes, galleryRefs.current]);
+
+    if (Object.keys(initialIndices).length > 0) {
+      setCurrentImageIndices(prev => ({
+        ...prev,
+        ...initialIndices
+      }));
+    }
+  }, [filteredRecipes, currentImageIndices]);
 
   if (editingRecipe) {
     return (
@@ -642,181 +469,29 @@ export default function RecipeList({
                 try {
                   const images = JSON.parse(recipe.images);
                   return images.length > 0 && (
-                    <Link href={`/recipe/${recipe.id}`} onClick={(e) => e.stopPropagation()}>
+                    <a
+                      href={`/recipe/${recipe.id}`}
+                      className="relative w-full h-48 group block"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                    >
                       <div className="relative w-full h-48 group">
-                        <div
-                          ref={(el) => {
-                            if (el) {
-                              galleryRefs.current[recipe.id] = el;
-                            }
+                        <ImageCarousel
+                          images={images}
+                          title={recipe.title}
+                          carouselId={recipe.id}
+                          className="h-48"
+                          navigationButtonSize="small"
+                          onIndicatorChange={(index) => {
+                            setCurrentImageIndices(prev => ({
+                              ...prev,
+                              [recipe.id]: index
+                            }));
                           }}
-                          data-recipe-id={recipe.id}
-                          className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide touch-pan-x"
-                          style={{
-                            scrollSnapType: 'x mandatory',
-                            WebkitOverflowScrolling: 'touch',
-                            touchAction: 'pan-x pan-y'
-                          }}
-                        >
-                          {/* Add last image at the beginning for smooth transition */}
-                          {images.length > 1 && (
-                            <div className="flex-none w-full h-48 snap-center relative">
-                              <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-                                <img
-                                  src={images[images.length - 1]}
-                                  alt={`${recipe.title} - Image ${images.length}`}
-                                  className="max-w-full max-h-full w-auto h-auto object-contain"
-                                  style={{ pointerEvents: 'none' }}
-                                  onError={(e) => {
-                                    e.currentTarget.src = 'https://via.placeholder.com/400x300?text=No+Image';
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          )}
-                          {images.map((image: string, index: number) => (
-                            <div key={index} className="flex-none w-full h-48 snap-center relative">
-                              <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-                                <img
-                                  src={image}
-                                  alt={`${recipe.title} - Image ${index + 1}`}
-                                  className="max-w-full max-h-full w-auto h-auto object-contain"
-                                  style={{ pointerEvents: 'none' }}
-                                  onError={(e) => {
-                                    e.currentTarget.src = 'https://via.placeholder.com/400x300?text=No+Image';
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          ))}
-                          {/* Add first image at the end for smooth transition */}
-                          {images.length > 1 && (
-                            <div className="flex-none w-full h-48 snap-center relative">
-                              <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-                                <img
-                                  src={images[0]}
-                                  alt={`${recipe.title} - Image 1`}
-                                  className="max-w-full max-h-full w-auto h-auto object-contain"
-                                  style={{ pointerEvents: 'none' }}
-                                  onError={(e) => {
-                                    e.currentTarget.src = 'https://via.placeholder.com/400x300?text=No+Image';
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        {images.length > 1 && (
-                          <>
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-
-                                // Check if events are currently prevented
-                                const preventEvents = (window as any).recipeListCarouselPreventEvents?.get();
-                                if (preventEvents) return;
-
-                                const gallery = e.currentTarget.parentElement?.querySelector('.snap-x') as HTMLDivElement | null;
-                                if (gallery) {
-                                  // Get current position
-                                  const clientWidth = gallery.clientWidth;
-                                  const scrollLeft = gallery.scrollLeft;
-                                  const scrollWidth = gallery.scrollWidth;
-
-                                  // Calculate current index
-                                  const rawIndex = scrollLeft / clientWidth;
-                                  const currentIndex = Math.round(rawIndex);
-
-                                  // Handle edge cases
-                                  if (currentIndex <= 0) {
-                                    // At the cloned last image, go to the real last image
-                                    (window as any).recipeListCarouselPreventEvents?.set(true);
-                                    gallery.style.scrollBehavior = 'auto';
-                                    gallery.scrollLeft = scrollWidth - (clientWidth * 2);
-                                    setTimeout(() => {
-                                      gallery.style.scrollBehavior = 'smooth';
-                                      (window as any).recipeListCarouselPreventEvents?.set(false);
-                                    }, 50);
-                                    return;
-                                  }
-
-                                  // Normal previous behavior
-                                  gallery.style.scrollBehavior = 'smooth';
-                                  gallery.scrollLeft = (currentIndex - 1) * clientWidth;
-                                }
-                              }}
-                              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                            >
-                              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-
-                                // Check if events are currently prevented
-                                const preventEvents = (window as any).recipeListCarouselPreventEvents?.get();
-                                if (preventEvents) return;
-
-                                const gallery = e.currentTarget.parentElement?.querySelector('.snap-x') as HTMLDivElement | null;
-                                if (gallery) {
-                                  // Get current position
-                                  const clientWidth = gallery.clientWidth;
-                                  const scrollLeft = gallery.scrollLeft;
-                                  const scrollWidth = gallery.scrollWidth;
-
-                                  // Calculate current index
-                                  const rawIndex = scrollLeft / clientWidth;
-                                  const currentIndex = Math.round(rawIndex);
-
-                                  // Handle edge cases
-                                  if (currentIndex >= images.length + 1) {
-                                    // At the cloned first image, go to the real first image
-                                    (window as any).recipeListCarouselPreventEvents?.set(true);
-                                    gallery.style.scrollBehavior = 'auto';
-                                    gallery.scrollLeft = clientWidth;
-                                    setTimeout(() => {
-                                      gallery.style.scrollBehavior = 'smooth';
-                                      (window as any).recipeListCarouselPreventEvents?.set(false);
-                                    }, 50);
-                                    return;
-                                  }
-
-                                  // Normal next behavior
-                                  gallery.style.scrollBehavior = 'smooth';
-                                  gallery.scrollLeft = (currentIndex + 1) * clientWidth;
-                                }
-                              }}
-                              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                            >
-                              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                              </svg>
-                            </button>
-                            <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
-                              {images.map((_: string, index: number) => {
-                                // Use the stored current image index for this recipe
-                                const currentImageIndex = currentImageIndices[recipe.id] || 0;
-
-                                return (
-                                  <div
-                                    key={index}
-                                    className={`w-2 h-2 rounded-full ${
-                                      currentImageIndex === index
-                                        ? 'bg-white'
-                                        : 'bg-white bg-opacity-50'
-                                    }`}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </>
-                        )}
+                        />
                       </div>
-                    </Link>
+                    </a>
                   );
                 } catch (e) {
                   return null;
@@ -827,13 +502,15 @@ export default function RecipeList({
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
                   <div className="w-full">
                     <div className="flex items-start justify-between mb-2">
-                      <Link
+                      <a
                         href={`/recipe/${recipe.id}`}
-                        className="text-xl sm:text-2xl font-semibold hover:text-indigo-600 transition-colors text-left"
-                        onClick={(e) => e.stopPropagation()}
+                        className="text-xl sm:text-2xl font-semibold hover:text-indigo-600 transition-colors text-left block"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
                       >
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white">{recipe.title}</h3>
-                      </Link>
+                      </a>
 
                       {session && ((String(session.user.id) === String(recipe.userId)) || session.user.isAdmin) && (
                         <div className="relative flex-shrink-0 ml-2">
@@ -1034,16 +711,18 @@ export default function RecipeList({
                     </ul>
 
                     <div className="flex justify-end mt-4">
-                      <Link
+                      <a
                         href={`/recipe/${recipe.id}`}
                         className="inline-flex items-center bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 transition-colors"
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
                       >
                         <span>View Full Recipe</span>
                         <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                         </svg>
-                      </Link>
+                      </a>
                     </div>
                   </div>
                 )}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useView } from '../contexts/ViewContext';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import RecipeForm from './RecipeForm';
 import RecipeList from './RecipeList';
 import RecipeSearch from './RecipeSearch';
@@ -14,6 +14,7 @@ import { Suspense } from 'react';
 export default function HomeContent() {
   const { data: session } = useSession();
   const { isMyRecipesView, selectedUserId, selectedUserName, setSelectedUser } = useView();
+  const router = useRouter();
   const [key, setKey] = useState(0);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -111,12 +112,15 @@ export default function HomeContent() {
           {isMyRecipesView ? 'My Recipes' : 'All Public Recipes'}
         </h1>
         {session && (
-          <Link
+          <a
             href="/recipes/new"
             className="inline-flex items-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-900"
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
           >
             Create New Recipe
-          </Link>
+          </a>
         )}
       </div>
 

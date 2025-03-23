@@ -3,6 +3,10 @@
 import { useState, useRef, useEffect } from 'react';
 import RichTextEditor from './RichTextEditor';
 import { Recipe, Ingredient, Step } from '../types';
+import { useSession } from 'next-auth/react';
+import Dropzone from 'react-dropzone';
+import { nanoid } from 'nanoid';
+import { CATEGORIES, DIFFICULTIES } from '../lib/constants';
 
 interface RecipeFormProps {
   recipe?: Recipe;
@@ -26,18 +30,6 @@ const emptyRecipe: Recipe = {
   userId: 0, // This will be set by the server
   cookedOn: null,
 };
-
-const CATEGORIES = [
-  'Breakfast',
-  'Lunch',
-  'Dinner',
-  'Dessert',
-  'Snack',
-  'Beverage',
-  'Other'
-];
-
-const DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
 
 // Modify the compression utility function to fix the "image source is detached" error
 const compressImageBeforeUpload = async (file: File, maxSizeMB = 4): Promise<File> => {
@@ -935,7 +927,7 @@ A quick and easy dinner recipe perfect for weeknights.
                     className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     disabled={isSubmitting}
                   >
-                    <option value="">Select a category</option>
+                    <option value="">Select category</option>
                     {CATEGORIES.map(cat => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}

@@ -10,6 +10,14 @@ export const CATEGORIES = [
 
 export type Category = typeof CATEGORIES[number];
 
+export const DIFFICULTIES = [
+  'Easy',
+  'Medium',
+  'Hard'
+] as const;
+
+export type Difficulty = typeof DIFFICULTIES[number];
+
 export interface ReactionFilter {
   value: string;
   emoji: string;

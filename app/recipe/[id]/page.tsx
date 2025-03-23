@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useView } from '../../contexts/ViewContext';
 import RecipeReactions from '../../components/RecipeReactions';
@@ -11,6 +11,7 @@ import Navigation from '../../components/Navigation';
 import QuickReactions from '../../components/QuickReactions';
 import { RichTextContent } from '../../components/RichTextEditor';
 import Comments from '../../components/Comments';
+import ImageCarousel from '../../components/ImageCarousel';
 import { Recipe, Ingredient, Step } from '../../types';
 
 export default function RecipePage({ params }: { params: { id: string } }) {
@@ -22,186 +23,8 @@ export default function RecipePage({ params }: { params: { id: string } }) {
   const { setSelectedUser } = useView();
   const { data: session } = useSession();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const images = recipe?.images ? JSON.parse(recipe.images) : [];
-  const galleryRefs = useRef<Record<number, HTMLDivElement | null>>({});
-
-  // Add scroll event handler for continuous scrolling
-  useEffect(() => {
-    let isScrolling = false;
-    let scrollTimeout: NodeJS.Timeout | null = null;
-    let preventEvents = false;
-
-    // Update active indicator based on scroll position
-    const handleIndicatorUpdate = (e: Event) => {
-      if (preventEvents) return;
-
-      const gallery = e.target as HTMLDivElement;
-      const images = JSON.parse(recipe?.images || '[]');
-
-      if (images.length <= 1) return;
-
-      const scrollLeft = gallery.scrollLeft;
-      const clientWidth = gallery.clientWidth;
-      const rawIndex = scrollLeft / clientWidth;
-      const roundedIndex = Math.round(rawIndex);
-
-      let imageIndex = 0;
-
-      // Convert from scroll position to image index (accounting for clones)
-      if (roundedIndex === 0) {
-        imageIndex = images.length - 1;
-      } else if (roundedIndex > images.length) {
-        imageIndex = 0;
-      } else {
-        imageIndex = roundedIndex - 1;
-      }
-
-      setCurrentImageIndex(imageIndex);
-    };
-
-    const handleScroll = (e: Event) => {
-      if (preventEvents) return;
-
-      const gallery = e.target as HTMLDivElement;
-      const images = JSON.parse(recipe?.images || '[]');
-
-      if (images.length <= 1) return;
-
-      const scrollLeft = gallery.scrollLeft;
-      const scrollWidth = gallery.scrollWidth;
-      const clientWidth = gallery.clientWidth;
-
-      // Clear any existing timeout
-      if (scrollTimeout) {
-        clearTimeout(scrollTimeout);
-      }
-
-      // Check if we're at the beginning or end edge
-      if (Math.abs(scrollLeft) < 20) {
-        // We're at the clone of the last image, prevent further interaction
-        preventEvents = true;
-
-        // Jump to the real last image
-        gallery.style.scrollBehavior = 'auto';
-
-        // Calculate real last image position (total width - 2 slides)
-        const targetPosition = scrollWidth - (clientWidth * 2);
-        gallery.scrollLeft = targetPosition;
-
-        // Reset scroll behavior and re-enable events after a delay
-        setTimeout(() => {
-          gallery.style.scrollBehavior = 'smooth';
-          preventEvents = false;
-        }, 100);
-      }
-      else if (scrollLeft + clientWidth >= scrollWidth - 20) {
-        // We're at the clone of the first image, prevent further interaction
-        preventEvents = true;
-
-        // Jump to the real first image
-        gallery.style.scrollBehavior = 'auto';
-        gallery.scrollLeft = clientWidth;
-
-        // Reset scroll behavior and re-enable events after a delay
-        setTimeout(() => {
-          gallery.style.scrollBehavior = 'smooth';
-          preventEvents = false;
-        }, 100);
-      }
-
-      // Update indicators
-      handleIndicatorUpdate(e);
-    };
-
-    // Add touch event handlers
-    const handleTouchStart = (e: TouchEvent) => {
-      if (preventEvents) {
-        e.preventDefault();
-        return;
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (preventEvents) {
-        e.preventDefault();
-        return;
-      }
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (preventEvents) {
-        e.preventDefault();
-        return;
-      }
-
-      const gallery = e.currentTarget as HTMLDivElement;
-      const images = JSON.parse(recipe?.images || '[]');
-
-      if (images.length <= 1) return;
-
-      // Force snapping to the nearest slide
-      const clientWidth = gallery.clientWidth;
-      const scrollLeft = gallery.scrollLeft;
-      const rawIndex = scrollLeft / clientWidth;
-      const targetIndex = Math.round(rawIndex);
-
-      gallery.style.scrollBehavior = 'smooth';
-      gallery.scrollLeft = targetIndex * clientWidth;
-    };
-
-    // Set up event listeners for all galleries
-    Object.entries(galleryRefs.current).forEach(([_, gallery]) => {
-      if (gallery) {
-        gallery.style.scrollBehavior = 'smooth';
-        gallery.addEventListener('scroll', handleScroll);
-        gallery.addEventListener('touchstart', handleTouchStart as EventListener);
-        gallery.addEventListener('touchmove', handleTouchMove as EventListener);
-        gallery.addEventListener('touchend', handleTouchEnd as EventListener);
-      }
-    });
-
-    // Make preventEvents available globally to the component
-    (window as any).carouselPreventEvents = {
-      get: () => preventEvents,
-      set: (value: boolean) => { preventEvents = value; }
-    };
-
-    return () => {
-      // Clean up timeouts
-      if (scrollTimeout) {
-        clearTimeout(scrollTimeout);
-      }
-
-      // Remove event listeners
-      Object.entries(galleryRefs.current).forEach(([_, gallery]) => {
-        if (gallery) {
-          gallery.removeEventListener('scroll', handleScroll);
-          gallery.removeEventListener('touchstart', handleTouchStart as EventListener);
-          gallery.removeEventListener('touchmove', handleTouchMove as EventListener);
-          gallery.removeEventListener('touchend', handleTouchEnd as EventListener);
-        }
-      });
-
-      // Clean up global reference
-      delete (window as any).carouselPreventEvents;
-    };
-  }, [recipe?.images]);
-
-  // Initialize scroll position
-  useEffect(() => {
-    Object.entries(galleryRefs.current).forEach(([_, gallery]) => {
-      if (gallery && images.length > 1) {
-        // Start at the first real image (after the cloned last image)
-        gallery.style.scrollBehavior = 'auto';
-        gallery.scrollLeft = gallery.clientWidth;
-        // Reset behavior after positioning
-        setTimeout(() => {
-          gallery.style.scrollBehavior = 'smooth';
-        }, 100);
-      }
-    });
-  }, [images.length]);
+  const [isSharing, setIsSharing] = useState(false);
 
   useEffect(() => {
     fetchRecipe();
@@ -229,12 +52,18 @@ export default function RecipePage({ params }: { params: { id: string } }) {
   };
 
   const handleShare = async () => {
-    const url = window.location.href;
+    setIsSharing(true);
     try {
-      await navigator.clipboard.writeText(url);
-      setShareButtonText('Copied!');
+      await navigator.clipboard.writeText(window.location.href);
+      setShareButtonText('Link Copied!');
+      setTimeout(() => {
+        setShareButtonText('Share Recipe');
+      }, 2000);
     } catch (error) {
-      console.error('Error copying link:', error);
+      console.error('Failed to copy link:', error);
+      setShareButtonText('Failed to copy');
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -307,13 +136,11 @@ export default function RecipePage({ params }: { params: { id: string } }) {
 
   const nextImage = useCallback(() => {
     if (!images.length) return;
-    setIsTransitioning(true);
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
   }, [images.length]);
 
   const prevImage = useCallback(() => {
     if (!images.length) return;
-    setIsTransitioning(true);
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
   }, [images.length]);
 
@@ -374,178 +201,16 @@ export default function RecipePage({ params }: { params: { id: string } }) {
 
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
             {images.length > 0 && (
-              <div className="relative mb-8 group">
-                <div className="relative h-96 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
-                  <div
-                    ref={(el) => {
-                      if (el && recipe.id) {
-                        galleryRefs.current[recipe.id] = el;
-                      }
-                    }}
-                    data-recipe-id={recipe.id}
-                    className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-full touch-pan-x"
-                    style={{
-                      scrollSnapType: 'x mandatory',
-                      WebkitOverflowScrolling: 'touch',
-                      touchAction: 'pan-x pan-y'
-                    }}
-                  >
-                    {/* Add last image at the beginning for smooth transition */}
-                    {images.length > 1 && (
-                      <div className="flex-none w-full h-full snap-center relative">
-                        <div className="w-full h-full flex items-center justify-center">
-                          <img
-                            src={images[images.length - 1]}
-                            alt={`${recipe.title} - Image ${images.length}`}
-                            className="max-w-full max-h-full w-auto h-auto object-contain"
-                            style={{ pointerEvents: 'none' }}
-                            onError={(e) => {
-                              e.currentTarget.src = 'https://via.placeholder.com/800x600?text=Failed+to+Load';
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                    {images.map((image: string, index: number) => (
-                      <div key={index} className="flex-none w-full h-full snap-center relative">
-                        <div className="w-full h-full flex items-center justify-center">
-                          <img
-                            src={image}
-                            alt={`${recipe.title} - Image ${index + 1}`}
-                            className="max-w-full max-h-full w-auto h-auto object-contain"
-                            style={{ pointerEvents: 'none' }}
-                            onError={(e) => {
-                              e.currentTarget.src = 'https://via.placeholder.com/800x600?text=Failed+to+Load';
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                    {/* Add first image at the end for smooth transition */}
-                    {images.length > 1 && (
-                      <div className="flex-none w-full h-full snap-center relative">
-                        <div className="w-full h-full flex items-center justify-center">
-                          <img
-                            src={images[0]}
-                            alt={`${recipe.title} - Image 1`}
-                            className="max-w-full max-h-full w-auto h-auto object-contain"
-                            style={{ pointerEvents: 'none' }}
-                            onError={(e) => {
-                              e.currentTarget.src = 'https://via.placeholder.com/800x600?text=Failed+to+Load';
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {images.length > 1 && (
-                    <>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-
-                          // Check if events are currently prevented
-                          const preventEvents = (window as any).carouselPreventEvents?.get();
-                          if (preventEvents) return;
-
-                          const gallery = e.currentTarget.parentElement?.querySelector('.snap-x') as HTMLDivElement | null;
-                          if (gallery) {
-                            // Get current position
-                            const clientWidth = gallery.clientWidth;
-                            const scrollLeft = gallery.scrollLeft;
-                            const scrollWidth = gallery.scrollWidth;
-
-                            // Calculate current index
-                            const rawIndex = scrollLeft / clientWidth;
-                            const currentIndex = Math.round(rawIndex);
-
-                            // Handle edge cases
-                            if (currentIndex <= 0) {
-                              // At the cloned last image, go to the real last image
-                              (window as any).carouselPreventEvents?.set(true);
-                              gallery.style.scrollBehavior = 'auto';
-                              gallery.scrollLeft = scrollWidth - (clientWidth * 2);
-                              setTimeout(() => {
-                                gallery.style.scrollBehavior = 'smooth';
-                                (window as any).carouselPreventEvents?.set(false);
-                              }, 50);
-                              return;
-                            }
-
-                            // Normal previous behavior
-                            gallery.style.scrollBehavior = 'smooth';
-                            gallery.scrollLeft = (currentIndex - 1) * clientWidth;
-                          }
-                        }}
-                        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full z-10 transition-all duration-200"
-                        aria-label="Previous image"
-                      >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-
-                          // Check if events are currently prevented
-                          const preventEvents = (window as any).carouselPreventEvents?.get();
-                          if (preventEvents) return;
-
-                          const gallery = e.currentTarget.parentElement?.querySelector('.snap-x') as HTMLDivElement | null;
-                          if (gallery) {
-                            // Get current position
-                            const clientWidth = gallery.clientWidth;
-                            const scrollLeft = gallery.scrollLeft;
-                            const scrollWidth = gallery.scrollWidth;
-
-                            // Calculate current index
-                            const rawIndex = scrollLeft / clientWidth;
-                            const currentIndex = Math.round(rawIndex);
-
-                            // Handle edge cases
-                            if (currentIndex >= images.length + 1) {
-                              // At the cloned first image, go to the real first image
-                              (window as any).carouselPreventEvents?.set(true);
-                              gallery.style.scrollBehavior = 'auto';
-                              gallery.scrollLeft = clientWidth;
-                              setTimeout(() => {
-                                gallery.style.scrollBehavior = 'smooth';
-                                (window as any).carouselPreventEvents?.set(false);
-                              }, 50);
-                              return;
-                            }
-
-                            // Normal next behavior
-                            gallery.style.scrollBehavior = 'smooth';
-                            gallery.scrollLeft = (currentIndex + 1) * clientWidth;
-                          }
-                        }}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full z-10 transition-all duration-200"
-                        aria-label="Next image"
-                      >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
-                        {images.map((_: string, index: number) => (
-                          <div
-                            key={index}
-                            className={`w-2 h-2 rounded-full ${
-                              currentImageIndex === index
-                                ? 'bg-white'
-                                : 'bg-white bg-opacity-50'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
+              <div className="mb-8">
+                <ImageCarousel
+                  images={images}
+                  title={recipe.title}
+                  carouselId={recipe.id || ""}
+                  className="h-96"
+                  navigationButtonSize="large"
+                  showAlways={true}
+                  onIndicatorChange={setCurrentImageIndex}
+                />
               </div>
             )}
 
@@ -557,13 +222,36 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       onClick={handleShare}
-                      className="p-2 bg-blue-600 dark:bg-blue-500 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 text-sm font-medium flex items-center"
-                      title={shareButtonText}
+                      disabled={isSharing}
+                      className="flex items-center bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md shadow"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                      </svg>
+                      {isSharing ? (
+                        <span className="flex items-center">
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Copying...
+                        </span>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
+                          </svg>
+                          {shareButtonText}
+                        </>
+                      )}
                     </button>
+
+                    <Link
+                      href={`/cook?id=${recipe.id}`}
+                      className="flex items-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md shadow"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"></path>
+                      </svg>
+                      Cook Mode
+                    </Link>
 
                     {session && ((String(session.user.id) === String(recipe?.userId)) || session.user.isAdmin) && (
                       <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
