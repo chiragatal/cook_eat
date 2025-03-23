@@ -117,7 +117,7 @@ A post is basically a recipe.
 
 ### Tests
 
-- [ ] Add automated tests
+- [x] Add automated tests
 - [ ] Add tests for the mobile
 - [ ] Negative tests
 
