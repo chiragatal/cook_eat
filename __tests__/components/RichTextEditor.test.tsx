@@ -5,21 +5,37 @@ import { RichTextEditor } from '@/app/components/RichTextEditor';
 
 // Create a mock for the chain methods
 const createMockChain = () => {
-  const chain = {
-    focus: jest.fn(() => chain),
-    toggleBold: jest.fn(() => chain),
-    toggleItalic: jest.fn(() => chain),
-    toggleStrike: jest.fn(() => chain),
-    toggleHeading: jest.fn(() => chain),
-    toggleBulletList: jest.fn(() => chain),
-    toggleOrderedList: jest.fn(() => chain),
-    toggleCodeBlock: jest.fn(() => chain),
-    toggleBlockquote: jest.fn(() => chain),
-    setLink: jest.fn(() => chain),
-    unsetLink: jest.fn(() => chain),
-    run: jest.fn(),
+  type ChainType = {
+    focus: jest.Mock<ChainType>;
+    toggleBold: jest.Mock<ChainType>;
+    toggleItalic: jest.Mock<ChainType>;
+    toggleStrike: jest.Mock<ChainType>;
+    toggleHeading: jest.Mock<ChainType>;
+    toggleBulletList: jest.Mock<ChainType>;
+    toggleOrderedList: jest.Mock<ChainType>;
+    toggleCodeBlock: jest.Mock<ChainType>;
+    toggleBlockquote: jest.Mock<ChainType>;
+    setLink: jest.Mock<ChainType>;
+    unsetLink: jest.Mock<ChainType>;
+    run: jest.Mock;
   };
-  return chain;
+
+  const chain: Partial<ChainType> = {};
+
+  chain.focus = jest.fn(() => chain as ChainType);
+  chain.toggleBold = jest.fn(() => chain as ChainType);
+  chain.toggleItalic = jest.fn(() => chain as ChainType);
+  chain.toggleStrike = jest.fn(() => chain as ChainType);
+  chain.toggleHeading = jest.fn(() => chain as ChainType);
+  chain.toggleBulletList = jest.fn(() => chain as ChainType);
+  chain.toggleOrderedList = jest.fn(() => chain as ChainType);
+  chain.toggleCodeBlock = jest.fn(() => chain as ChainType);
+  chain.toggleBlockquote = jest.fn(() => chain as ChainType);
+  chain.setLink = jest.fn(() => chain as ChainType);
+  chain.unsetLink = jest.fn(() => chain as ChainType);
+  chain.run = jest.fn();
+
+  return chain as ChainType;
 };
 
 // Mock the tiptap dependencies
@@ -69,7 +85,8 @@ jest.mock('@tiptap/extension-image', () => ({
 }));
 
 // Mock window.prompt for link testing
-window.prompt = jest.fn(() => 'https://example.com');
+const originalPrompt = window.prompt;
+window.prompt = jest.fn().mockImplementation(() => 'https://example.com');
 
 describe('RichTextEditor Component', () => {
   const mockOnChange = jest.fn();
@@ -198,7 +215,7 @@ describe('RichTextEditor Component', () => {
     };
 
     // Mock prompt to return null to trigger unsetLink
-    window.prompt.mockReturnValueOnce(null);
+    (window.prompt as jest.Mock).mockReturnValueOnce(null);
     useEditor.mockReturnValue(mockEditor);
 
     render(
@@ -245,5 +262,9 @@ describe('RichTextEditor Component', () => {
     const toolbarDiv = container.querySelector('.flex.flex-wrap.items-center');
     expect(toolbarDiv).not.toBeNull();
     expect(screen.getByTestId('editor-content')).toBeInTheDocument();
+  });
+
+  afterAll(() => {
+    window.prompt = originalPrompt;
   });
 });
