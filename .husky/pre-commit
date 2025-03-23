@@ -17,4 +17,10 @@ if [ -n "$STAGED_JS_FILES" ]; then
   git add $STAGED_JS_FILES
 fi
 
+# Run tests related to staged files
+if [ -n "$STAGED_JS_FILES" ]; then
+  echo "Running tests for staged files..."
+  npm test -- --findRelatedTests $STAGED_JS_FILES --passWithNoTests || exit 1
+fi
+
 exit 0
