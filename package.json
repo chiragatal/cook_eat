@@ -48,6 +48,7 @@
     "ts-node": "^10.9.2"
   },
   "devDependencies": {
+    "@babel/plugin-transform-private-methods": "^7.25.9",
     "@playwright/test": "^1.51.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
