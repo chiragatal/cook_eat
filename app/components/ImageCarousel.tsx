@@ -27,7 +27,10 @@ export default function ImageCarousel({
   const galleryRef = useRef<HTMLDivElement | null>(null);
   const preventEventsRef = useRef<boolean>(false);
   const touchStartXRef = useRef<number>(0);
+  const touchStartYRef = useRef<number>(0);
   const touchEndXRef = useRef<number>(0);
+  const touchMoveXRef = useRef<number>(0);
+  const isHorizontalSwipeRef = useRef<boolean | null>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const uniqueId = `carousel-${carouselId}`;
 
@@ -148,8 +151,12 @@ export default function ImageCarousel({
       return;
     }
 
-    // Record start position
+    // Record start position for both X and Y
     touchStartXRef.current = e.touches[0].clientX;
+    touchStartYRef.current = e.touches[0].clientY;
+    touchEndXRef.current = e.touches[0].clientX;
+    touchMoveXRef.current = e.touches[0].clientX;
+    isHorizontalSwipeRef.current = null;
   };
 
   const handleTouchMove = (e: TouchEvent) => {
@@ -158,13 +165,44 @@ export default function ImageCarousel({
       return;
     }
 
-    // Update current position
-    touchEndXRef.current = e.touches[0].clientX;
+    if (isHorizontalSwipeRef.current === null) {
+      // Determine swipe direction on first move
+      const diffX = Math.abs(e.touches[0].clientX - touchStartXRef.current);
+      const diffY = Math.abs(e.touches[0].clientY - touchStartYRef.current);
+
+      // If horizontal movement is dominant, it's a horizontal swipe
+      if (diffX > diffY && diffX > 10) {
+        isHorizontalSwipeRef.current = true;
+        e.preventDefault(); // Prevent page scroll only for horizontal swipes
+      } else if (diffY > diffX && diffY > 10) {
+        isHorizontalSwipeRef.current = false; // It's a vertical swipe
+      }
+    }
+
+    // Only process movement for horizontal swipes
+    if (isHorizontalSwipeRef.current === true) {
+      e.preventDefault(); // Prevent scrolling the page
+      touchMoveXRef.current = e.touches[0].clientX;
+
+      // For smoother swipe effect, directly update scroll position
+      if (galleryRef.current) {
+        const moveDiff = touchStartXRef.current - touchMoveXRef.current;
+        const gallery = galleryRef.current;
+        const currentScroll = gallery.scrollLeft;
+        gallery.scrollLeft = currentScroll + moveDiff / 3; // Reduced divisor for more responsive feeling
+        touchStartXRef.current = touchMoveXRef.current;
+      }
+    }
   };
 
   const handleTouchEnd = (e: TouchEvent) => {
     if (preventEventsRef.current || !galleryRef.current || images.length <= 1) {
       e.preventDefault();
+      return;
+    }
+
+    // Only process horizontal swipes
+    if (isHorizontalSwipeRef.current !== true) {
       return;
     }
 
@@ -180,7 +218,7 @@ export default function ImageCarousel({
     let targetIndex = Math.round(rawIndex);
 
     // Adjust target based on swipe direction if significant swipe detected
-    const SWIPE_THRESHOLD = 50; // Minimum pixels for a swipe to count
+    const SWIPE_THRESHOLD = 40; // Reduced threshold for easier swiping
     if (Math.abs(swipeDistance) > SWIPE_THRESHOLD) {
       if (swipeDistance > 0) {
         // Swiped left, go to next
@@ -201,6 +239,8 @@ export default function ImageCarousel({
     // Reset touch tracking
     touchStartXRef.current = 0;
     touchEndXRef.current = 0;
+    touchMoveXRef.current = 0;
+    isHorizontalSwipeRef.current = null;
 
     // Update indicator based on target index
     setTimeout(() => {
