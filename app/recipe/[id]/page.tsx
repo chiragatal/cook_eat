@@ -28,9 +28,42 @@ export default function RecipePage({ params }: { params: { id: string } }) {
 
   // Add scroll event handler for continuous scrolling
   useEffect(() => {
-    const handleScroll = (e: Event) => {
+    let isScrolling = false;
+    let scrollTimeout: NodeJS.Timeout | null = null;
+    let preventEvents = false;
+
+    // Update active indicator based on scroll position
+    const handleIndicatorUpdate = (e: Event) => {
+      if (preventEvents) return;
+
       const gallery = e.target as HTMLDivElement;
-      const recipeId = parseInt(gallery.getAttribute('data-recipe-id') || '0');
+      const images = JSON.parse(recipe?.images || '[]');
+
+      if (images.length <= 1) return;
+
+      const scrollLeft = gallery.scrollLeft;
+      const clientWidth = gallery.clientWidth;
+      const rawIndex = scrollLeft / clientWidth;
+      const roundedIndex = Math.round(rawIndex);
+
+      let imageIndex = 0;
+
+      // Convert from scroll position to image index (accounting for clones)
+      if (roundedIndex === 0) {
+        imageIndex = images.length - 1;
+      } else if (roundedIndex > images.length) {
+        imageIndex = 0;
+      } else {
+        imageIndex = roundedIndex - 1;
+      }
+
+      setCurrentImageIndex(imageIndex);
+    };
+
+    const handleScroll = (e: Event) => {
+      if (preventEvents) return;
+
+      const gallery = e.target as HTMLDivElement;
       const images = JSON.parse(recipe?.images || '[]');
 
       if (images.length <= 1) return;
@@ -39,58 +72,119 @@ export default function RecipePage({ params }: { params: { id: string } }) {
       const scrollWidth = gallery.scrollWidth;
       const clientWidth = gallery.clientWidth;
 
-      // If we're at the beginning (showing the last cloned image)
-      if (Math.abs(scrollLeft) < 10) {
-        // Prevent rapid re-triggering
-        gallery.removeEventListener('scroll', handleScroll);
-
-        // Jump to the real last image (second to last in the DOM because of the clones)
-        setTimeout(() => {
-          gallery.scrollTo({
-            left: scrollWidth - (2 * clientWidth),
-            behavior: 'instant'
-          });
-
-          // Re-add the event listener after the jump
-          setTimeout(() => {
-            gallery.addEventListener('scroll', handleScroll);
-          }, 100);
-        }, 50);
+      // Clear any existing timeout
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
       }
-      // If we're at the end (showing the first cloned image)
-      else if (scrollLeft + clientWidth >= scrollWidth - 10) {
-        // Prevent rapid re-triggering
-        gallery.removeEventListener('scroll', handleScroll);
+
+      // Check if we're at the beginning or end edge
+      if (Math.abs(scrollLeft) < 20) {
+        // We're at the clone of the last image, prevent further interaction
+        preventEvents = true;
+
+        // Jump to the real last image
+        gallery.style.scrollBehavior = 'auto';
+
+        // Calculate real last image position (total width - 2 slides)
+        const targetPosition = scrollWidth - (clientWidth * 2);
+        gallery.scrollLeft = targetPosition;
+
+        // Reset scroll behavior and re-enable events after a delay
+        setTimeout(() => {
+          gallery.style.scrollBehavior = 'smooth';
+          preventEvents = false;
+        }, 100);
+      }
+      else if (scrollLeft + clientWidth >= scrollWidth - 20) {
+        // We're at the clone of the first image, prevent further interaction
+        preventEvents = true;
 
         // Jump to the real first image
-        setTimeout(() => {
-          gallery.scrollTo({
-            left: clientWidth,
-            behavior: 'instant'
-          });
+        gallery.style.scrollBehavior = 'auto';
+        gallery.scrollLeft = clientWidth;
 
-          // Re-add the event listener after the jump
-          setTimeout(() => {
-            gallery.addEventListener('scroll', handleScroll);
-          }, 100);
-        }, 50);
+        // Reset scroll behavior and re-enable events after a delay
+        setTimeout(() => {
+          gallery.style.scrollBehavior = 'smooth';
+          preventEvents = false;
+        }, 100);
+      }
+
+      // Update indicators
+      handleIndicatorUpdate(e);
+    };
+
+    // Add touch event handlers
+    const handleTouchStart = (e: TouchEvent) => {
+      if (preventEvents) {
+        e.preventDefault();
+        return;
       }
     };
 
-    // Add scroll event listeners to all galleries
+    const handleTouchMove = (e: TouchEvent) => {
+      if (preventEvents) {
+        e.preventDefault();
+        return;
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (preventEvents) {
+        e.preventDefault();
+        return;
+      }
+
+      const gallery = e.currentTarget as HTMLDivElement;
+      const images = JSON.parse(recipe?.images || '[]');
+
+      if (images.length <= 1) return;
+
+      // Force snapping to the nearest slide
+      const clientWidth = gallery.clientWidth;
+      const scrollLeft = gallery.scrollLeft;
+      const rawIndex = scrollLeft / clientWidth;
+      const targetIndex = Math.round(rawIndex);
+
+      gallery.style.scrollBehavior = 'smooth';
+      gallery.scrollLeft = targetIndex * clientWidth;
+    };
+
+    // Set up event listeners for all galleries
     Object.entries(galleryRefs.current).forEach(([_, gallery]) => {
       if (gallery) {
+        gallery.style.scrollBehavior = 'smooth';
         gallery.addEventListener('scroll', handleScroll);
+        gallery.addEventListener('touchstart', handleTouchStart as EventListener);
+        gallery.addEventListener('touchmove', handleTouchMove as EventListener);
+        gallery.addEventListener('touchend', handleTouchEnd as EventListener);
       }
     });
 
+    // Make preventEvents available globally to the component
+    (window as any).carouselPreventEvents = {
+      get: () => preventEvents,
+      set: (value: boolean) => { preventEvents = value; }
+    };
+
     return () => {
-      // Remove scroll event listeners
+      // Clean up timeouts
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+
+      // Remove event listeners
       Object.entries(galleryRefs.current).forEach(([_, gallery]) => {
         if (gallery) {
           gallery.removeEventListener('scroll', handleScroll);
+          gallery.removeEventListener('touchstart', handleTouchStart as EventListener);
+          gallery.removeEventListener('touchmove', handleTouchMove as EventListener);
+          gallery.removeEventListener('touchend', handleTouchEnd as EventListener);
         }
       });
+
+      // Clean up global reference
+      delete (window as any).carouselPreventEvents;
     };
   }, [recipe?.images]);
 
@@ -99,10 +193,12 @@ export default function RecipePage({ params }: { params: { id: string } }) {
     Object.entries(galleryRefs.current).forEach(([_, gallery]) => {
       if (gallery && images.length > 1) {
         // Start at the first real image (after the cloned last image)
-        gallery.scrollTo({
-          left: gallery.clientWidth,
-          behavior: 'instant'
-        });
+        gallery.style.scrollBehavior = 'auto';
+        gallery.scrollLeft = gallery.clientWidth;
+        // Reset behavior after positioning
+        setTimeout(() => {
+          gallery.style.scrollBehavior = 'smooth';
+        }, 100);
       }
     });
   }, [images.length]);
@@ -349,34 +445,38 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          const gallery = e.currentTarget.parentElement?.querySelector('.snap-x');
+
+                          // Check if events are currently prevented
+                          const preventEvents = (window as any).carouselPreventEvents?.get();
+                          if (preventEvents) return;
+
+                          const gallery = e.currentTarget.parentElement?.querySelector('.snap-x') as HTMLDivElement | null;
                           if (gallery) {
-                            // Ensure we're at a proper position first
-                            const currentIndex = Math.round(gallery.scrollLeft / gallery.clientWidth);
-                            // If we're at the first position (the cloned last image), jump to the real first image
-                            if (currentIndex === 0) {
-                              // Set to the first real image position
-                              gallery.scrollTo({
-                                left: gallery.clientWidth,
-                                behavior: 'instant'
-                              });
-                              // Give time for the scroll to complete
+                            // Get current position
+                            const clientWidth = gallery.clientWidth;
+                            const scrollLeft = gallery.scrollLeft;
+                            const scrollWidth = gallery.scrollWidth;
+
+                            // Calculate current index
+                            const rawIndex = scrollLeft / clientWidth;
+                            const currentIndex = Math.round(rawIndex);
+
+                            // Handle edge cases
+                            if (currentIndex <= 0) {
+                              // At the cloned last image, go to the real last image
+                              (window as any).carouselPreventEvents?.set(true);
+                              gallery.style.scrollBehavior = 'auto';
+                              gallery.scrollLeft = scrollWidth - (clientWidth * 2);
                               setTimeout(() => {
-                                // Then scroll to the last real image
-                                gallery.scrollTo({
-                                  left: (images.length) * gallery.clientWidth,
-                                  behavior: 'smooth'
-                                });
+                                gallery.style.scrollBehavior = 'smooth';
+                                (window as any).carouselPreventEvents?.set(false);
                               }, 50);
                               return;
                             }
 
                             // Normal previous behavior
-                            const targetIndex = Math.max(currentIndex - 1, 0);
-                            gallery.scrollTo({
-                              left: targetIndex * gallery.clientWidth,
-                              behavior: 'smooth'
-                            });
+                            gallery.style.scrollBehavior = 'smooth';
+                            gallery.scrollLeft = (currentIndex - 1) * clientWidth;
                           }
                         }}
                         className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full z-10 transition-all duration-200"
@@ -390,34 +490,38 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          const gallery = e.currentTarget.parentElement?.querySelector('.snap-x');
+
+                          // Check if events are currently prevented
+                          const preventEvents = (window as any).carouselPreventEvents?.get();
+                          if (preventEvents) return;
+
+                          const gallery = e.currentTarget.parentElement?.querySelector('.snap-x') as HTMLDivElement | null;
                           if (gallery) {
-                            // Ensure we're at a proper position first
-                            const currentIndex = Math.round(gallery.scrollLeft / gallery.clientWidth);
-                            // If we're at the last position (the cloned first image), jump to the real last image
+                            // Get current position
+                            const clientWidth = gallery.clientWidth;
+                            const scrollLeft = gallery.scrollLeft;
+                            const scrollWidth = gallery.scrollWidth;
+
+                            // Calculate current index
+                            const rawIndex = scrollLeft / clientWidth;
+                            const currentIndex = Math.round(rawIndex);
+
+                            // Handle edge cases
                             if (currentIndex >= images.length + 1) {
-                              // Set to the last real image position
-                              gallery.scrollTo({
-                                left: images.length * gallery.clientWidth,
-                                behavior: 'instant'
-                              });
-                              // Give time for the scroll to complete
+                              // At the cloned first image, go to the real first image
+                              (window as any).carouselPreventEvents?.set(true);
+                              gallery.style.scrollBehavior = 'auto';
+                              gallery.scrollLeft = clientWidth;
                               setTimeout(() => {
-                                // Then scroll to the first real image
-                                gallery.scrollTo({
-                                  left: gallery.clientWidth,
-                                  behavior: 'smooth'
-                                });
+                                gallery.style.scrollBehavior = 'smooth';
+                                (window as any).carouselPreventEvents?.set(false);
                               }, 50);
                               return;
                             }
 
                             // Normal next behavior
-                            const targetIndex = Math.min(currentIndex + 1, images.length + 1);
-                            gallery.scrollTo({
-                              left: targetIndex * gallery.clientWidth,
-                              behavior: 'smooth'
-                            });
+                            gallery.style.scrollBehavior = 'smooth';
+                            gallery.scrollLeft = (currentIndex + 1) * clientWidth;
                           }
                         }}
                         className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full z-10 transition-all duration-200"
@@ -431,7 +535,11 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                         {images.map((_: string, index: number) => (
                           <div
                             key={index}
-                            className="w-2 h-2 rounded-full bg-white bg-opacity-50"
+                            className={`w-2 h-2 rounded-full ${
+                              currentImageIndex === index
+                                ? 'bg-white'
+                                : 'bg-white bg-opacity-50'
+                            }`}
                           />
                         ))}
                       </div>
