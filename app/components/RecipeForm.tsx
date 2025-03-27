@@ -421,177 +421,200 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
   };
 
   const processIngredientLine = (line: string, ingredients: Ingredient[]) => {
-    // Common cooking measurements and descriptive terms with their variations
-    const measurementPairs = [
-      ['cup', 'cups'],
-      ['tbsp', 'tablespoon', 'tablespoons'],
-      ['tsp', 'teaspoon', 'teaspoons'],
-      ['gram', 'grams', 'g'],
-      ['kilogram', 'kilograms', 'kg'],
-      ['milliliter', 'milliliters', 'ml'],
-      ['ounce', 'ounces', 'oz'],
-      ['pound', 'pounds', 'lb', 'lbs'],
-      ['piece', 'pieces', 'pc', 'pcs'],
-      ['slice', 'slices'],
-      ['pinch', 'pinches'],
-      ['can', 'cans'],
-      ['packet', 'packets', 'pack', 'packs'],
-      ['package', 'packages'],
-      ['jar', 'jars'],
-      ['bottle', 'bottles'],
-      ['bunch', 'bunches'],
-      ['handful', 'handfuls'],
-      ['dash', 'dashes'],
-      ['splash', 'splashes'],
-      ['sprinkle', 'sprinkles'],
-      ['little', 'few', 'bit'],
-      ['to taste', 'as needed', 'as required'],
-      ['spoon', 'spoons']
+    // Common cooking measurements
+    const measurementWords = [
+      'cup', 'cups',
+      'tbsp', 'tablespoon', 'tablespoons',
+      'tsp', 'teaspoon', 'teaspoons',
+      'gram', 'grams', 'g',
+      'kilogram', 'kilograms', 'kg',
+      'milliliter', 'milliliters', 'ml',
+      'ounce', 'ounces', 'oz',
+      'pound', 'pounds', 'lb', 'lbs',
+      'piece', 'pieces', 'pc', 'pcs',
+      'slice', 'slices',
+      'pinch', 'pinches',
+      'can', 'cans',
+      'packet', 'packets', 'pack', 'packs',
+      'package', 'packages',
+      'jar', 'jars',
+      'bottle', 'bottles',
+      'bunch', 'bunches',
+      'handful', 'handfuls',
+      'dash', 'dashes',
+      'splash', 'splashes',
+      'sprinkle', 'sprinkles',
+      'spoon', 'spoons'
     ];
 
-    // Create a regex-safe measurement pattern
-    const measurements = measurementPairs
-      .flat()
-      .map(m => m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-      .join('|');
+    // Split line into words while preserving quoted phrases and parentheses content
+    const words = line.match(/[^\s"]+|"([^"]*)"|(\([^)]*\))/g) || [];
+    const processedWords = words.map(word => word.replace(/"/g, '').trim());
 
-    // Common ingredient preparations
-    const preparations = [
-      'diced', 'chopped', 'minced', 'sliced', 'grated', 'crushed', 'ground',
-      'peeled', 'seeded', 'cored', 'julienned', 'cubed', 'quartered',
-      'roughly chopped', 'finely chopped', 'thinly sliced', 'coarsely ground'
-    ].join('|');
+    // Find the last number in the string (including fractions)
+    const numberPattern = /\d+(?:\/\d+)?|\d*\.?\d+/;
+    let lastNumberIndex = -1;
+    let lastMeasurementIndex = -1;
 
-    // Try different patterns for ingredient parsing
-    const patterns = [
-      // Pattern for "ingredient - amount" format (e.g., "milk - 1 cup")
-      new RegExp(`^(.+?)\\s*[-:]\\s*(\\d+(?:\\.\\d+)?\\s*(?:${measurements})?)$`, 'i'),
+    // First pass: find the last number and measurement unit
+    processedWords.forEach((word, index) => {
+      if (numberPattern.test(word)) {
+        lastNumberIndex = index;
+      }
+      if (measurementWords.some(measure =>
+        word.toLowerCase() === measure.toLowerCase() ||
+        word.toLowerCase() === measure.toLowerCase() + 's'
+      )) {
+        lastMeasurementIndex = index;
+      }
+    });
 
-      // Pattern for "ingredient-amount" format without spaces (e.g., "water-2 spoons")
-      new RegExp(`^(.+?)-(\\d+(?:\\.\\d+)?\\s*(?:${measurements})?)$`, 'i'),
+    // Determine the split point
+    let splitIndex = -1;
+    if (lastMeasurementIndex !== -1) {
+      splitIndex = lastMeasurementIndex + 1;
+    } else if (lastNumberIndex !== -1) {
+      splitIndex = lastNumberIndex + 1;
+    }
 
-      // Pattern for "ingredient: amount" format (e.g., "sugar: 100g")
-      new RegExp(`^(.+?):\\s*(\\d+(?:\\.\\d+)?\\s*(?:${measurements})?)$`, 'i'),
+    let name = '';
+    let amount = '';
 
-      // Pattern 1: Amount + measurement + ingredient (e.g., "2 cups flour")
-      new RegExp(`^(\\d+(?:\\.\\d+)?\\s*(?:${measurements})?\\s*)(.+)$`, 'i'),
+    // Extract any preparation instructions in parentheses
+    const prepMatch = line.match(/\((.*?)\)/);
+    let prep = prepMatch ? ` (${prepMatch[1]})` : '';
+    let lineWithoutPrep = line.replace(/\s*\(.*?\)/, '');
 
-      // Pattern 2: Descriptive amount + ingredient (e.g., "a little salt")
-      new RegExp(`^(?:a |an |some )?(${measurements})\\s+(?:of\\s+)?(.+)$`, 'i'),
+    if (splitIndex > 0) {
+      // Get the amount part (everything before the split)
+      amount = processedWords.slice(0, splitIndex).join(' ').trim();
 
-      // Pattern 3: Ingredient + amount (e.g., "water 2 cups")
-      new RegExp(`^(.+?)\\s+(\\d+(?:\\.\\d+)?\\s*(?:${measurements})?)$`, 'i'),
+      // Get the name part (everything after the split)
+      name = capitalizeFirstLetter(lineWithoutPrep.substring(
+        lineWithoutPrep.indexOf(processedWords[splitIndex])
+      ).trim());
+    } else {
+      // Check for "to taste" or similar phrases
+      const toTasteMatch = lineWithoutPrep.match(/(.*?)\s+(?:to taste|as needed|as required)$/i);
+      if (toTasteMatch) {
+        name = capitalizeFirstLetter(toTasteMatch[1].trim());
+        amount = 'to taste';
+      } else {
+        // If no clear split point, use the whole line as name
+        name = capitalizeFirstLetter(lineWithoutPrep.trim());
+        amount = '';
+      }
+    }
 
-      // Pattern 4: Ingredient with preparation (e.g., "onion, finely chopped")
-      new RegExp(`^(.+?)(?:,\\s*(${preparations}))?$`, 'i')
-    ];
+    // Add back any preparation instructions to the name
+    if (prep) {
+      name = name + prep;
+    }
 
-    let matched = false;
-    for (const pattern of patterns) {
-      const match = line.match(pattern);
-      if (match) {
-        matched = true;
-        let name, amount;
+    // Clean up the amount
+    if (amount) {
+      // Handle "a" or "an" at the start
+      amount = amount.replace(/^(a |an |some )/i, '');
+      // Only add "a" prefix for single words without numbers
+      if (!numberPattern.test(amount) && !amount.includes(' ') && amount !== 'to taste') {
+        amount = `a ${amount}`;
+      }
+    }
 
-        if (pattern === patterns[0] || pattern === patterns[1] || pattern === patterns[2]) {
-          // Handle "ingredient - amount", "ingredient-amount", or "ingredient: amount" formats
-          name = capitalizeFirstLetter(match[1].trim());
-          amount = match[2].trim();
-        } else if (pattern === patterns[6]) {
-          // Handle preparation pattern
-          name = capitalizeFirstLetter(match[1].trim());
-          const prep = match[2];
-          if (prep) {
-            name = `${name} (${prep})`;
-          }
-          amount = '';
-        } else if (pattern === patterns[3] || pattern === patterns[4] || pattern === patterns[5]) {
-          // Handle amount patterns
-          if (pattern === patterns[5]) {
-            // For "ingredient amount" format, swap to get correct order
-            name = capitalizeFirstLetter(match[1].trim());
-            amount = match[2].trim();
-          } else {
-            // For "amount ingredient" format
-            amount = match[1].trim();
-            name = capitalizeFirstLetter(match[2].trim());
-          }
+    ingredients.push({
+      name: name,
+      amount: amount,
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+    });
+  };
 
-          // Clean up amount text
-          amount = amount.replace(/^(a |an |some )/, '');
-          if (!amount.match(/\d/)) {
-            // If amount doesn't contain numbers, it's probably a descriptive term
-            amount = `a ${amount}`;
-          }
-        }
+  const convertRawText = () => {
+    const lines = rawText.split('\n').map(line => line.trim());
+    let currentSection = '';
+    let descriptionParts: string[] = [];
+    let inIngredientSection = false;
+    let inStepsSection = false;
 
-        // Ensure name and amount are always strings (TypeScript safety)
-        const ingredientName = name || '';
-        const ingredientAmount = amount || '';
+    // Try to detect title more intelligently
+    let detectedTitle = '';
+    const boldTitlePattern = /\*\*([^*]+)\*\*/;  // Match text between ** **
+    const shortTitlePattern = /^.{3,50}$/;  // Title between 3-50 chars
 
-        ingredients.push({
-          name: ingredientName,
-          amount: ingredientAmount,
-          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-        });
+    // First pass to find title
+    for (let i = 0; i < Math.min(5, lines.length); i++) {
+      const line = lines[i];
+      // Check for bold text that could be a title
+      const boldMatch = line.match(boldTitlePattern);
+      if (boldMatch && shortTitlePattern.test(boldMatch[1])) {
+        detectedTitle = boldMatch[1];
+        break;
+      }
+      // If no bold title found, use first short line that's not a heading
+      if (!detectedTitle && !line.startsWith('#') && shortTitlePattern.test(line)) {
+        detectedTitle = line;
         break;
       }
     }
 
-    if (!matched) {
-      // If no pattern matched, use the whole line as the name
-      ingredients.push({
-        name: capitalizeFirstLetter(line.trim()),
-        amount: '',
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-      });
-    }
-  };
-
-  const convertRawText = () => {
-    const lines = rawText.split('\n').map(line => line.trim()).filter(line => line);
-
-    // Try to detect title (usually first line or line containing "recipe" or "dish")
-    const titlePattern = /recipe|dish/i;
-    let titleFound = false;
-    if (lines.length > 0) {
-      for (let i = 0; i < Math.min(3, lines.length); i++) {
-        if (titlePattern.test(lines[i]) || i === 0) {
-          if (!title) {
-            setTitle(capitalizeFirstLetter(lines[i]));
-            titleFound = true;
-          }
-          lines.splice(i, 1);
-          break;
-        }
-      }
+    if (detectedTitle && !title) {
+      setTitle(capitalizeFirstLetter(detectedTitle));
     }
 
-    const remainingLines: string[] = [];
+    // Process markdown sections and content
+    let currentDescription = '';
     const detectedIngredients: Ingredient[] = [];
     const detectedSteps: Step[] = [];
-
-    // First pass: Categorize lines
-    let isInIngredientsSection = false;
-    let isInStepsSection = false;
     let servingsMatch: RegExpMatchArray | null = null;
 
-    lines.forEach(line => {
-      // Check for section headers and metadata
-      const lowerLine = line.toLowerCase();
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
 
-      // Try to detect servings/yield
-      const servingsPattern = /(?:serves|servings|yield):\s*(\d+)|(?:for|serves)\s+(\d+)\s+(?:people|servings)/i;
-      if (!servingsMatch) {
-        servingsMatch = line.match(servingsPattern);
-        if (servingsMatch) {
-          // You might want to add a servings field to your Recipe type and form
-          console.log('Servings detected:', servingsMatch[1] || servingsMatch[2]);
-          return;
+      // Skip empty lines
+      if (!line) continue;
+
+      // Handle markdown headings
+      if (line.startsWith('#')) {
+        const headingMatch = line.match(/^#+/);
+        if (!headingMatch) continue;
+
+        const headingLevel = headingMatch[0].length;
+        const headingText = line.replace(/^#+\s*/, '').toLowerCase();
+
+        // Start a new section
+        if (headingText.includes('ingredient')) {
+          inIngredientSection = true;
+          inStepsSection = false;
+          if (currentDescription) {
+            descriptionParts.push(currentDescription.trim());
+            currentDescription = '';
+          }
+          continue;
+        } else if (headingText.includes('instruction') || headingText.includes('step') || headingText.includes('method') || headingText.includes('direction')) {
+          inIngredientSection = false;
+          inStepsSection = true;
+          if (currentDescription) {
+            descriptionParts.push(currentDescription.trim());
+            currentDescription = '';
+          }
+          continue;
+        } else if (headingLevel <= 3) { // Only consider h1-h3 as section headers
+          if (currentDescription) {
+            descriptionParts.push(currentDescription.trim());
+            currentDescription = '';
+          }
+          currentDescription = `**${line.replace(/^#+\s*/, '')}**\n`; // Convert heading to bold text
+          continue;
         }
       }
 
-      // Try to detect cooking time if not already set
+      // Handle servings/yield if not already found
+      if (!servingsMatch) {
+        const servingsPattern = /(?:serves|servings|yield):\s*(\d+)|(?:for|serves)\s+(\d+)\s+(?:people|servings)/i;
+        servingsMatch = line.match(servingsPattern);
+        if (servingsMatch) continue;
+      }
+
+      // Handle cooking time if not already set
       if (!cookingTime) {
         const timePattern = /(?:prep|cooking|total) time:?\s*(\d+)\s*(min|minute|hour|hr)/i;
         const timeMatch = line.match(timePattern);
@@ -599,60 +622,45 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
           const time = parseInt(timeMatch[1]);
           const unit = timeMatch[2].toLowerCase();
           setCookingTime(unit.includes('hour') || unit.includes('hr') ? time * 60 : time);
-          return;
+          continue;
         }
       }
 
-      // Check for section headers
-      if (lowerLine.includes('ingredient')) {
-        isInIngredientsSection = true;
-        isInStepsSection = false;
-        return;
-      } else if (lowerLine.match(/steps|instruction|method|direction|preparation/)) {
-        isInIngredientsSection = false;
-        isInStepsSection = true;
-        return;
-      }
-
-      // Check if line starts with bullet point or number
-      const bulletMatch = line.match(/^[-•*]\s*(.+)$/);
-      const numberMatch = line.match(/^(\d+)[).]\s*(.+)$/);
-
-      if (!bulletMatch && !numberMatch) {
-        remainingLines.push(line);
-        return;
-      }
-
-      const content = (bulletMatch ? bulletMatch[1] : numberMatch![2]).trim();
-
-      // If we're in a specific section, respect that
-      if (isInStepsSection) {
-        detectedSteps.push({
-          instruction: capitalizeFirstLetter(content),
-          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-        });
-        return;
-      }
-
-      if (isInIngredientsSection) {
-        processIngredientLine(content, detectedIngredients);
-        return;
-      }
-
-      // If no section is specified, try to guess based on content
-      const hasAmount = /\d+\s*(?:cup|tbsp|tsp|tablespoon|teaspoon|gram|g|kg|ml|oz|ounce|pound|lb|piece|slice|pinch|to taste)/i.test(content);
-      const looksLikeStep = /^(?:heat|mix|stir|add|place|cook|bake|pour|combine|prepare|cut|chop|serve|let|wait|remove)/i.test(content);
-
-      if (hasAmount || (!looksLikeStep && !isInStepsSection)) {
-        processIngredientLine(content, detectedIngredients);
+      // Process content based on current section
+      if (inIngredientSection) {
+        // Handle bullet points or numbered items for ingredients
+        const bulletMatch = line.match(/^[-•*]\s*(.+)$/) || line.match(/^\d+\.\s*(.+)$/);
+        if (bulletMatch) {
+          processIngredientLine(bulletMatch[1], detectedIngredients);
+        } else if (line.trim()) {
+          processIngredientLine(line, detectedIngredients);
+        }
+      } else if (inStepsSection) {
+        // Handle bullet points or numbered items for steps
+        const bulletMatch = line.match(/^[-•*]\s*(.+)$/) || line.match(/^\d+\.\s*(.+)$/);
+        if (bulletMatch) {
+          detectedSteps.push({
+            instruction: capitalizeFirstLetter(bulletMatch[1]),
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          });
+        } else if (line.trim()) {
+          detectedSteps.push({
+            instruction: capitalizeFirstLetter(line),
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          });
+        }
       } else {
-        detectedSteps.push({
-          instruction: capitalizeFirstLetter(content),
-          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-        });
+        // Add to current description section
+        currentDescription += line + '\n';
       }
-    });
+    }
 
+    // Add final description section if exists
+    if (currentDescription.trim()) {
+      descriptionParts.push(currentDescription.trim());
+    }
+
+    // Set the parsed data
     if (detectedIngredients.length > 0) {
       setIngredients(detectedIngredients);
     }
@@ -661,34 +669,17 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
       setSteps(detectedSteps);
     }
 
-    // Use remaining lines as description
-    if (remainingLines.length > 0 && !description) {
-      setDescription(remainingLines.join('\n\n'));
+    // Join description parts with proper spacing and preserve markdown
+    if (descriptionParts.length > 0 && !description) {
+      setDescription(descriptionParts.join('\n\n'));
     }
 
-    // Try to detect cooking time (look for time-related words)
-    const timePattern = /(\d+)\s*(min|minute|hour|hr)/i;
-    for (const line of remainingLines) {
-      const match = line.match(timePattern);
-      if (match) {
-        const time = parseInt(match[1]);
-        const unit = match[2].toLowerCase();
-        if (unit.includes('hour') || unit.includes('hr')) {
-          setCookingTime(time * 60);
-        } else {
-          setCookingTime(time);
-        }
-        break;
-      }
-    }
-
-    // Try to detect difficulty (look for difficulty-related words)
+    // Try to detect difficulty
     const difficultyPattern = /(easy|medium|hard|simple|intermediate|advanced|beginner)/i;
-    for (const line of remainingLines) {
-      const match = line.match(difficultyPattern);
+    for (const part of descriptionParts) {
+      const match = part.match(difficultyPattern);
       if (match) {
         let difficulty = match[1].toLowerCase();
-        // Map similar terms to our difficulty levels
         switch (difficulty) {
           case 'simple':
           case 'beginner':
@@ -706,34 +697,23 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
       }
     }
 
-    // Try to detect category
-    const categoryPattern = new RegExp(`(${CATEGORIES.join('|')})`, 'i');
-    for (const line of remainingLines) {
-      const match = line.match(categoryPattern);
-      if (match) {
-        setCategory(match[1].charAt(0).toUpperCase() + match[1].slice(1));
-        break;
-      }
-    }
-
-    // Try to detect tags (look for hashtags or keywords)
+    // Try to detect tags
     const tagPattern = /#(\w+)/g;
     const commonTags = ['vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'quick', 'easy', 'healthy'];
     const detectedTags: string[] = [];
 
-    remainingLines.forEach(line => {
-      // Check for hashtags
-      const matches = line.match(tagPattern);
-      if (matches) {
-        detectedTags.push(...matches.map(tag => tag.slice(1)));
-      }
+    // Look for hashtags and common terms in the entire text
+    const fullText = lines.join(' ');
+    const hashtagMatches = fullText.match(tagPattern);
+    if (hashtagMatches) {
+      detectedTags.push(...hashtagMatches.map(tag => tag.slice(1)));
+    }
 
-      // Check for common dietary and cooking terms
-      commonTags.forEach(tag => {
-        if (line.toLowerCase().includes(tag)) {
-          detectedTags.push(tag);
-        }
-      });
+    // Look for common terms
+    commonTags.forEach(tag => {
+      if (fullText.toLowerCase().includes(tag)) {
+        detectedTags.push(tag);
+      }
     });
 
     if (detectedTags.length > 0) {
