@@ -7,6 +7,7 @@ import { useSession } from 'next-auth/react';
 import Dropzone from 'react-dropzone';
 import { nanoid } from 'nanoid';
 import { CATEGORIES, DIFFICULTIES } from '../lib/constants';
+import Image from 'next/image';
 
 interface RecipeFormProps {
   recipe?: Recipe;
@@ -144,10 +145,10 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
   });
   const [newTag, setNewTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showExampleModal, setShowExampleModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [compressionMessage, setCompressionMessage] = useState<string | null>(null);
+  const [showSidebar, setShowSidebar] = useState(true);
 
   const handleImageDrop = async (e: React.DragEvent<HTMLDivElement>, dropIndex?: number) => {
     e.preventDefault();
@@ -293,7 +294,7 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -795,69 +796,57 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
 
         {isRawMode ? (
           <div className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="rawText" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Paste Your Recipe Text
-                </label>
-                <button
-                  type="button"
-                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                  onClick={() => setShowExampleModal(true)}
-                >
-                  <div className="flex items-center">
-                    <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-sm">See Example</span>
-                  </div>
-                </button>
-              </div>
-              <div className="mt-1">
-                <textarea
-                  id="rawText"
-                  value={rawText}
-                  onChange={(e) => setRawText(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[400px] font-mono"
-                  placeholder={`Paste your recipe text here. The converter will detect:
-
-• Title (first line)
-• Servings & Time (e.g., "Serves 4", "Prep time: 10 min")
-• Ingredients (with measurements or bullet points)
-• Steps (numbered or bullet points)
-• Tags (using #hashtags)
-
-💡 Use bullet points (-) or numbers (1.) for ingredients and steps`}
-                />
-              </div>
-              <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                The converter will organize your recipe, and you can adjust any fields afterward.
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={convertRawText}
-                className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-              >
-                Convert to Form
-              </button>
-            </div>
-
-            {/* Example Modal */}
-            {showExampleModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 relative">
+            <div className="flex gap-6 relative">
+              <div className="flex-1">
+                <div className="mb-2">
+                  <label htmlFor="rawText" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Paste Your Recipe Text
+                  </label>
+                </div>
+                <div className="mt-1">
+                  <textarea
+                    id="rawText"
+                    value={rawText}
+                    onChange={(e) => setRawText(e.target.value)}
+                    className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[400px] font-mono"
+                    placeholder="Paste your recipe here..."
+                  />
+                </div>
+                <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                  The converter will organize your recipe, and you can adjust any fields afterward.
+                </div>
+                <div className="flex justify-end mt-4">
                   <button
-                    onClick={() => setShowExampleModal(false)}
-                    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    type="button"
+                    onClick={convertRawText}
+                    className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                   >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    Convert to Form
                   </button>
-                  <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Example Recipe Format</h3>
-                  <pre className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg overflow-auto text-sm font-mono text-gray-800 dark:text-gray-200">
+                </div>
+              </div>
+
+              {/* Collapsible sidebar with toggle button */}
+              <div className={`transition-all duration-300 ${showSidebar ? 'w-96' : 'w-0 overflow-hidden'}`}>
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Instructions</h3>
+                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-sm text-gray-600 dark:text-gray-300">
+                      <p className="font-medium mb-2">The converter will detect:</p>
+                      <ul className="list-disc pl-5 space-y-2">
+                        <li>Title (first line)</li>
+                        <li>Servings &amp; Time (e.g., &ldquo;Serves 4&rdquo;, &ldquo;Prep time: 10 min&rdquo;)</li>
+                        <li>Ingredients (with measurements or bullet points)</li>
+                        <li>Steps (numbered or bullet points)</li>
+                        <li>Tags (using #hashtags)</li>
+                      </ul>
+                      <p className="mt-4">💡 Use bullet points (-) or numbers (1.) for ingredients and steps</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Example Recipe Format</h3>
+                    <pre className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg overflow-auto text-sm font-mono text-gray-800 dark:text-gray-200">
 {`Easy Pasta Recipe
 Serves 4
 Prep time: 10 minutes
@@ -882,10 +871,28 @@ Steps:
 
 A quick and easy dinner recipe perfect for weeknights.
 #quick #easy #vegetarian`}
-                  </pre>
+                    </pre>
+                  </div>
                 </div>
               </div>
-            )}
+
+              {/* Toggle button */}
+              <button
+                type="button"
+                onClick={() => setShowSidebar(!showSidebar)}
+                className="absolute -right-6 top-0 p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 focus:outline-none"
+              >
+                {showSidebar ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
         ) : (
           <>
@@ -1082,11 +1089,13 @@ A quick and easy dinner recipe perfect for weeknights.
                           onDragOver={handleImageDragOver}
                           onDrop={(e) => handleImageDrop(e, index)}
                         >
-                          <img
+                          <Image
                             src={image}
                             alt={`Recipe image ${index + 1}`}
-                            className="object-cover w-full h-full group-hover:opacity-75 transition-opacity duration-200"
+                            fill
+                            className="object-cover group-hover:opacity-75 transition-opacity duration-200"
                             style={{ pointerEvents: 'none' }}
+                            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                           />
                           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                             <button
