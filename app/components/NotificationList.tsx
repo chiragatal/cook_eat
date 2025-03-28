@@ -75,22 +75,15 @@ export default function NotificationList() {
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
-        <span className="sm:hidden">Notifications</span>
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 sm:inline-flex hidden items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">
-            {unreadCount}
-          </span>
-        )}
-        {/* Mobile unread count */}
-        {unreadCount > 0 && (
-          <span className="sm:hidden inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full ml-1">
+          <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">
             {unreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="fixed sm:absolute inset-x-0 sm:inset-auto sm:right-0 top-full sm:mt-2 sm:w-80 w-full bg-white dark:bg-gray-800 sm:rounded-lg shadow-lg overflow-hidden z-50">
+        <div className="fixed sm:absolute inset-x-0 sm:inset-auto sm:right-0 top-[3.5rem] sm:top-full sm:mt-2 sm:w-80 w-full bg-white dark:bg-gray-800 sm:rounded-lg shadow-lg overflow-hidden z-50">
           <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Notifications</h3>
             {notifications.some(n => !n.read) && (
@@ -111,33 +104,39 @@ export default function NotificationList() {
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {notifications.map((notification) => (
-                  <Link
+                  <div
                     key={notification.id}
-                    href={getNotificationLink(notification)}
-                    onClick={() => {
-                      if (!notification.read) {
-                        markAsRead(notification.id);
-                      }
-                      setIsOpen(false);
-                    }}
                     className={`block p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
                       !notification.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                     }`}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-900 dark:text-white">
-                          {getNotificationContent(notification)}
-                        </p>
-                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                          {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-                        </p>
+                    <Link
+                      href={getNotificationLink(notification)}
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        if (!notification.read) {
+                          await markAsRead(notification.id);
+                        }
+                        setIsOpen(false);
+                        window.location.href = getNotificationLink(notification);
+                      }}
+                      className="block"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-900 dark:text-white">
+                            {getNotificationContent(notification)}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                          </p>
+                        </div>
+                        {!notification.read && (
+                          <span className="flex-shrink-0 w-2 h-2 mt-2 bg-blue-600 rounded-full" />
+                        )}
                       </div>
-                      {!notification.read && (
-                        <span className="flex-shrink-0 w-2 h-2 mt-2 bg-blue-600 rounded-full" />
-                      )}
-                    </div>
-                  </Link>
+                    </Link>
+                  </div>
                 ))}
               </div>
             )}
