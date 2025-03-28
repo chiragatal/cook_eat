@@ -234,7 +234,7 @@ describe('ImageCarousel Component', () => {
     expect(carouselContainer?.classList.contains('custom-class')).toBe(true);
 
     const images = screen.getAllByRole('img');
-    images.forEach(img => {
+    images.forEach((img: HTMLElement) => {
       expect(img).toHaveClass('custom-image');
     });
   });

@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/dom';
 import RecipeSearch from '@/app/components/RecipeSearch';
 import { useSession } from 'next-auth/react';
 import { CATEGORIES, REACTION_FILTERS } from '@/app/lib/constants';

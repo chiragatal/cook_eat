@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/dom';
 import RecipeToggle from '@/app/components/RecipeToggle';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
