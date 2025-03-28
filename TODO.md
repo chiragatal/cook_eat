@@ -114,6 +114,7 @@ A post is basically a recipe.
 
 - [ ] Voice input for creating recipes
 - [ ] Cook along
+- [ ] Auto detect nutritional information
 
 ### Tests
 

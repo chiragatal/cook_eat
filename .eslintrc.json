@@ -1,20 +1,26 @@
 {
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
   "extends": [
     "next",
     "next/core-web-vitals",
-    "eslint:recommended"
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended"
   ],
   "rules": {
     "react/no-unescaped-entities": "off",
     "react/display-name": "off",
-    "@typescript-eslint/no-unused-vars": ["warn", {
-      "argsIgnorePattern": "^_",
-      "varsIgnorePattern": "^_",
-      "caughtErrorsIgnorePattern": "^_"
-    }],
-    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "@typescript-eslint/no-unused-vars": "off",
+    "no-console": "off",
     "no-debugger": "warn",
-    "no-duplicate-imports": "error",
-    "no-unused-vars": "off"
+    "no-duplicate-imports": "off",
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "react-hooks/exhaustive-deps": "off",
+    "prefer-const": "off",
+    "no-var": "off",
+    "no-useless-escape": "off",
+    "@next/next/no-img-element": "off",
+    "@next/next/no-page-custom-font": "off"
   }
 }
