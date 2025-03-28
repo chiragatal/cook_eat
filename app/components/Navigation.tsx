@@ -77,9 +77,12 @@ export default function Navigation() {
             {/* Mobile menu button */}
             <div className="flex sm:hidden items-center">
               {session && (
-                <span className="mr-3 text-sm text-gray-700 dark:text-gray-300">
-                  Hi, {session.user?.name?.split(' ')[0] || session.user?.email?.split('@')[0]}
-                </span>
+                <>
+                  <span className="mr-3 text-sm text-gray-700 dark:text-gray-300">
+                    Hi, {session.user?.name?.split(' ')[0] || session.user?.email?.split('@')[0]}
+                  </span>
+                  <NotificationList />
+                </>
               )}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -182,6 +185,20 @@ export default function Navigation() {
                 {session ? (
                   <>
                     <UserSearch />
+                    <button
+                      onClick={() => {
+                        const notificationButton = document.querySelector('[aria-label="Notifications"]') as HTMLButtonElement;
+                        if (notificationButton) {
+                          notificationButton.click();
+                        }
+                      }}
+                      className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      </svg>
+                      <span>Notifications</span>
+                    </button>
                     <button
                       onClick={toggleTheme}
                       className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
