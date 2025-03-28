@@ -392,8 +392,13 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
 
   const addStep = () => {
     if (newStep.instruction.trim()) {
+      // Clean up any markdown formatting
+      const cleanedInstruction = newStep.instruction.trim()
+        .replace(/\*+/g, '') // Remove all asterisks
+        .trim();
+
       setSteps([...steps, {
-        instruction: newStep.instruction.trim(),
+        instruction: cleanedInstruction,
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       }]);
       setNewStep({ instruction: '', id: '' });
@@ -602,7 +607,12 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
             descriptionParts.push(currentDescription.trim());
             currentDescription = '';
           }
-          currentDescription = `**${line.replace(/^#+\s*/, '')}**\n`; // Convert heading to bold text
+          // Convert heading to bold text and preserve other markdown formatting
+          const formattedHeading = line.replace(/^#+\s*/, '')
+            .replace(/\*\*([^*]+)\*\*/g, '**$1**') // Preserve bold
+            .replace(/\*([^*]+)\*/g, '*$1*') // Preserve italic
+            .replace(/`([^`]+)`/g, '`$1`'); // Preserve code
+          currentDescription = `**${formattedHeading}**\n`;
           continue;
         }
       }
@@ -639,19 +649,34 @@ export default function RecipeForm({ recipe = emptyRecipe, onSave, onCancel, mod
         // Handle bullet points or numbered items for steps
         const bulletMatch = line.match(/^[-•*]\s*(.+)$/) || line.match(/^\d+\.\s*(.+)$/);
         if (bulletMatch) {
+          // Clean up any markdown formatting in the step
+          const cleanedStep = bulletMatch[1]
+            .replace(/\*+/g, '') // Remove all asterisks
+            .trim();
+
           detectedSteps.push({
-            instruction: capitalizeFirstLetter(bulletMatch[1]),
+            instruction: capitalizeFirstLetter(cleanedStep),
             id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
           });
         } else if (line.trim()) {
+          // Clean up any markdown formatting in the step
+          const cleanedStep = line
+            .replace(/\*+/g, '') // Remove all asterisks
+            .trim();
+
           detectedSteps.push({
-            instruction: capitalizeFirstLetter(line),
+            instruction: capitalizeFirstLetter(cleanedStep),
             id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
           });
         }
       } else {
-        // Add to current description section
-        currentDescription += line + '\n';
+        // Add to current description section, preserving markdown formatting
+        const formattedLine = line
+          .replace(/\*\*([^*]+)\*\*/g, '**$1**') // Preserve bold
+          .replace(/\*([^*]+)\*/g, '*$1*') // Preserve italic
+          .replace(/`([^`]+)`/g, '`$1`') // Preserve code
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '[$1]($2)'); // Preserve links
+        currentDescription += formattedLine + '\n';
       }
     }
 
@@ -1251,7 +1276,11 @@ A quick and easy dinner recipe perfect for weeknights.
                             value={step.instruction}
                             onChange={(e) => {
                               const updatedSteps = [...steps];
-                              updatedSteps[index] = { ...step, instruction: e.target.value };
+                              // Clean up any markdown formatting when editing
+                              const cleanedValue = e.target.value
+                                .replace(/\*+/g, '') // Remove all asterisks
+                                .trim();
+                              updatedSteps[index] = { ...step, instruction: cleanedValue };
                               setSteps(updatedSteps);
                             }}
                             placeholder="Step instruction"

@@ -121,6 +121,7 @@ A post is basically a recipe.
 - [x] Add automated tests
 - [ ] Add tests for the mobile
 - [ ] Negative tests
+- [ ] Enable more linting errors instead of ignoring them
 
 ### Bugs
 

@@ -7,6 +7,19 @@ import Image from '@tiptap/extension-image';
 import { useState, useEffect, useRef, forwardRef } from 'react';
 import { cn } from '../../lib/utils';
 
+// Add this function to convert Markdown-style formatting to HTML
+function convertMarkdownToHtml(content: string): string {
+  if (!content) return '';
+
+  return content
+    // Convert **text** to <strong>text</strong>
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    // Convert *text* to <em>text</em>
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    // Convert `text` to <code>text</code>
+    .replace(/`(.*?)`/g, '<code>$1</code>');
+}
+
 interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -49,6 +62,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         placeholder: placeholder,
       },
     },
+    immediatelyRender: false,
   });
 
   useEffect(() => {
@@ -224,11 +238,13 @@ export const RichTextContent = forwardRef<
 >(({ content, className }, ref) => {
   if (!content) return null;
 
+  const processedContent = convertMarkdownToHtml(content);
+
   return (
     <div
       ref={ref}
       className={cn("prose dark:prose-invert max-w-none", className)}
-      dangerouslySetInnerHTML={{ __html: content }}
+      dangerouslySetInnerHTML={{ __html: processedContent }}
     />
   );
 });
@@ -249,6 +265,7 @@ export function TruncatedRichText({
 }) {
   const [hasOverflow, setHasOverflow] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const processedContent = convertMarkdownToHtml(content);
 
   useEffect(() => {
     // Check if content overflows the container
@@ -266,7 +283,7 @@ export function TruncatedRichText({
         ref={contentRef}
         className={`${className} overflow-hidden`}
         style={{ maxHeight }}
-        dangerouslySetInnerHTML={{ __html: content }}
+        dangerouslySetInnerHTML={{ __html: processedContent }}
         onClick={(e) => {
           if (onReadMore) {
             e.stopPropagation();
