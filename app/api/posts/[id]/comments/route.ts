@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/config';
-import { prisma } from '../../../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
+import { createCommentNotification, createCommentMentionNotification } from '@/app/utils/notifications';
 
 // GET comments for a post
 export async function GET(
@@ -18,7 +19,6 @@ export async function GET(
       );
     }
 
-    // Fetch comments for the post
     const comments = await prisma.comment.findMany({
       where: { postId },
       orderBy: {
@@ -51,17 +51,14 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
       );
     }
 
-    console.log('Session user:', session.user);
-
     const postId = parseInt(params.id);
-
     if (isNaN(postId)) {
       return NextResponse.json(
         { error: 'Invalid post ID' },
@@ -69,9 +66,6 @@ export async function POST(
       );
     }
 
-    console.log('Post ID:', postId);
-
-    // Check if post exists
     const post = await prisma.post.findUnique({
       where: { id: postId }
     });
@@ -83,13 +77,7 @@ export async function POST(
       );
     }
 
-    console.log('Post found:', post.id);
-
-    const body = await request.json();
-    const { content } = body;
-
-    console.log('Comment content:', content);
-
+    const { content } = await request.json();
     if (!content || content.trim() === '') {
       return NextResponse.json(
         { error: 'Comment content is required' },
@@ -97,43 +85,60 @@ export async function POST(
       );
     }
 
-    // Create comment
-    console.log('Creating comment with data:', {
-      content,
-      postId,
-      userId: session.user.id
+    const comment = await prisma.comment.create({
+      data: {
+        content,
+        postId,
+        userId: session.user.id
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      }
     });
 
-    try {
-      const comment = await prisma.comment.create({
-        data: {
-          content,
-          postId,
-          userId: session.user.id
-        },
-        include: {
-          user: {
-            select: {
-              name: true,
-              email: true
-            }
-          }
+    // Create notification for post author
+    await createCommentNotification(
+      comment.postId,
+      comment.userId,
+      post.userId,
+      post.title
+    );
+
+    // Check for mentions in the comment
+    const mentionRegex = /@(\w+)/g;
+    const mentions = content.match(mentionRegex) || [];
+
+    if (mentions.length > 0) {
+      const mentionedUsers = await prisma.user.findMany({
+        where: {
+          OR: mentions.map((mention: string) => ({
+            name: mention.substring(1)
+          }))
         }
       });
 
-      console.log('Comment created successfully:', comment.id);
-      return NextResponse.json(comment);
-    } catch (dbError) {
-      console.error('Database error creating comment:', dbError);
-      return NextResponse.json(
-        { error: 'Database error: ' + (dbError instanceof Error ? dbError.message : 'Unknown error') },
-        { status: 500 }
+      await Promise.all(
+        mentionedUsers.map(user =>
+          createCommentMentionNotification(
+            comment.id,
+            user.id,
+            comment.userId,
+            comment.content
+          )
+        )
       );
     }
+
+    return NextResponse.json(comment);
   } catch (error) {
-    console.error('Detailed error creating comment:', error);
+    console.error('Error creating comment:', error);
     return NextResponse.json(
-      { error: 'Error creating comment: ' + (error instanceof Error ? error.message : 'Unknown error') },
+      { error: 'Failed to create comment' },
       { status: 500 }
     );
   }
@@ -146,7 +151,7 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
@@ -163,7 +168,6 @@ export async function PUT(
       );
     }
 
-    // Check if comment exists and belongs to the user
     const comment = await prisma.comment.findUnique({
       where: { id: commentId }
     });
@@ -182,9 +186,7 @@ export async function PUT(
       );
     }
 
-    const body = await request.json();
-    const { content } = body;
-
+    const { content } = await request.json();
     if (!content || content.trim() === '') {
       return NextResponse.json(
         { error: 'Comment content is required' },
@@ -192,7 +194,6 @@ export async function PUT(
       );
     }
 
-    // Update comment
     const updatedComment = await prisma.comment.update({
       where: { id: commentId },
       data: { content },
@@ -223,7 +224,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
@@ -240,7 +241,6 @@ export async function DELETE(
       );
     }
 
-    // Check if comment exists and belongs to the user
     const comment = await prisma.comment.findUnique({
       where: { id: commentId }
     });
@@ -259,7 +259,6 @@ export async function DELETE(
       );
     }
 
-    // Delete comment
     await prisma.comment.delete({
       where: { id: commentId }
     });

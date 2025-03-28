@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/config';
 import { COMMENT_REACTION_TYPES, CommentReactionType } from './types';
 import { prisma } from '../../../../../lib/prisma';
+import { createCommentReactionNotification } from '@/app/utils/notifications';
 
 // GET reactions for a comment
 export async function GET(
@@ -132,19 +133,30 @@ export async function POST(
       },
     });
 
+    let reaction;
     // Toggle the reaction
     if (existingReaction) {
       await prisma.commentReaction.delete({
         where: { id: existingReaction.id },
       });
     } else {
-      await prisma.commentReaction.create({
+      reaction = await prisma.commentReaction.create({
         data: {
           type,
           commentId,
           userId: session.user.id,
         },
       });
+
+      // Create notification only when adding a reaction
+      if (reaction) {
+        await createCommentReactionNotification(
+          reaction.commentId,
+          reaction.userId,
+          comment.userId,
+          comment.content
+        );
+      }
     }
 
     // Get updated reactions with user info

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/config';
 import { REACTION_TYPES, ReactionType } from './types';
 import { prisma } from '../../../../../lib/db';
+import { createReactionNotification } from '@/app/utils/notifications';
 
 // GET reactions for a post
 export async function GET(
@@ -120,19 +121,41 @@ export async function POST(
       },
     });
 
+    let reaction;
     // Toggle the reaction
     if (existingReaction) {
       await prisma.reaction.delete({
         where: { id: existingReaction.id },
       });
     } else {
-      await prisma.reaction.create({
+      reaction = await prisma.reaction.create({
         data: {
           type,
           postId,
           userId: session.user.id,
         },
       });
+
+      // Create notification only when adding a reaction
+      if (reaction) {
+        const post = await prisma.post.findUnique({
+          where: { id: reaction.postId },
+          select: {
+            userId: true,
+            title: true
+          }
+        });
+
+        if (post) {
+          await createReactionNotification(
+            reaction.postId,
+            reaction.userId,
+            post.userId,
+            reaction.type,
+            post.title
+          );
+        }
+      }
     }
 
     // Get updated reactions with user info

@@ -7,6 +7,7 @@ import UserSearch from './UserSearch';
 import { useState, useEffect, useRef } from 'react';
 import Logo from './Logo';
 import { usePathname } from 'next/navigation';
+import NotificationList from './NotificationList';
 
 export default function Navigation() {
   const { data: session } = useSession();
@@ -117,6 +118,8 @@ export default function Navigation() {
                   Hi, {session.user?.name || session.user?.email}
                 </span>
                 <div className="flex items-center gap-3">
+                  {/* Add NotificationList before the theme toggle */}
+                  {session && <NotificationList />}
                   <button
                     onClick={toggleTheme}
                     className="rounded-md bg-gray-100 dark:bg-gray-700 p-2 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600"

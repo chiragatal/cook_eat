@@ -21,6 +21,9 @@ model User {
   commentReactions CommentReaction[]
   posts            Post[]
   reactions        Reaction[]
+  notifications    Notification[]      @relation("UserNotifications")
+  notificationPreferences NotificationPreference[]
+  triggeredNotifications Notification[]      @relation("NotificationActor")
 }
 
 model Post {
@@ -87,5 +90,32 @@ model CommentReaction {
 
   @@unique([commentId, userId, type])
   @@index([commentId])
+  @@index([userId])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  type      String   // REACTION, COMMENT, COMMENT_REACTION, COMMENT_MENTION, NEW_POST_FROM_FOLLOWING
+  userId    Int
+  actorId   Int
+  targetId  Int      // postId or commentId
+  read      Boolean  @default(false)
+  data      Json?    // Additional data like postTitle, commentContent, reactionType
+  createdAt DateTime @default(now())
+  user      User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  actor     User     @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([actorId])
+}
+
+model NotificationPreference {
+  id      Int     @id @default(autoincrement())
+  type    String  // REACTION, COMMENT, COMMENT_REACTION, COMMENT_MENTION, NEW_POST_FROM_FOLLOWING
+  enabled Boolean @default(true)
+  userId  Int
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
   @@index([userId])
 }

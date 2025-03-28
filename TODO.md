@@ -102,6 +102,13 @@ A post is basically a recipe.
 - [ ] Reactions on comments notifications
 - [ ] Tagging other users in comments
 
+### Followers
+
+- [ ] Option to follow and unfollow other users
+- [ ] Following list
+- [ ] Followers list
+- [ ] Notification support for new posts by following users
+
 ### Shopping list
 
 - [ ] Users should be able to add items to their shopping list
