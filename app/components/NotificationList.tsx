@@ -41,23 +41,25 @@ export default function NotificationList() {
   }, [fetchNotifications]);
 
   const getNotificationContent = (notification: Notification) => {
+    const actorName = notification.actor?.name ?? 'Someone';
+
     switch (notification.type) {
       case 'REACTION':
-        return `reacted with ${notification.data?.reactionType} to your post "${notification.data?.postTitle}"`;
+        return `${actorName} reacted with ${notification.data?.reactionType ?? ''} to your post "${notification.data?.postTitle ?? ''}"`;
       case 'COMMENT':
-        return `commented on your post "${notification.data?.postTitle}"`;
+        return `${actorName} commented on your post "${notification.data?.postTitle ?? ''}"`;
       case 'COMMENT_REACTION': {
-        const content = notification.data?.commentContent || '';
-        return `reacted to your comment "${content.slice(0, 50)}${content.length > 50 ? '...' : ''}"`;
+        const content = notification.data?.commentContent ?? '';
+        return `${actorName} reacted to your comment "${content.slice(0, 50)}${content.length > 50 ? '...' : ''}"`;
       }
       case 'COMMENT_MENTION': {
-        const content = notification.data?.commentContent || '';
-        return `mentioned you in a comment: "${content.slice(0, 50)}${content.length > 50 ? '...' : ''}"`;
+        const content = notification.data?.commentContent ?? '';
+        return `${actorName} mentioned you in a comment: "${content.slice(0, 50)}${content.length > 50 ? '...' : ''}"`;
       }
       case 'NEW_POST_FROM_FOLLOWING':
-        return `shared a new recipe: "${notification.data?.postTitle}"`;
+        return `${actorName} shared a new recipe: "${notification.data?.postTitle ?? ''}"`;
       default:
-        return 'sent you a notification';
+        return `${actorName} sent you a notification`;
     }
   };
 
@@ -65,9 +67,9 @@ export default function NotificationList() {
     switch (notification.type) {
       case 'COMMENT_MENTION':
       case 'COMMENT_REACTION':
-        return `/posts/${notification.targetId}#comment-${notification.data?.commentContent}`;
+        return `/recipe/${notification.targetId}#comment-${notification.data?.commentContent}`;
       default:
-        return `/posts/${notification.targetId}`;
+        return `/recipe/${notification.targetId}`;
     }
   };
 
@@ -82,7 +84,7 @@ export default function NotificationList() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">
+          <span className="absolute top-0.5 right-0.5 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform bg-red-500 rounded-full">
             {unreadCount}
           </span>
         )}
@@ -141,6 +143,13 @@ export default function NotificationList() {
                       className="block"
                     >
                       <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 mt-1">
+                          <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                          </div>
+                        </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-gray-900 dark:text-white">
                             {getNotificationContent(notification)}

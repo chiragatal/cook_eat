@@ -6,7 +6,7 @@ import crypto from 'crypto';
 const prisma = new PrismaClient();
 
 // Generate a random integer between min and max (inclusive)
-function getRandomInt(min, max) {
+function getRandomInt(min: number, max: number): number {
   min = Math.ceil(min);
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min + 1)) + min;

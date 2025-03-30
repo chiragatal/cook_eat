@@ -24,6 +24,10 @@ export interface Notification {
     commentContent?: string;
     reactionType?: string;
   };
+  actor?: {
+    name: string;
+    email: string;
+  };
 }
 
 export interface NotificationSettings {
