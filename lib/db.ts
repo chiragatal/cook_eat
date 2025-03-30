@@ -11,7 +11,7 @@ if (process.env.NODE_ENV !== 'production') {
   global.prisma = prisma;
 }
 
-export async function getReactions(postId: number) {
+export async function getReactions(postId: string) {
   try {
     const allReactions = await prisma.reaction.findMany({
       where: { postId },
@@ -24,7 +24,7 @@ export async function getReactions(postId: number) {
   }
 }
 
-export async function getUserReactions(postId: number, userId: string) {
+export async function getUserReactions(postId: string, userId: string) {
   try {
     const userReactions = await prisma.reaction.findMany({
       where: {
@@ -40,7 +40,7 @@ export async function getUserReactions(postId: number, userId: string) {
   }
 }
 
-export async function toggleReaction(postId: number, userId: string, type: string) {
+export async function toggleReaction(postId: string, userId: string, type: string) {
   try {
     const existingReaction = await prisma.reaction.findFirst({
       where: {

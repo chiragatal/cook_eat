@@ -14,8 +14,8 @@ interface Reaction {
 }
 
 interface QuickReactionsProps {
-  postId: number;
-  onReactionToggled?: () => void;
+  postId: string;
+  onReactionToggled?: (postId: string) => void;
 }
 
 const REACTION_EMOJIS: Record<ReactionType, { emoji: string; label: string }> = {
@@ -113,7 +113,7 @@ export default function QuickReactions({ postId, onReactionToggled }: QuickReact
       setReactions(data.reactions || []);
       setUserReactions(data.userReactions || []);
       setShowReactionPicker(false);
-      onReactionToggled?.();
+      onReactionToggled?.(postId);
     } catch (error) {
       console.error('Error toggling reaction:', error);
     }

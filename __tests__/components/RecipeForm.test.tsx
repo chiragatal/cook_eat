@@ -178,7 +178,7 @@ describe('RecipeForm Component', () => {
 
   it('populates form with recipe data in edit mode', async () => {
     const mockRecipe = {
-      id: 1,
+      id: '1',
       title: 'Test Recipe',
       description: 'Test description',
       ingredients: JSON.stringify([

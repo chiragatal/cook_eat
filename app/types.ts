@@ -10,7 +10,7 @@ export interface Step {
 }
 
 export interface Recipe {
-  id?: number;
+  id?: string;
   title: string;
   description: string;
   ingredients: string; // JSON string of Ingredient[]

@@ -11,8 +11,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const postId = parseInt(params.id);
-    if (isNaN(postId)) {
+    const postId = params.id;
+
+    if (!postId) {
       return NextResponse.json(
         { error: 'Invalid post ID' },
         { status: 400 }
@@ -94,8 +95,9 @@ export async function POST(
       );
     }
 
-    const postId = parseInt(params.id);
-    if (isNaN(postId)) {
+    const postId = params.id;
+
+    if (!postId) {
       return NextResponse.json(
         { error: 'Invalid post ID' },
         { status: 400 }
@@ -115,8 +117,8 @@ export async function POST(
     // Find existing reaction
     const existingReaction = await prisma.reaction.findFirst({
       where: {
-        postId: Number(params.id),
-        userId: session.user.id.toString(),
+        postId,
+        userId: session.user.id,
         type,
       },
     });
@@ -131,8 +133,8 @@ export async function POST(
       reaction = await prisma.reaction.create({
         data: {
           type,
-          postId: Number(params.id),
-          userId: session.user.id.toString(),
+          postId,
+          userId: session.user.id,
         },
       });
 
@@ -149,7 +151,7 @@ export async function POST(
         if (post) {
           await createReactionNotification(
             reaction.postId,
-            session.user.id.toString(),
+            session.user.id,
             post.userId,
             type,
             post.title
@@ -198,7 +200,7 @@ export async function POST(
 
     // Get user's reactions
     const userReactions = allReactions
-      .filter(r => r.userId === session.user.id.toString())
+      .filter(r => r.userId === session.user.id)
       .map(r => r.type);
 
     return NextResponse.json({

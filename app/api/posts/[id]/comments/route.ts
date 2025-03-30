@@ -10,9 +10,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const postId = parseInt(params.id);
+    const postId = params.id;
 
-    if (isNaN(postId)) {
+    if (!postId) {
       return NextResponse.json(
         { error: 'Invalid post ID' },
         { status: 400 }
@@ -58,8 +58,8 @@ export async function POST(
       );
     }
 
-    const postId = parseInt(params.id);
-    if (isNaN(postId)) {
+    const postId = params.id;
+    if (!postId) {
       return NextResponse.json(
         { error: 'Invalid post ID' },
         { status: 400 }
@@ -88,7 +88,7 @@ export async function POST(
     const comment = await prisma.comment.create({
       data: {
         content,
-        postId: Number(postId),
+        postId,
         userId: session.user.id.toString()
       },
       include: {
@@ -104,7 +104,7 @@ export async function POST(
     // Create notification for post author
     await createCommentNotification(
       comment.postId,
-      session.user.id.toString(),
+      session.user.id,
       post.userId,
       post.title
     );
@@ -113,25 +113,36 @@ export async function POST(
     const mentionRegex = /@(\w+)/g;
     const mentions = content.match(mentionRegex) || [];
 
+    // Process mentions
     if (mentions.length > 0) {
+      // Extract usernames from mentions (remove @ symbol)
+      const usernames = mentions.map((mention: string) => mention.substring(1));
+
+      // Find mentioned users in the database
       const mentionedUsers = await prisma.user.findMany({
         where: {
-          OR: mentions.map((mention: string) => ({
-            name: mention.substring(1)
-          }))
+          name: {
+            in: usernames
+          }
+        },
+        select: {
+          id: true,
+          name: true
         }
       });
 
-      await Promise.all(
-        mentionedUsers.map(user =>
-          createCommentMentionNotification(
+      // Create notifications for mentioned users (excluding commenter)
+      for (const user of mentionedUsers) {
+        if (user.id !== session.user.id) {
+          await createCommentMentionNotification(
             comment.id,
-            user.id.toString(),
-            session.user.id.toString(),
-            comment.content
-          )
-        )
-      );
+            post.id,
+            session.user.id,
+            user.id,
+            content
+          );
+        }
+      }
     }
 
     return NextResponse.json(comment);
@@ -159,9 +170,9 @@ export async function PUT(
     }
 
     const url = new URL(request.url);
-    const commentId = parseInt(url.searchParams.get('commentId') || '');
+    const commentId = url.searchParams.get('commentId');
 
-    if (isNaN(commentId)) {
+    if (!commentId) {
       return NextResponse.json(
         { error: 'Invalid comment ID' },
         { status: 400 }
@@ -179,7 +190,7 @@ export async function PUT(
       );
     }
 
-    if (comment.userId !== session.user.id.toString() && !session.user.isAdmin) {
+    if (comment.userId !== session.user.id && !session.user.isAdmin) {
       return NextResponse.json(
         { error: 'Not authorized to update this comment' },
         { status: 403 }
@@ -232,9 +243,9 @@ export async function DELETE(
     }
 
     const url = new URL(request.url);
-    const commentId = parseInt(url.searchParams.get('commentId') || '');
+    const commentId = url.searchParams.get('commentId');
 
-    if (isNaN(commentId)) {
+    if (!commentId) {
       return NextResponse.json(
         { error: 'Invalid comment ID' },
         { status: 400 }
@@ -252,7 +263,7 @@ export async function DELETE(
       );
     }
 
-    if (comment.userId !== session.user.id.toString() && !session.user.isAdmin) {
+    if (comment.userId !== session.user.id && !session.user.isAdmin) {
       return NextResponse.json(
         { error: 'Not authorized to delete this comment' },
         { status: 403 }

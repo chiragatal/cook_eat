@@ -11,8 +11,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const commentId = parseInt(params.id);
-    if (isNaN(commentId)) {
+    const commentId = params.id;
+    if (!commentId) {
       return NextResponse.json(
         { error: 'Invalid comment ID' },
         { status: 400 }
@@ -63,7 +63,7 @@ export async function GET(
     let userReactions: string[] = [];
     if (session?.user?.id) {
       userReactions = allReactions
-        .filter(r => r.userId === session.user.id.toString())
+        .filter(r => r.userId === session.user.id)
         .map(r => r.type);
     }
 
@@ -74,7 +74,7 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching comment reactions:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch reactions' },
+      { error: 'Failed to fetch comment reactions' },
       { status: 500 }
     );
   }
@@ -94,8 +94,8 @@ export async function POST(
       );
     }
 
-    const commentId = parseInt(params.id);
-    if (isNaN(commentId)) {
+    const commentId = params.id;
+    if (!commentId) {
       return NextResponse.json(
         { error: 'Invalid comment ID' },
         { status: 400 }
@@ -127,8 +127,8 @@ export async function POST(
     // Find existing reaction
     const existingReaction = await prisma.commentReaction.findFirst({
       where: {
-        commentId: Number(params.id),
-        userId: session.user.id.toString(),
+        commentId,
+        userId: session.user.id,
         type
       }
     });
@@ -143,8 +143,8 @@ export async function POST(
       reaction = await prisma.commentReaction.create({
         data: {
           type,
-          commentId: Number(params.id),
-          userId: session.user.id.toString(),
+          commentId,
+          userId: session.user.id,
         },
       });
 
@@ -152,7 +152,7 @@ export async function POST(
       if (reaction) {
         await createCommentReactionNotification(
           reaction.commentId,
-          session.user.id.toString(),
+          session.user.id,
           comment.userId,
           comment.content
         );
@@ -199,7 +199,7 @@ export async function POST(
 
     // Get user's reactions
     const userReactions = allReactions
-      .filter(r => r.userId === session.user.id.toString())
+      .filter(r => r.userId === session.user.id)
       .map(r => r.type);
 
     return NextResponse.json({
@@ -209,7 +209,7 @@ export async function POST(
   } catch (error) {
     console.error('Error toggling comment reaction:', error);
     return NextResponse.json(
-      { error: 'Failed to toggle reaction' },
+      { error: 'Failed to toggle comment reaction' },
       { status: 500 }
     );
   }

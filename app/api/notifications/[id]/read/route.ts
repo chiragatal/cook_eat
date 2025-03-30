@@ -13,8 +13,9 @@ export async function POST(
   }
 
   try {
-    const notificationId = parseInt(params.id);
-    if (isNaN(notificationId)) {
+    const notificationId = params.id;
+
+    if (!notificationId) {
       return NextResponse.json(
         { error: 'Invalid notification ID' },
         { status: 400 }

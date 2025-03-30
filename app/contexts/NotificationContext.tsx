@@ -8,7 +8,7 @@ interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
   preferences: NotificationPreference[];
-  markAsRead: (notificationId: number) => Promise<void>;
+  markAsRead: (notificationId: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   updatePreference: (type: NotificationType, enabled: boolean) => Promise<void>;
   fetchNotifications: () => Promise<void>;
@@ -57,7 +57,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }
   }, [session, fetchNotifications, fetchPreferences]);
 
-  const markAsRead = async (notificationId: number) => {
+  const markAsRead = async (notificationId: string) => {
     try {
       const response = await fetch(`/api/notifications/${notificationId}/read`, {
         method: 'POST',

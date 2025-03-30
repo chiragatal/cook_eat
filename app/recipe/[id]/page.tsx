@@ -23,8 +23,24 @@ export default function RecipePage({ params }: { params: { id: string } }) {
   const { setSelectedUser } = useView();
   const { data: session } = useSession();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const images = recipe?.images ? JSON.parse(recipe.images) : [];
   const [isSharing, setIsSharing] = useState(false);
+
+  // Safely parse JSON with fallback to empty array
+  const safeJsonParse = (jsonString: string | null | undefined, fallback: any[] = []) => {
+    if (!jsonString) return fallback;
+    try {
+      return JSON.parse(jsonString);
+    } catch (error) {
+      console.error('Error parsing JSON:', error);
+      return fallback;
+    }
+  };
+
+  // Use safe parsing for all JSON fields
+  const ingredients: Ingredient[] = recipe ? safeJsonParse(recipe.ingredients) : [];
+  const steps: Step[] = recipe ? safeJsonParse(recipe.steps) : [];
+  const tags: string[] = recipe ? safeJsonParse(recipe.tags) : [];
+  const images: string[] = recipe ? safeJsonParse(recipe.images) : [];
 
   useEffect(() => {
     fetchRecipe();
@@ -32,11 +48,17 @@ export default function RecipePage({ params }: { params: { id: string } }) {
 
   const fetchRecipe = async () => {
     try {
-      const response = await fetch(`/api/posts?id=${params.id}`);
+      console.log('Fetching recipe with ID:', params.id);
+      const response = await fetch(`/api/posts/${params.id}`);
+
       if (!response.ok) {
-        throw new Error('Failed to fetch recipe');
+        const errorText = await response.text();
+        console.error('Server error:', response.status, errorText);
+        throw new Error(`Failed to fetch recipe: ${response.status} ${errorText}`);
       }
+
       const data = await response.json();
+      console.log('Recipe data received:', data);
       setRecipe(data);
     } catch (error) {
       setError('Failed to load recipe');
@@ -135,14 +157,14 @@ export default function RecipePage({ params }: { params: { id: string } }) {
   };
 
   const nextImage = useCallback(() => {
-    if (!images.length) return;
+    if (!images || !images.length) return;
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
-  }, [images.length]);
+  }, [images]);
 
   const prevImage = useCallback(() => {
-    if (!images.length) return;
+    if (!images || !images.length) return;
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
-  }, [images.length]);
+  }, [images]);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -181,10 +203,6 @@ export default function RecipePage({ params }: { params: { id: string } }) {
       </div>
     );
   }
-
-  const ingredients: Ingredient[] = JSON.parse(recipe.ingredients);
-  const steps: Step[] = JSON.parse(recipe.steps);
-  const tags: string[] = JSON.parse(recipe.tags);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -253,7 +271,7 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                       Cook Mode
                     </Link>
 
-                    {session && ((String(session.user.id) === String(recipe?.userId)) || session.user.isAdmin) && (
+                    {session && (session.user.id === recipe.userId || session.user.isAdmin) && (
                       <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
                         <Link
                           href={`/recipe/${recipe.id}/edit`}
@@ -283,7 +301,7 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                     <span
                       className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400"
                       onClick={() => handleUserClick(
-                        String(recipe.userId),
+                        recipe.userId,
                         recipe.user?.name || null,
                         recipe.user?.email || ''
                       )}
@@ -380,7 +398,9 @@ export default function RecipePage({ params }: { params: { id: string } }) {
               <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                   <div>
-                    <QuickReactions postId={recipe.id || 0} />
+                    {recipe && recipe.id && (
+                      <QuickReactions postId={recipe.id} />
+                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-4 text-right">
@@ -412,7 +432,9 @@ export default function RecipePage({ params }: { params: { id: string } }) {
               </div>
 
               {/* Comments Section */}
-              <Comments postId={recipe.id || 0} />
+              {recipe && recipe.id && (
+                <Comments postId={recipe.id} />
+              )}
             </div>
           </div>
         </div>

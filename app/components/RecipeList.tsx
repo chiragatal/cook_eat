@@ -25,7 +25,7 @@ interface Step {
 }
 
 interface Recipe {
-  id: number;
+  id: string;
   title: string;
   description: string;
   ingredients: string; // JSON string of Ingredient[]
@@ -78,23 +78,23 @@ export default function RecipeList({
   const [error, setError] = useState<string | null>(null);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
   const [shareButtonText, setShareButtonText] = useState('Share Collection');
-  const [userReactions, setUserReactions] = useState<Record<number, string[]>>({});
-  const [expandedRecipes, setExpandedRecipes] = useState<number[]>([]);
-  const [commentCounts, setCommentCounts] = useState<Record<number, number>>({});
+  const [userReactions, setUserReactions] = useState<Record<string, string[]>>({});
+  const [expandedRecipes, setExpandedRecipes] = useState<string[]>([]);
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const [filters, setFilters] = useState<SearchFilters>({
     query: '',
     category: '',
     visibility: 'all',
     reactionFilter: '',
   });
-  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
-  const [currentImageIndices, setCurrentImageIndices] = useState<Record<number, number>>({});
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [currentImageIndices, setCurrentImageIndices] = useState<Record<string, number>>({});
 
   // Add a ref for scrolling to expanded content
-  const expandedRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const expandedRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Enhance toggleRecipeExpansion with smooth scroll
-  const toggleRecipeExpansion = (recipeId: number) => {
+  const toggleRecipeExpansion = (recipeId: string) => {
     const isExpanding = !expandedRecipes.includes(recipeId);
 
     setExpandedRecipes(current =>
@@ -115,11 +115,11 @@ export default function RecipeList({
   };
 
   // Fetch user reactions for all recipes
-  const fetchUserReactions = async (recipeIds: number[]) => {
+  const fetchUserReactions = async (recipeIds: string[]) => {
     if (!session?.user?.id) return;
 
     try {
-      const newReactions: Record<number, string[]> = {};
+      const newReactions: Record<string, string[]> = {};
 
       await Promise.all(recipeIds.map(async (postId) => {
         const response = await fetch(`/api/posts/${postId}/reactions`);
@@ -139,9 +139,9 @@ export default function RecipeList({
   };
 
   // Fetch comment counts for all recipes
-  const fetchCommentCounts = async (recipeIds: number[]) => {
+  const fetchCommentCounts = async (recipeIds: string[]) => {
     try {
-      const counts: Record<number, number> = {};
+      const counts: Record<string, number> = {};
 
       await Promise.all(recipeIds.map(async (recipeId) => {
         const response = await fetch(`/api/posts/${recipeId}/comments/count`);
@@ -198,7 +198,7 @@ export default function RecipeList({
     fetchRecipes();
   }, [userId, publicOnly, isMyRecipesView, session?.user?.id]);
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this recipe?')) {
       return;
     }
@@ -302,12 +302,12 @@ export default function RecipeList({
     }
   };
 
-  const handleReactionToggled = async (postId: number) => {
+  const handleReactionToggled = async (postId: string) => {
     if (!session?.user?.id) return;
     await fetchUserReactions([postId]);
   };
 
-  const handleMenuClick = (e: React.MouseEvent, recipeId: number) => {
+  const handleMenuClick = (e: React.MouseEvent, recipeId: string) => {
     e.stopPropagation();
     setOpenMenuId(openMenuId === recipeId ? null : recipeId);
   };
@@ -395,7 +395,7 @@ export default function RecipeList({
   // Initialize all galleries when recipes are loaded or changed
   useEffect(() => {
     // Ensure current image indices are initialized for all recipes
-    const initialIndices: Record<number, number> = {};
+    const initialIndices: Record<string, number> = {};
     filteredRecipes.forEach(recipe => {
       if (!currentImageIndices[recipe.id]) {
         initialIndices[recipe.id] = 0;

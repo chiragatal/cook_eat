@@ -7,9 +7,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const postId = parseInt(params.id);
+    const postId = params.id;
 
-    if (isNaN(postId)) {
+    if (!postId) {
       return NextResponse.json(
         { error: 'Invalid post ID' },
         { status: 400 }

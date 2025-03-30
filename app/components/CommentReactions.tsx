@@ -8,13 +8,13 @@ interface Reaction {
   type: CommentReactionType;
   count: number;
   users?: Array<{
-    id: number;
+    id: string;
     name: string | null;
   }>;
 }
 
 interface CommentReactionsProps {
-  commentId: number;
+  commentId: string;
   onReactionToggled?: () => void;
 }
 

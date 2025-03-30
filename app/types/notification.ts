@@ -12,10 +12,10 @@ export interface NotificationPreference {
 }
 
 export interface Notification {
-  id: number;
+  id: string;
   type: NotificationType;
   userId: string;
-  targetId: number; // postId or commentId
+  targetId: string; // postId or commentId
   actorId: string; // user who triggered the notification
   read: boolean;
   createdAt: string;

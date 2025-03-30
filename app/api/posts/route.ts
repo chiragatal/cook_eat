@@ -5,66 +5,75 @@ import { prisma } from '../../../lib/prisma';
 
 export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const searchTerm = searchParams.get('q');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    const userId = searchParams.get('userId');
+    const bookmark = searchParams.get('bookmark') === 'true';
+    const madeIt = searchParams.get('madeIt') === 'true';
+    const wantToTry = searchParams.get('wantToTry') === 'true';
+
     const session = await getServerSession(authOptions);
-    const url = new URL(request.url);
-    const id = url.searchParams.get('id');
-    const userId = url.searchParams.get('userId');
-    const publicOnly = url.searchParams.get('publicOnly') === 'true';
-    const startDate = url.searchParams.get('startDate');
-    const endDate = url.searchParams.get('endDate');
-    const myRecipes = url.searchParams.get('myRecipes') === 'true';
 
-    if (id) {
-      // Fetch single recipe
-      const recipe = await prisma.post.findUnique({
-        where: { id: parseInt(id) },
-        include: {
-          user: {
-            select: {
-              name: true,
-              email: true
-            }
-          }
-        }
-      });
+    // Build filter
+    const where: any = {};
 
-      if (!recipe) {
-        return NextResponse.json(
-          { error: 'Recipe not found' },
-          { status: 404 }
-        );
-      }
-
-      // Check if user has access to this recipe
-      if (!recipe.isPublic && (!session || recipe.userId !== session.user.id.toString())) {
-        return NextResponse.json(
-          { error: 'Not authorized to view this recipe' },
-          { status: 403 }
-        );
-      }
-
-      return NextResponse.json(recipe);
+    // Search filter
+    if (searchTerm) {
+      where.OR = [
+        { title: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } },
+        { ingredients: { contains: searchTerm, mode: 'insensitive' } },
+        { steps: { contains: searchTerm, mode: 'insensitive' } },
+        { notes: { contains: searchTerm, mode: 'insensitive' } },
+        { tags: { contains: searchTerm, mode: 'insensitive' } }
+      ];
     }
 
-    // Build the query
-    const where = {} as any;
-
-    if (userId) {
-      // User-specific recipes (for My Recipes page)
-      where.userId = parseInt(userId);
-    } else if (myRecipes && session) {
-      // My recipes for current user
-      where.userId = session.user.id;
-    } else if (publicOnly || !session) {
-      // Public recipes only (for All Recipes page or non-authenticated users)
-      where.isPublic = true;
-    }
-
-    // Add date range filtering if provided
+    // Date filter for calendar view
     if (startDate && endDate) {
       where.cookedOn = {
         gte: new Date(startDate),
-        lte: new Date(endDate),
+        lte: new Date(endDate)
+      };
+    }
+
+    // User filter
+    if (userId) {
+      where.userId = userId;
+    }
+
+    // Visibility filter - Only return public posts or the user's own posts
+    if (session?.user?.id) {
+      where.OR = [
+        { isPublic: true },
+        { userId: session.user.id.toString() }
+      ];
+    } else {
+      where.isPublic = true;
+    }
+
+    // Reaction filters
+    if (bookmark || madeIt || wantToTry) {
+      if (!session?.user?.id) {
+        return NextResponse.json(
+          { error: 'Authentication required for reaction filters' },
+          { status: 401 }
+        );
+      }
+
+      const reactionType = bookmark
+        ? 'FAVORITE'
+        : madeIt
+          ? 'MADE_IT'
+          : 'WANT_TO_TRY';
+
+      where.reactions = {
+        some: {
+          userId: session.user.id.toString(),
+          type: reactionType
+        }
       };
     }
 
@@ -204,7 +213,7 @@ export async function DELETE(request: Request) {
     }
 
     const url = new URL(request.url);
-    const id = parseInt(url.searchParams.get('id') || '');
+    const id = url.searchParams.get('id');
 
     if (!id) {
       return NextResponse.json(
@@ -257,7 +266,7 @@ export async function PUT(request: Request) {
     }
 
     const url = new URL(request.url);
-    const id = parseInt(url.searchParams.get('id') || '');
+    const id = url.searchParams.get('id');
     const body = await request.json();
 
     console.log('Updating post with ID:', id);

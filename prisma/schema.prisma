@@ -27,7 +27,7 @@ model User {
 }
 
 model Post {
-  id          Int        @id @default(autoincrement())
+  id          String     @id @default(uuid())
   title       String
   description String
   ingredients String
@@ -51,9 +51,9 @@ model Post {
 }
 
 model Reaction {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
   type      String
-  postId    Int
+  postId    String
   userId    String
   createdAt DateTime @default(now())
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -65,9 +65,9 @@ model Reaction {
 }
 
 model Comment {
-  id        Int               @id @default(autoincrement())
+  id        String            @id @default(uuid())
   content   String
-  postId    Int
+  postId    String
   userId    String
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
@@ -80,9 +80,9 @@ model Comment {
 }
 
 model CommentReaction {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
   type      String
-  commentId Int
+  commentId String
   userId    String
   createdAt DateTime @default(now())
   comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
@@ -94,11 +94,11 @@ model CommentReaction {
 }
 
 model Notification {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
   type      String
   userId    String
   actorId   String
-  targetId  Int
+  targetId  String
   read      Boolean  @default(false)
   data      Json?
   createdAt DateTime @default(now())
@@ -110,7 +110,7 @@ model Notification {
 }
 
 model NotificationPreference {
-  id      Int     @id @default(autoincrement())
+  id      String  @id @default(uuid())
   type    String
   enabled Boolean @default(true)
   userId  String

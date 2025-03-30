@@ -11,22 +11,22 @@ interface User {
 }
 
 interface Comment {
-  id: number;
+  id: string;
   content: string;
   createdAt: string;
   updatedAt: string;
   userId: string;
-  postId: number;
+  postId: string;
   user: User;
 }
 
-export default function Comments({ postId }: { postId: number }) {
+export default function Comments({ postId }: { postId: string }) {
   const { data: session } = useSession();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -107,7 +107,7 @@ export default function Comments({ postId }: { postId: number }) {
   };
 
   // Update a comment
-  const updateComment = async (id: number) => {
+  const updateComment = async (id: string) => {
     if (!editContent.trim()) return;
 
     try {
@@ -134,7 +134,7 @@ export default function Comments({ postId }: { postId: number }) {
   };
 
   // Delete a comment
-  const deleteComment = async (id: number) => {
+  const deleteComment = async (id: string) => {
     if (!confirm('Are you sure you want to delete this comment?')) return;
 
     try {

@@ -5,7 +5,7 @@ interface CreateNotificationParams {
   type: NotificationType;
   userId: string;
   actorId: string;
-  targetId: number;
+  targetId: string;
   data?: Record<string, any>;
 }
 
@@ -46,7 +46,7 @@ export async function createNotification({
 }
 
 export async function createReactionNotification(
-  postId: number,
+  postId: string,
   reactorId: string,
   authorId: string,
   reactionType: string,
@@ -65,7 +65,7 @@ export async function createReactionNotification(
 }
 
 export async function createCommentNotification(
-  postId: number,
+  postId: string,
   commenterId: string,
   authorId: string,
   postTitle: string
@@ -82,7 +82,7 @@ export async function createCommentNotification(
 }
 
 export async function createCommentReactionNotification(
-  commentId: number,
+  commentId: string,
   reactorId: string,
   authorId: string,
   commentContent: string
@@ -99,9 +99,10 @@ export async function createCommentReactionNotification(
 }
 
 export async function createCommentMentionNotification(
-  commentId: number,
-  mentionedUserId: string,
+  commentId: string,
+  postId: string,
   commenterId: string,
+  mentionedUserId: string,
   commentContent: string
 ) {
   return createNotification({
@@ -110,13 +111,14 @@ export async function createCommentMentionNotification(
     actorId: commenterId,
     targetId: commentId,
     data: {
+      postId,
       commentContent
     }
   });
 }
 
 export async function createNewPostFromFollowingNotification(
-  postId: number,
+  postId: string,
   authorId: string,
   followerIds: string[],
   postTitle: string
