@@ -1,24 +1,124 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cook & Eat
+
+A recipe sharing and discovery app that helps you track what you're cooking and find inspiration from other cooks.
+
+## Features
+
+- User authentication and profiles
+- Create, share, and discover recipes
+- Reactions and comments on recipes
+- Recipe collections and bookmarks
+- Notifications system
+- Mobile-friendly UI with dark mode support
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+
+- npm or yarn
+- PostgreSQL database
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd cook_eat
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+
+   Then edit `.env` with your database credentials and other settings.
+
+4. Set up the database:
+   ```bash
+   npx prisma migrate dev
+   ```
+
+5. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+6. Visit `http://localhost:3000` in your browser.
+
+## Database Management
+
+This application uses Prisma with a PostgreSQL database, recently migrated to use UUID string IDs instead of integer IDs.
+
+### Common Database Operations
+
+#### View Database with Prisma Studio
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npx prisma studio
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+#### Create a Database Backup
+```bash
+node scripts/backup-database.js
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+#### Restore from a Backup
+```bash
+node scripts/restore-database.js backups/[filename].json
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+#### Clear and Restore Database (fixes duplicate data issues)
+```bash
+node scripts/clear-and-restore.js
+```
+
+#### Fix Migration Issues
+```bash
+node scripts/fix-migrations.js
+```
+
+### About the UUID Migration
+
+The application was originally built with integer IDs and has been migrated to use UUID strings. This change provides:
+
+- Better security and data privacy
+- Reduced risk of ID enumeration attacks
+- Distributed system compatibility
+- No sequential ID leakage
+
+If you encounter issues with IDs or duplicate data after deployment, refer to the `DEPLOYMENT.md` troubleshooting guide.
+
+## Deployment
+
+See `DEPLOYMENT.md` for detailed deployment instructions and troubleshooting.
+
+For Git-based deployment, see `GIT-DEPLOYMENT.md` for the recommended workflow.
+
+## Testing
+
+```bash
+# Run unit and integration tests
+npm test
+
+# Run end-to-end tests
+npm run test:e2e
+
+# Run all tests
+npm run test:all
+```
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- Thanks to all contributors who have helped build and improve Cook & Eat!
 
 ## Learn More
 

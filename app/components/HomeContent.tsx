@@ -46,7 +46,7 @@ export default function HomeContent() {
       .then(users => {
         if (users && users.length > 0) {
           // Find the exact user by ID
-          const user = users.find((u: any) => u.id.toString() === userParam);
+          const user = users.find((u: any) => u.id === userParam);
           if (user) {
             setSelectedUser(userParam, user.name || user.email);
           }
@@ -109,7 +109,7 @@ export default function HomeContent() {
     <>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {isMyRecipesView ? 'My Recipes' : 'All Public Recipes'}
+          {isMyRecipesView ? 'My Recipes' : 'All Recipes'}
         </h1>
         {session && (
           <a
@@ -136,8 +136,6 @@ export default function HomeContent() {
             <RecipeList
               key={key}
               userId={selectedUserId ? selectedUserId : (isMyRecipesView && session?.user?.id ? session.user.id.toString() : undefined)}
-              showPrivate={Boolean(isMyRecipesView || (selectedUserId && selectedUserId === session?.user?.id?.toString()))}
-              publicOnly={Boolean(!isMyRecipesView && (!selectedUserId || selectedUserId !== session?.user?.id?.toString()))}
               selectedDate={selectedDate}
               filterByDate={Boolean(selectedDate)}
             />

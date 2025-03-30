@@ -13,6 +13,7 @@ export async function GET(request: Request) {
     const bookmark = searchParams.get('bookmark') === 'true';
     const madeIt = searchParams.get('madeIt') === 'true';
     const wantToTry = searchParams.get('wantToTry') === 'true';
+    const publicOnly = searchParams.get('publicOnly') === 'true';
 
     const session = await getServerSession(authOptions);
 
@@ -46,11 +47,19 @@ export async function GET(request: Request) {
 
     // Visibility filter - Only return public posts or the user's own posts
     if (session?.user?.id) {
+      // Store the existing OR conditions if any
+      const existingOR = where.OR || [];
+
+      // Add visibility conditions
       where.OR = [
+        ...existingOR,
         { isPublic: true },
         { userId: session.user.id.toString() }
       ];
+    } else if (publicOnly) {
+      where.isPublic = true;
     } else {
+      // Default to showing only public recipes for non-logged in users
       where.isPublic = true;
     }
 
@@ -85,6 +94,11 @@ export async function GET(request: Request) {
       };
     }
 
+    // For debugging
+    console.log('API query params:', JSON.stringify(searchParams, null, 2));
+    console.log('Final query where clause:', JSON.stringify(where, null, 2));
+    console.log('Session user:', session?.user?.id);
+
     // Fetch recipes
     const posts = await prisma.post.findMany({
       where,
@@ -100,6 +114,20 @@ export async function GET(request: Request) {
         }
       }
     });
+
+    console.log(`Found ${posts.length} posts`);
+    if (posts.length === 0) {
+      console.log('No posts found. Fetching all posts for debugging...');
+      const allPosts = await prisma.post.findMany({
+        select: {
+          id: true,
+          title: true,
+          userId: true,
+          isPublic: true
+        }
+      });
+      console.log('All posts in database:', JSON.stringify(allPosts, null, 2));
+    }
 
     return NextResponse.json(posts);
   } catch (error) {
@@ -136,7 +164,7 @@ export async function POST(request: Request) {
       category = null,
       cookingTime = null,
       difficulty = null,
-      isPublic = false,
+      isPublic = true,
       cookedOn = null,
     } = body;
 

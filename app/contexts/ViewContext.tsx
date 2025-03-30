@@ -33,16 +33,25 @@ export function ViewProvider({ children }: { children: ReactNode }) {
       // Toggle between my recipes and all recipes
       const newIsMyRecipesView = !isMyRecipesView;
       setIsMyRecipesView(newIsMyRecipesView);
+
+      // If toggling to My Recipes view and user is logged in, update URL with user ID
+      if (newIsMyRecipesView && session?.user?.id) {
+        setSelectedUserId(session.user.id.toString());
+        setSelectedUserName(session.user.name || session.user.email || null);
+        window.history.replaceState({}, '', `/`);
+      }
     }
   };
 
   const setSelectedUser = (userId: string | number | null, userName: string | null) => {
     if (userId) {
-      setSelectedUserId(userId.toString());
+      // Ensure userId is always a string
+      const userIdString = String(userId);
+      setSelectedUserId(userIdString);
       setSelectedUserName(userName);
       setIsMyRecipesView(false);
       // Use replaceState to update URL without triggering a navigation
-      window.history.replaceState({}, '', `/?user=${userId.toString()}`);
+      window.history.replaceState({}, '', `/?user=${userIdString}`);
     } else {
       setSelectedUserId(null);
       setSelectedUserName(null);

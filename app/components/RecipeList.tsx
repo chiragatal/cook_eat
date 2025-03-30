@@ -168,16 +168,35 @@ export default function RecipeList({
           params.append('userId', session.user.id.toString());
         } else if (userId) {
           params.append('userId', userId.toString());
-        } else if (publicOnly) {
+        }
+
+        // Add calendar view filters
+        if (filterByDate && selectedDate) {
+          const year = selectedDate.getFullYear();
+          const month = selectedDate.getMonth() + 1;
+          const day = selectedDate.getDate();
+
+          // First day of month
+          const startDate = new Date(year, month - 1, 1);
+          // Last day of month
+          const endDate = new Date(year, month, 0);
+
+          params.append('startDate', startDate.toISOString());
+          params.append('endDate', endDate.toISOString());
+        }
+
+        if (publicOnly) {
           params.append('publicOnly', 'true');
         }
 
+        console.log(`Fetching recipes with params: ${params.toString()}`);
         const response = await fetch(`/api/posts?${params.toString()}`);
         if (!response.ok) {
           throw new Error('Failed to fetch recipes');
         }
 
         const data = await response.json();
+        console.log(`Received ${data.length} recipes from the API`);
         setRecipes(data);
 
         // Fetch reactions for all recipes if user is logged in
@@ -196,7 +215,7 @@ export default function RecipeList({
     };
 
     fetchRecipes();
-  }, [userId, publicOnly, isMyRecipesView, session?.user?.id]);
+  }, [userId, isMyRecipesView, session?.user?.id, filterByDate, selectedDate, publicOnly]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this recipe?')) {

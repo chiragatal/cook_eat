@@ -34,7 +34,7 @@ export default function MyRecipes() {
 
       <div className="mb-8">
         <RecipeList
-          userId={session.user.id}
+          userId={session.user.id.toString()}
           showPrivate={true}
         />
       </div>

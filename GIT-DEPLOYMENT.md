@@ -59,22 +59,30 @@ Vercel will automatically detect the push and start the deployment process. You 
 
 If you encounter issues during deployment:
 
-1. **Check Vercel Build Logs**:
+1. **Error P3005: The database schema is not empty**:
+   - This happens when Prisma tries to apply migrations to a database that already has tables
+   - Run the baseline migration script to fix it:
+     ```bash
+     npm run baseline
+     ```
+   - Then commit and push the changes to trigger a new deployment
+
+2. **Check Vercel Build Logs**:
    - Review the build logs in the Vercel dashboard for error messages
    - Look for Prisma migration failures or database connection issues
 
-2. **Database Migration Issues**:
+3. **Database Migration Issues**:
    - If migrations fail, you may need to run them manually:
      ```bash
      npx prisma migrate deploy
      ```
    - For more complex migration issues, refer to [DEPLOYMENT.md](./DEPLOYMENT.md)
 
-3. **Failed Type Checking**:
+4. **Failed Type Checking**:
    - Fix any TypeScript errors reported by the pre-deployment script
    - Pay special attention to type mismatches with ID fields (string vs. number)
 
-4. **Environment Variable Problems**:
+5. **Environment Variable Problems**:
    - Verify all required environment variables are set in Vercel
    - Ensure the database connection string is correct and the database is accessible
 

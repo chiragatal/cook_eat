@@ -9,11 +9,11 @@ import Calendar from './components/Calendar';
 import Navigation from './components/Navigation';
 import HomeContent from './components/HomeContent';
 import Link from 'next/link';
+import { getServerSession } from 'next-auth';
+import { authOptions } from './api/auth/config';
+import { ViewProvider } from './contexts/ViewContext';
 
 export default function Home() {
-  const { data: session } = useSession();
-  const { isMyRecipesView } = useView();
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
       <div className="max-w-[1400px] mx-auto px-4">

@@ -10,8 +10,18 @@ This guide addresses common issues that may occur when deploying the Cook & Eat 
 - Deployment fails with Prisma migration errors
 - Database tables are missing or have incorrect schemas
 - Type errors related to ID fields
+- Error P3005: "The database schema is not empty"
 
 **Solutions:**
+- For "P3005: The database schema is not empty" error:
+  ```bash
+  # Run the baseline migration script
+  npm run baseline
+
+  # Then redeploy
+  npm run deploy
+  ```
+
 - Run migrations manually before deployment:
   ```bash
   npx prisma migrate deploy
@@ -77,6 +87,32 @@ This guide addresses common issues that may occur when deploying the Cook & Eat 
 - Verify Vercel Blob Storage is properly configured
 - Check access permissions for storage buckets
 - Ensure environment variables for storage are correctly set
+
+### 6. Duplicate Data After UUID Migration
+
+**Symptoms:**
+- Duplicate posts, reactions, or comments appear in the UI
+- Data appears to be doubled after migration to UUID IDs
+- The same content shows up multiple times
+
+**Solutions:**
+- Use the cleanup and restore script to reset and properly restore the data:
+  ```bash
+  # Stop any running services first
+  pkill -f "next dev|prisma studio"
+
+  # Clear and restore the database
+  node scripts/clear-and-restore.js
+  ```
+- If that doesn't work, you may need to manually clean duplicate data:
+  ```bash
+  # Open Prisma Studio to manually inspect and delete duplicates
+  npx prisma studio
+  ```
+- For production environments, create a backup before cleaning:
+  ```bash
+  node scripts/backup-database.js
+  ```
 
 ## Debugging Steps
 
