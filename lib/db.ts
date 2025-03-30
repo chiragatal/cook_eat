@@ -24,7 +24,7 @@ export async function getReactions(postId: number) {
   }
 }
 
-export async function getUserReactions(postId: number, userId: number) {
+export async function getUserReactions(postId: number, userId: string) {
   try {
     const userReactions = await prisma.reaction.findMany({
       where: {
@@ -40,7 +40,7 @@ export async function getUserReactions(postId: number, userId: number) {
   }
 }
 
-export async function toggleReaction(postId: number, userId: number, type: string) {
+export async function toggleReaction(postId: number, userId: string, type: string) {
   try {
     const existingReaction = await prisma.reaction.findFirst({
       where: {

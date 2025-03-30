@@ -14,9 +14,9 @@ export interface NotificationPreference {
 export interface Notification {
   id: number;
   type: NotificationType;
-  userId: number;
+  userId: string;
   targetId: number; // postId or commentId
-  actorId: number; // user who triggered the notification
+  actorId: string; // user who triggered the notification
   read: boolean;
   createdAt: string;
   data?: {
@@ -32,5 +32,5 @@ export interface Notification {
 
 export interface NotificationSettings {
   preferences: NotificationPreference[];
-  userId: number;
+  userId: string;
 }

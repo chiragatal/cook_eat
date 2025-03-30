@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     if (isIdSearch) {
       // For ID searches, try to find the exact user first
       const user = await prisma.user.findUnique({
-        where: { id: parseInt(query) },
+        where: { id: query },
         select: {
           id: true,
           name: true,

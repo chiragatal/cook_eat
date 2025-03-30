@@ -194,7 +194,7 @@ describe('RecipeForm Component', () => {
       difficulty: 'Medium',
       isPublic: true,
       notes: 'Test notes',
-      userId: 1,
+      userId: '1',
       cookedOn: '2023-01-01',
     };
 

@@ -40,7 +40,7 @@ export async function GET(
     }
 
     // Check if user has access to this recipe
-    if (!recipe.isPublic && (!session || recipe.userId !== session.user.id)) {
+    if (!recipe.isPublic && (!session || recipe.userId !== session.user.id.toString())) {
       return NextResponse.json(
         { error: 'Not authorized to view this recipe' },
         { status: 403 }
@@ -91,7 +91,7 @@ export async function DELETE(
       );
     }
 
-    if (recipe.userId !== session.user.id && !session.user.isAdmin) {
+    if (recipe.userId !== session.user.id.toString() && !session.user.isAdmin) {
       return NextResponse.json(
         { error: 'Not authorized to delete this recipe' },
         { status: 403 }
@@ -150,7 +150,7 @@ export async function PUT(
       );
     }
 
-    if (recipe.userId !== session.user.id && !session.user.isAdmin) {
+    if (recipe.userId !== session.user.id.toString() && !session.user.isAdmin) {
       return NextResponse.json(
         { error: 'Not authorized to edit this recipe' },
         { status: 403 }
@@ -246,7 +246,7 @@ export async function PATCH(
       );
     }
 
-    if (recipe.userId !== session.user.id && !session.user.isAdmin) {
+    if (recipe.userId !== session.user.id.toString() && !session.user.isAdmin) {
       return NextResponse.json(
         { error: 'Not authorized to edit this recipe' },
         { status: 403 }

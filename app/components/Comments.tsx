@@ -15,7 +15,7 @@ interface Comment {
   content: string;
   createdAt: string;
   updatedAt: string;
-  userId: number;
+  userId: string;
   postId: number;
   user: User;
 }

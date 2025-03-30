@@ -35,7 +35,7 @@ export async function GET(
     });
 
     // Group reactions by type with user info
-    const reactionsByType: Record<string, { count: number, users: Array<{ id: number, name: string | null }> }> = {};
+    const reactionsByType: Record<string, { count: number, users: Array<{ id: string, name: string | null }> }> = {};
 
     allReactions.forEach(reaction => {
       if (!reactionsByType[reaction.type]) {
@@ -63,7 +63,7 @@ export async function GET(
     let userReactions: string[] = [];
     if (session?.user?.id) {
       userReactions = allReactions
-        .filter(r => r.userId === session.user.id)
+        .filter(r => r.userId === session.user.id.toString())
         .map(r => r.type);
     }
 
@@ -127,10 +127,10 @@ export async function POST(
     // Find existing reaction
     const existingReaction = await prisma.commentReaction.findFirst({
       where: {
-        commentId,
-        userId: session.user.id,
-        type,
-      },
+        commentId: Number(params.id),
+        userId: session.user.id.toString(),
+        type
+      }
     });
 
     let reaction;
@@ -143,8 +143,8 @@ export async function POST(
       reaction = await prisma.commentReaction.create({
         data: {
           type,
-          commentId,
-          userId: session.user.id,
+          commentId: Number(params.id),
+          userId: session.user.id.toString(),
         },
       });
 
@@ -152,7 +152,7 @@ export async function POST(
       if (reaction) {
         await createCommentReactionNotification(
           reaction.commentId,
-          reaction.userId,
+          session.user.id.toString(),
           comment.userId,
           comment.content
         );
@@ -173,7 +173,7 @@ export async function POST(
     });
 
     // Group reactions by type with user info
-    const reactionsByType: Record<string, { count: number, users: Array<{ id: number, name: string | null }> }> = {};
+    const reactionsByType: Record<string, { count: number, users: Array<{ id: string, name: string | null }> }> = {};
 
     allReactions.forEach(reaction => {
       if (!reactionsByType[reaction.type]) {
@@ -199,7 +199,7 @@ export async function POST(
 
     // Get user's reactions
     const userReactions = allReactions
-      .filter(r => r.userId === session.user.id)
+      .filter(r => r.userId === session.user.id.toString())
       .map(r => r.type);
 
     return NextResponse.json({

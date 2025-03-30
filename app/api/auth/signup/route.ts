@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 
 const prisma = new PrismaClient();
 
@@ -49,20 +49,12 @@ export async function POST(request: Request) {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // Get highest existing user ID to avoid conflicts
-    const highestUser = await prisma.user.findFirst({
-      orderBy: { id: 'desc' }
-    });
+    // Generate a UUID for the user ID
+    const uniqueId = uuidv4();
 
-    // Generate a unique ID, ensuring it's larger than any existing ID
-    let uniqueId = generateUniqueId();
-    if (highestUser && typeof highestUser.id === 'number' && uniqueId <= highestUser.id) {
-      uniqueId = highestUser.id + getRandomInt(1000, 10000);
-    }
+    console.log(`Creating user with UUID: ${uniqueId}`);
 
-    console.log(`Creating user with generated ID: ${uniqueId}`);
-
-    // Create user with an explicit ID
+    // Create user with a UUID
     const user = await prisma.user.create({
       data: {
         id: uniqueId,

@@ -17,6 +17,7 @@
     "test:all": "npm run test && npm run test:e2e"
   },
   "dependencies": {
+    "@auth/prisma-adapter": "^2.8.0",
     "@heroicons/react": "^2.2.0",
     "@mantine/core": "^7.17.0",
     "@mantine/dates": "^7.17.0",
@@ -31,6 +32,7 @@
     "@tiptap/react": "^2.11.5",
     "@tiptap/starter-kit": "^2.11.5",
     "@vercel/blob": "^0.22.1",
+    "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -45,7 +47,8 @@
     "react-dropzone": "^14.3.8",
     "sharp": "^0.33.5",
     "tailwind-merge": "^3.0.2",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@babel/plugin-transform-private-methods": "^7.25.9",
@@ -59,6 +62,7 @@
     "@types/react": "^18.2.58",
     "@types/react-dom": "^18.2.19",
     "@types/sharp": "^0.31.1",
+    "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.28.0",
     "@typescript-eslint/parser": "^8.28.0",
     "autoprefixer": "^10.4.17",

@@ -46,8 +46,8 @@ export default function RecipePage({ params }: { params: { id: string } }) {
     }
   };
 
-  const handleUserClick = (userId: number, userName: string | null, email: string) => {
-    setSelectedUser(String(userId), userName || email);
+  const handleUserClick = (userId: string, userName: string | null, email: string) => {
+    setSelectedUser(userId, userName || email);
     router.push('/');
   };
 
@@ -283,7 +283,7 @@ export default function RecipePage({ params }: { params: { id: string } }) {
                     <span
                       className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400"
                       onClick={() => handleUserClick(
-                        recipe.userId,
+                        String(recipe.userId),
                         recipe.user?.name || null,
                         recipe.user?.email || ''
                       )}

@@ -136,8 +136,8 @@ export default function HomeContent() {
             <RecipeList
               key={key}
               userId={selectedUserId ? selectedUserId : (isMyRecipesView && session?.user?.id ? session.user.id.toString() : undefined)}
-              showPrivate={Boolean(isMyRecipesView || (selectedUserId && parseInt(selectedUserId) === session?.user?.id))}
-              publicOnly={Boolean(!isMyRecipesView && (!selectedUserId || parseInt(selectedUserId) !== session?.user?.id))}
+              showPrivate={Boolean(isMyRecipesView || (selectedUserId && selectedUserId === session?.user?.id?.toString()))}
+              publicOnly={Boolean(!isMyRecipesView && (!selectedUserId || selectedUserId !== session?.user?.id?.toString()))}
               selectedDate={selectedDate}
               filterByDate={Boolean(selectedDate)}
             />

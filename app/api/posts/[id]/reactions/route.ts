@@ -35,7 +35,7 @@ export async function GET(
     });
 
     // Group reactions by type with user info
-    const reactionsByType: Record<string, { count: number, users: Array<{ id: number, name: string | null }> }> = {};
+    const reactionsByType: Record<string, { count: number, users: Array<{ id: string, name: string | null }> }> = {};
 
     allReactions.forEach(reaction => {
       if (!reactionsByType[reaction.type]) {
@@ -115,8 +115,8 @@ export async function POST(
     // Find existing reaction
     const existingReaction = await prisma.reaction.findFirst({
       where: {
-        postId,
-        userId: session.user.id,
+        postId: Number(params.id),
+        userId: session.user.id.toString(),
         type,
       },
     });
@@ -131,8 +131,8 @@ export async function POST(
       reaction = await prisma.reaction.create({
         data: {
           type,
-          postId,
-          userId: session.user.id,
+          postId: Number(params.id),
+          userId: session.user.id.toString(),
         },
       });
 
@@ -149,9 +149,9 @@ export async function POST(
         if (post) {
           await createReactionNotification(
             reaction.postId,
-            reaction.userId,
+            session.user.id.toString(),
             post.userId,
-            reaction.type,
+            type,
             post.title
           );
         }
@@ -172,7 +172,7 @@ export async function POST(
     });
 
     // Group reactions by type with user info
-    const reactionsByType: Record<string, { count: number, users: Array<{ id: number, name: string | null }> }> = {};
+    const reactionsByType: Record<string, { count: number, users: Array<{ id: string, name: string | null }> }> = {};
 
     allReactions.forEach(reaction => {
       if (!reactionsByType[reaction.type]) {
@@ -198,7 +198,7 @@ export async function POST(
 
     // Get user's reactions
     const userReactions = allReactions
-      .filter(r => r.userId === session.user.id)
+      .filter(r => r.userId === session.user.id.toString())
       .map(r => r.type);
 
     return NextResponse.json({

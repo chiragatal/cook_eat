@@ -23,7 +23,7 @@ export interface Recipe {
   difficulty: string | null;
   createdAt?: string;
   updatedAt?: string;
-  userId: number;
+  userId: string;
   user?: {
     name?: string;
     email?: string;
@@ -38,7 +38,7 @@ export interface Comment {
   createdAt: string;
   updatedAt: string;
   postId: number;
-  userId: number;
+  userId: string;
   user: {
     name: string;
     email: string;
@@ -49,7 +49,7 @@ export interface Reaction {
   id: number;
   type: string;
   postId: number;
-  userId: number;
+  userId: string;
   createdAt: string;
   user?: {
     name?: string;

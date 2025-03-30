@@ -39,7 +39,7 @@ interface Recipe {
   createdAt: string;
   isPublic: boolean;
   cookedOn: string | null;
-  userId: number;
+  userId: string;
   user: {
     name?: string;
     email?: string;
@@ -278,8 +278,8 @@ export default function RecipeList({
     return `${ingredient.name} · ${ingredient.amount}`;
   };
 
-  const handleUserClick = (userId: number, userName: string | undefined | null, email: string) => {
-    setSelectedUser(userId.toString(), userName || email);
+  const handleUserClick = (userId: string, userName: string | undefined | null, email: string) => {
+    setSelectedUser(userId, userName || email);
   };
 
   const handleShare = async () => {
@@ -512,7 +512,7 @@ export default function RecipeList({
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white">{recipe.title}</h3>
                       </a>
 
-                      {session && ((String(session.user.id) === String(recipe.userId)) || session.user.isAdmin) && (
+                      {session && (session.user.id === recipe.userId || session.user.isAdmin) && (
                         <div className="relative flex-shrink-0 ml-2">
                           <button
                             onClick={(e) => handleMenuClick(e, recipe.id)}

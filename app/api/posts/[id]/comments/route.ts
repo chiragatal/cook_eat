@@ -88,8 +88,8 @@ export async function POST(
     const comment = await prisma.comment.create({
       data: {
         content,
-        postId,
-        userId: session.user.id
+        postId: Number(postId),
+        userId: session.user.id.toString()
       },
       include: {
         user: {
@@ -104,7 +104,7 @@ export async function POST(
     // Create notification for post author
     await createCommentNotification(
       comment.postId,
-      comment.userId,
+      session.user.id.toString(),
       post.userId,
       post.title
     );
@@ -126,8 +126,8 @@ export async function POST(
         mentionedUsers.map(user =>
           createCommentMentionNotification(
             comment.id,
-            user.id,
-            comment.userId,
+            user.id.toString(),
+            session.user.id.toString(),
             comment.content
           )
         )
@@ -179,7 +179,7 @@ export async function PUT(
       );
     }
 
-    if (comment.userId !== session.user.id && !session.user.isAdmin) {
+    if (comment.userId !== session.user.id.toString() && !session.user.isAdmin) {
       return NextResponse.json(
         { error: 'Not authorized to update this comment' },
         { status: 403 }
@@ -252,7 +252,7 @@ export async function DELETE(
       );
     }
 
-    if (comment.userId !== session.user.id && !session.user.isAdmin) {
+    if (comment.userId !== session.user.id.toString() && !session.user.isAdmin) {
       return NextResponse.json(
         { error: 'Not authorized to delete this comment' },
         { status: 403 }

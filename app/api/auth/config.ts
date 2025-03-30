@@ -11,7 +11,7 @@ if (!process.env.NEXTAUTH_SECRET) {
 
 // Define the structure of our database User for clarity
 interface DbUser {
-  id: number;
+  id: string;
   email: string;
   name: string | null;
   passwordHash: string;
@@ -61,7 +61,7 @@ export const authOptions: NextAuthOptions = {
 
           // Create a User object that matches your custom User type
           const authUser: User = {
-            id: user.id, // Keep as number to match your custom type
+            id: user.id, // UUID string from database
             email: user.email,
             name: user.name,
             isAdmin: user.isAdmin,

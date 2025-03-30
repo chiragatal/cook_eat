@@ -28,7 +28,7 @@ const emptyRecipe: Recipe = {
   cookingTime: null,
   difficulty: null,
   isPublic: false,
-  userId: 0, // This will be set by the server
+  userId: '', // This will be set by the server
   cookedOn: null,
 };
 

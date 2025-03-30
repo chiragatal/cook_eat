@@ -3,8 +3,8 @@ import { NotificationType } from '../types/notification';
 
 interface CreateNotificationParams {
   type: NotificationType;
-  userId: number;
-  actorId: number;
+  userId: string;
+  actorId: string;
   targetId: number;
   data?: Record<string, any>;
 }
@@ -24,7 +24,7 @@ export async function createNotification({
   // Check if user has enabled this type of notification
   const preference = await prisma.notificationPreference.findFirst({
     where: {
-      userId,
+      userId: userId,
       type
     }
   });
@@ -37,8 +37,8 @@ export async function createNotification({
   return prisma.notification.create({
     data: {
       type,
-      userId,
-      actorId,
+      userId: userId,
+      actorId: actorId,
       targetId,
       data
     }
@@ -47,8 +47,8 @@ export async function createNotification({
 
 export async function createReactionNotification(
   postId: number,
-  reactorId: number,
-  authorId: number,
+  reactorId: string,
+  authorId: string,
   reactionType: string,
   postTitle: string
 ) {
@@ -66,8 +66,8 @@ export async function createReactionNotification(
 
 export async function createCommentNotification(
   postId: number,
-  commenterId: number,
-  authorId: number,
+  commenterId: string,
+  authorId: string,
   postTitle: string
 ) {
   return createNotification({
@@ -83,8 +83,8 @@ export async function createCommentNotification(
 
 export async function createCommentReactionNotification(
   commentId: number,
-  reactorId: number,
-  authorId: number,
+  reactorId: string,
+  authorId: string,
   commentContent: string
 ) {
   return createNotification({
@@ -100,8 +100,8 @@ export async function createCommentReactionNotification(
 
 export async function createCommentMentionNotification(
   commentId: number,
-  mentionedUserId: number,
-  commenterId: number,
+  mentionedUserId: string,
+  commenterId: string,
   commentContent: string
 ) {
   return createNotification({
@@ -117,8 +117,8 @@ export async function createCommentMentionNotification(
 
 export async function createNewPostFromFollowingNotification(
   postId: number,
-  authorId: number,
-  followerIds: number[],
+  authorId: string,
+  followerIds: string[],
   postTitle: string
 ) {
   return Promise.all(
