@@ -35,6 +35,41 @@ if (!fs.existsSync(backupsDir)) {
   fs.mkdirSync(backupsDir, { recursive: true });
 }
 
+// Verify vercel.json configuration
+function checkVercelConfig() {
+  console.log(`\n${colors.cyan}CHECKING:${colors.reset} Vercel configuration`);
+
+  const vercelConfigPath = path.join(__dirname, '..', 'vercel.json');
+  if (!fs.existsSync(vercelConfigPath)) {
+    console.log(`${colors.yellow}WARNING: vercel.json file not found${colors.reset}`);
+    return true;
+  }
+
+  try {
+    const vercelConfig = JSON.parse(fs.readFileSync(vercelConfigPath, 'utf8'));
+
+    // Check for minimal required configuration
+    const hasRequiredFields =
+      vercelConfig.version &&
+      vercelConfig.buildCommand &&
+      vercelConfig.framework === 'nextjs';
+
+    if (!hasRequiredFields) {
+      console.log(`${colors.yellow}WARNING: vercel.json missing required fields (version, buildCommand, framework)${colors.reset}`);
+    }
+
+    // Check for potentially problematic configuration
+    if (vercelConfig.env) {
+      console.log(`${colors.yellow}WARNING: Environment variables in vercel.json should be set via Vercel dashboard instead${colors.reset}`);
+    }
+
+    return true;
+  } catch (error) {
+    console.error(`${colors.red}ERROR checking vercel.json: ${error.message}${colors.reset}`);
+    return false;
+  }
+}
+
 // Main pre-deployment process
 console.log(`${colors.magenta}=== STARTING PRE-DEPLOYMENT CHECKS ===${colors.reset}`);
 
@@ -55,5 +90,14 @@ if (!executeStep('npx prisma generate', 'Generating Prisma client')) {
   process.exit(1);
 }
 
+// 4. Check Vercel configuration
+if (!checkVercelConfig()) {
+  console.log(`${colors.yellow}WARNING: Vercel configuration check failed, but continuing.${colors.reset}`);
+}
+
 console.log(`${colors.magenta}=== PRE-DEPLOYMENT CHECKS COMPLETED SUCCESSFULLY ===${colors.reset}`);
-console.log(`\n${colors.green}You can now safely push to Git to trigger deployment!${colors.reset}\n`);
+console.log(`\n${colors.green}You can now safely push to Git to trigger deployment!${colors.reset}`);
+console.log(`\n${colors.yellow}IMPORTANT: Make sure your environment variables are set in the Vercel dashboard:${colors.reset}`);
+console.log(`  • DATABASE_URL - Your PostgreSQL connection string`);
+console.log(`  • NEXTAUTH_URL - Your production URL (https://your-app.vercel.app)`);
+console.log(`  • NEXTAUTH_SECRET - Your NextAuth secret key\n`);

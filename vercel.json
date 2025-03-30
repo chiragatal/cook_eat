@@ -2,12 +2,5 @@
   "version": 2,
   "buildCommand": "prisma generate && prisma migrate deploy && next build",
   "installCommand": "npm install",
-  "framework": "nextjs",
-  "regions": ["iad1"],
-  "env": {
-    "PRISMA_CLIENT_ENGINE_TYPE": "binary",
-    "DATABASE_URL": "@database_url",
-    "NEXTAUTH_URL": "@nextauth_url",
-    "NEXTAUTH_SECRET": "@nextauth_secret"
-  }
+  "framework": "nextjs"
 }

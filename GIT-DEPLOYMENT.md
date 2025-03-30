@@ -40,11 +40,20 @@ Vercel will automatically detect the push and start the deployment process. You 
 
 ## Environment Variables
 
-Make sure these environment variables are set in the Vercel project settings:
+### Important: Configure Environment Variables in the Vercel Dashboard
 
-- `DATABASE_URL`: Your PostgreSQL connection string
-- `NEXTAUTH_URL`: Your production URL (e.g., https://your-app.vercel.app)
-- `NEXTAUTH_SECRET`: Your NextAuth secret key
+1. **Log in to your Vercel dashboard**: https://vercel.com/dashboard
+2. **Select your project**
+3. **Go to Settings > Environment Variables**
+4. **Add the following environment variables**:
+
+| Name | Value | Description |
+|------|-------|-------------|
+| `DATABASE_URL` | `postgres://...` | Your PostgreSQL connection string |
+| `NEXTAUTH_URL` | `https://your-app.vercel.app` | Your production URL |
+| `NEXTAUTH_SECRET` | `your-secret-key` | Your NextAuth secret key |
+
+**Important**: Do NOT set these variables in `vercel.json` as that can cause deployment issues. Always use the Vercel dashboard.
 
 ## Troubleshooting
 
