@@ -54,9 +54,19 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       const response = await fetch('/api/notifications/preferences');
       if (!response.ok) throw new Error('Failed to fetch notification preferences');
       const data = await response.json();
-      setPreferences(data.preferences);
+
+      if (Array.isArray(data)) {
+        setPreferences(data);
+      } else if (data && Array.isArray(data.preferences)) {
+        setPreferences(data.preferences);
+      } else {
+        // Handle case where data structure is unexpected
+        console.error('Unexpected notification preferences data structure:', data);
+        setPreferences([]);
+      }
     } catch (error) {
       console.error('Error fetching notification preferences:', error);
+      setPreferences([]);
     }
   }, [session]);
 
@@ -100,6 +110,11 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   const updatePreference = async (type: NotificationType, enabled: boolean) => {
     try {
+      if (!session) {
+        console.error('Cannot update preference without session');
+        return;
+      }
+
       const response = await fetch('/api/notifications/preferences', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -107,9 +122,21 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       });
       if (!response.ok) throw new Error('Failed to update notification preference');
 
-      setPreferences(prev =>
-        prev.map(p => p.type === type ? { ...p, enabled } : p)
-      );
+      const updatedPreference = await response.json();
+
+      // Update the state with the new preference
+      setPreferences(prev => {
+        if (!prev || !Array.isArray(prev)) {
+          return [{ type, enabled }];
+        }
+
+        const index = prev.findIndex(p => p.type === type);
+        if (index >= 0) {
+          return [...prev.slice(0, index), { ...prev[index], enabled }, ...prev.slice(index + 1)];
+        } else {
+          return [...prev, { type, enabled }];
+        }
+      });
     } catch (error) {
       console.error('Error updating notification preference:', error);
     }

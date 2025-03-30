@@ -14,6 +14,9 @@ const NOTIFICATION_LABELS: Record<NotificationType, string> = {
 export default function NotificationPreferences() {
   const { preferences, updatePreference } = useNotifications();
 
+  // Safeguard against preferences being undefined
+  const safePreferences = preferences || [];
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -22,7 +25,7 @@ export default function NotificationPreferences() {
 
       <div className="space-y-3">
         {Object.entries(NOTIFICATION_LABELS).map(([type, label]) => {
-          const preference = preferences.find(p => p.type === type);
+          const preference = safePreferences.find(p => p?.type === type);
 
           return (
             <div key={type} className="flex items-center justify-between">
