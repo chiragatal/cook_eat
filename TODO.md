@@ -96,11 +96,11 @@ A post is basically a recipe.
 
 ### Notifications
 
-- [ ] Allow users to disable notifications for specific types of notifications
-- [ ] Reaction notifications
-- [ ] Comment notifications
-- [ ] Reactions on comments notifications
-- [ ] Tagging other users in comments
+- [x] Allow users to disable notifications for specific types of notifications
+- [x] Reaction notifications
+- [x] Comment notifications
+- [x] Reactions on comments notifications
+- [x] Tagging other users in comments
 
 ### Followers
 
