@@ -3,7 +3,16 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 
-const prisma = new PrismaClient();
+// Use a singleton pattern for Prisma to prevent too many connections
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+const prisma = globalForPrisma.prisma ?? new PrismaClient();
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
+}
 
 // Generate a random integer between min and max (inclusive)
 function getRandomInt(min: number, max: number): number {

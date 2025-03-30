@@ -1,15 +1,18 @@
 import { PrismaClient } from '@prisma/client';
 
-// Prevent multiple instances of Prisma Client in development
-declare global {
-  var prisma: PrismaClient | undefined;
-}
+// PrismaClient is attached to the `global` object in development to prevent
+// exhausting your database connection limit.
+// Learn more: https://pris.ly/d/help/next-js-best-practices
 
-const prisma = global.prisma || new PrismaClient();
+const globalForPrisma = global as unknown as { prisma: PrismaClient | undefined };
 
-if (process.env.NODE_ENV !== 'production') {
-  global.prisma = prisma;
-}
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  });
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 export async function getReactions(postId: string) {
   try {
@@ -70,5 +73,3 @@ export async function toggleReaction(postId: string, userId: string, type: strin
     return false;
   }
 }
-
-export { prisma };

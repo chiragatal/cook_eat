@@ -1,6 +1,10 @@
 {
   "version": 2,
-  "buildCommand": "prisma generate && prisma migrate deploy && next build",
+  "buildCommand": "npm run build",
   "installCommand": "npm install",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+  "env": {
+    "PRISMA_ENGINE_TYPE": "binary"
+  }
 }

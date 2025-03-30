@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "prepare": "husky",
+    "postinstall": "prisma generate",
     "type-check": "tsc --noEmit",
     "pre-push": "npm run type-check && npm run lint",
     "test": "jest",

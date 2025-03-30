@@ -1,9 +1,18 @@
 import { NextAuthOptions, User } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+// Use a singleton pattern for Prisma to prevent too many connections
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+const prisma = globalForPrisma.prisma ?? new PrismaClient();
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
+}
 
 if (!process.env.NEXTAUTH_SECRET) {
   throw new Error('Please provide NEXTAUTH_SECRET environment variable');
