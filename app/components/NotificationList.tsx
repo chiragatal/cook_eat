@@ -41,6 +41,8 @@ export default function NotificationList() {
   }, [fetchNotifications]);
 
   const getNotificationContent = (notification: Notification) => {
+    if (!notification) return 'Unknown notification';
+
     const actorName = notification.actor?.name ?? 'Someone';
 
     switch (notification.type) {
@@ -64,10 +66,12 @@ export default function NotificationList() {
   };
 
   const getNotificationLink = (notification: Notification) => {
+    if (!notification || !notification.targetId) return '/';
+
     switch (notification.type) {
       case 'COMMENT_MENTION':
       case 'COMMENT_REACTION':
-        return `/recipe/${notification.targetId}#comment-${notification.data?.commentContent}`;
+        return `/recipe/${notification.targetId}#comment-${notification.data?.commentContent || ''}`;
       default:
         return `/recipe/${notification.targetId}`;
     }
@@ -105,7 +109,7 @@ export default function NotificationList() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </button>
-              {notifications.some(n => !n.read) && (
+              {notifications && notifications.length > 0 && notifications.some(n => !n.read) && (
                 <button
                   onClick={markAllAsRead}
                   className="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
@@ -117,7 +121,7 @@ export default function NotificationList() {
           </div>
 
           <div className="max-h-96 overflow-y-auto">
-            {notifications.length === 0 ? (
+            {!notifications || notifications.length === 0 ? (
               <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                 No notifications yet
               </div>

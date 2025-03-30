@@ -29,10 +29,21 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       const response = await fetch('/api/notifications');
       if (!response.ok) throw new Error('Failed to fetch notifications');
       const data = await response.json();
-      setNotifications(data.notifications);
-      setUnreadCount(data.notifications.filter((n: Notification) => !n.read).length);
+      if (Array.isArray(data)) {
+        setNotifications(data);
+        setUnreadCount(data.filter((n: Notification) => !n.read).length);
+      } else if (data && Array.isArray(data.notifications)) {
+        setNotifications(data.notifications);
+        setUnreadCount(data.notifications.filter((n: Notification) => !n.read).length);
+      } else {
+        console.error('Unexpected notification data structure:', data);
+        setNotifications([]);
+        setUnreadCount(0);
+      }
     } catch (error) {
       console.error('Error fetching notifications:', error);
+      setNotifications([]);
+      setUnreadCount(0);
     }
   }, [session]);
 
