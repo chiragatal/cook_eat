@@ -130,6 +130,13 @@ A post is basically a recipe.
 - [ ] Negative tests
 - [ ] Enable more linting errors instead of ignoring them
 
+### Optimisations
+
+- [ ] Limit the number of posts that are loaded at the same time
+- [ ] Don't fetch the notifications in a loop. Fetch on new page
+- [ ] Get the reactions and other things from the cloud in a single request
+- [ ] On the home page, load just the first image in the carousel, fetch the others a little later
+
 ### Bugs
 
 - [x] Scrolling vertically by starting the scroll on images is not working
