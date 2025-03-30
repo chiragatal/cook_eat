@@ -33,6 +33,39 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
+### Git-Based Deployment (Recommended)
+
+This project is configured for automatic deployment through Git integration with Vercel:
+
+1. Run pre-deployment checks: `npm run pre-deploy`
+2. Commit your changes: `git commit -m "Your changes"`
+3. Push to your repository: `git push origin main`
+
+For detailed Git deployment instructions, see [GIT-DEPLOYMENT.md](./GIT-DEPLOYMENT.md).
+
+### Alternative Deployment Options
+
+1. **Manual deployment**:
+   ```bash
+   # Build and deploy manually
+   npm run build
+   npm run deploy
+   ```
+
+2. **Via Vercel Dashboard**:
+   Configure the following settings:
+   - Build Command: `prisma generate && prisma migrate deploy && next build`
+   - Output Directory: `.next`
+   - Install Command: `npm install`
+
+### Database Migration Notes
+
+This project uses PostgreSQL with UUID string IDs. When deploying after the ID migration:
+
+1. Ensure all migrations are applied with: `npx prisma migrate deploy`
+2. If using an existing database, verify UUID conversions are complete
+3. Always take a backup before deployment: `node scripts/backup-database.js`
+
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 ## Testing
