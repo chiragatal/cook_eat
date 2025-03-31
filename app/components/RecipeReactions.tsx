@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { REACTION_TYPES, ReactionType } from '../api/posts/[id]/reactions/types';
 
@@ -34,9 +34,23 @@ export default function RecipeReactions({ postId, onReactionToggled }: RecipeRea
   const [activeLongPressType, setActiveLongPressType] = useState<string | null>(null);
   const longPressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const fetchReactions = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/posts/${postId}/reactions`);
+      if (!response.ok) throw new Error('Failed to fetch reactions');
+      const data = await response.json();
+      setReactions(data.reactions);
+      setUserReactions(data.userReactions);
+    } catch (error) {
+      console.error('Error fetching reactions:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [postId]);
+
   useEffect(() => {
     fetchReactions();
-  }, [postId]);
+  }, [fetchReactions]);
 
   // Handle clicks outside to close the long-press popup
   useEffect(() => {
@@ -79,20 +93,6 @@ export default function RecipeReactions({ postId, onReactionToggled }: RecipeRea
     }
   };
 
-  const fetchReactions = async () => {
-    try {
-      const response = await fetch(`/api/posts/${postId}/reactions`);
-      if (!response.ok) throw new Error('Failed to fetch reactions');
-      const data = await response.json();
-      setReactions(data.reactions);
-      setUserReactions(data.userReactions);
-    } catch (error) {
-      console.error('Error fetching reactions:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleReaction = async (type: string) => {
     if (!session) {
       return;
@@ -121,7 +121,7 @@ export default function RecipeReactions({ postId, onReactionToggled }: RecipeRea
   if (isLoading) {
     return (
       <div className="flex justify-center">
-        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600" />
+        <div data-testid="loading-spinner" className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600" />
       </div>
     );
   }

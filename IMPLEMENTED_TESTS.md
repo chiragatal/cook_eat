@@ -32,6 +32,46 @@ Located in the `__tests__` directory:
    - Handles theme toggle correctly
    - Shows "My Recipes" when in my recipes view
 
+4. **NotificationList Component** (`__tests__/components/NotificationList.test.tsx`)
+   - Renders notification button with correct unread count
+   - Displays notification dropdown when button is clicked
+   - Displays correct notification content for different notification types
+   - Calls markAsRead when notification is clicked
+   - Calls markAllAsRead when "Mark all as read" is clicked
+   - Renders empty state when there are no notifications
+   - Displays notification settings when settings button is clicked
+   - Closes settings modal when close button is clicked
+
+5. **NotificationPreferences Component** (`__tests__/components/NotificationPreferences.test.tsx`)
+   - Renders all notification types with correct labels
+   - Displays correct toggle state for each preference
+   - Calls updatePreference when a toggle is clicked
+   - Disables toggles while updating
+   - Displays error message when update fails
+   - Handles empty or undefined preferences gracefully
+
+6. **Calendar Component** (`__tests__/components/Calendar.test.tsx`)
+   - Renders the calendar with correct month and year
+   - Renders the correct weekdays
+   - Navigates to previous month when prev button is clicked
+   - Navigates to next month when next button is clicked
+   - Fetches recipes when component mounts
+   - Shows loading state while fetching recipes
+   - Handles fetch errors gracefully
+   - Shows recipe list when a date with recipes is clicked
+   - Calls onDateSelect callback when a date is selected
+   - Shows different header when in MyRecipes view
+   - Adds myRecipes parameter to fetch when in MyRecipes view
+
+7. **RecipeReactions Component** (`__tests__/components/RecipeReactions.test.tsx`)
+   - Renders loading state initially
+   - Fetches and displays reactions on mount
+   - Highlights reactions that the user has made
+   - Toggles reaction when a reaction button is clicked
+   - Disables reaction buttons when user is not authenticated
+   - Handles fetch errors gracefully
+   - Shows user list when hovering over reaction with users
+
 ## End-to-End Tests (Playwright)
 
 Located in the `e2e` directory:

@@ -120,7 +120,7 @@ export default function CommentReactions({ commentId, onReactionToggled }: Comme
   };
 
   if (isLoading) {
-    return <div className="animate-pulse h-5 w-16 bg-gray-200 rounded" />;
+    return <div data-testid="loading-indicator" className="animate-pulse h-5 w-16 bg-gray-200 rounded" />;
   }
 
   // Filter out reactions with count 0

@@ -80,6 +80,13 @@ A post is basically a recipe.
 - [x] The user name is not clickable in the post list
 - [x] Double description in expanded post
 - [x] Header colors on the full recipe page in dark mode look incorrect. Also in the hamburger menu.
+- [x] Scrolling vertically by starting the scroll on images is not working
+- [x] Image upload is not working
+- [x] Add multiple ingredients at once is not working on mobile
+- [x] Can add multiple steps at once by copy pasting them together in new lines
+- [x] The ingredient name and amount is not fitting well on the mobile
+- [x] The image scrolling in the carousel is not smooth on mobile. It works fine by clicking the arrows, but not when swiping. It need not follow the speed of the swipe.
+- [x] Notifications are broken
 
 ### Calendar
 
@@ -141,14 +148,7 @@ A post is basically a recipe.
 
 ### Bugs
 
-- [x] Scrolling vertically by starting the scroll on images is not working
-- [x] Image upload is not working
-- [x] Add multiple ingredients at once is not working on mobile
-- [x] Can add multiple steps at once by copy pasting them together in new lines
-- [x] The ingredient name and amount is not fitting well on the mobile
 - [ ] When I share a user, the link is not working
 - [ ] Fix the logo and the favicon
-- [x] The image scrolling in the carousel is not smooth on mobile. It works fine by clicking the arrows, but not when swiping. It need not follow the speed of the swipe.
 - [ ] The drag and drop for ingredients, steps and images is not working well on mobile. It works, but it is not clear. And a lot of times it gets accidentally removed.
 - [ ] For any long press tooltip or the 3 dot menu on mobile, when clicking outside it, it gets closed, but it registers as a click on whatever I clicked on. Ideally it should just close the tooltip/menu.
-- [x] Notifications are broken
