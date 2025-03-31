@@ -2,6 +2,8 @@
 
 This document provides a comprehensive list of all tests implemented in the Cook-Eat application.
 
+Currently, the application has **19** test suites with a total of **105** tests.
+
 ## Current Test Issues
 
 1. **Navigation Component Tests**: The Navigation component tests are currently failing due to issues with mocking the Next.js App Router. The error is "invariant expected app router to be mounted" in the UserSearch component. This needs to be fixed by properly mocking the App Router context or refactoring the component to be more testable.
@@ -71,6 +73,37 @@ Located in the `__tests__` directory:
    - Disables reaction buttons when user is not authenticated
    - Handles fetch errors gracefully
    - Shows user list when hovering over reaction with users
+
+8. **QuickReactions Component** (`__tests__/components/QuickReactions.test.tsx`)
+   - Renders loading state initially
+   - Fetches and displays reactions on mount
+   - Highlights reactions the user has made
+   - Toggles reaction when a reaction button is clicked
+   - Disables reaction buttons when user is not authenticated
+   - Shows user list when hovering over reaction with users
+   - Handles long press on mobile devices
+   - Handles fetch errors gracefully
+   - Shows reaction picker for authenticated users when no reactions exist
+
+9. **FullCalendar Component** (`__tests__/components/FullCalendar.test.tsx`)
+   - Renders loading state initially
+   - Fetches and displays recipes on mount
+   - Displays recipes for today
+   - Handles network errors gracefully
+   - Filters out recipes without cookedOn dates
+
+10. **RecipeList Component** (`__tests__/components/RecipeList.test.tsx`)
+    - Renders loading state initially
+    - Fetches and displays recipes on mount
+    - Displays category filter
+    - Displays search box
+    - Displays pagination controls
+    - Shows "Create Recipe" button when user is authenticated in MyRecipes view
+    - Does not show "Create Recipe" button in All Recipes view
+    - Shows edit and delete buttons for user recipes in MyRecipes view
+    - Handles fetch error gracefully
+    - Refreshes data when filter is changed
+    - Refreshes data when search query is submitted
 
 ## End-to-End Tests (Playwright)
 

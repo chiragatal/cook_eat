@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { REACTION_TYPES, ReactionType } from '../api/posts/[id]/reactions/types';
 
@@ -38,9 +38,23 @@ export default function QuickReactions({ postId, onReactionToggled }: QuickReact
   const containerRef = useRef<HTMLDivElement>(null);
   const longPressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const fetchReactions = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/posts/${postId}/reactions`);
+      if (!response.ok) throw new Error('Failed to fetch reactions');
+      const data = await response.json();
+      setReactions(data.reactions || []);
+      setUserReactions(data.userReactions || []);
+    } catch (error) {
+      console.error('Error fetching reactions:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [postId]);
+
   useEffect(() => {
     fetchReactions();
-  }, [postId]);
+  }, [fetchReactions]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -83,20 +97,6 @@ export default function QuickReactions({ postId, onReactionToggled }: QuickReact
     }
   };
 
-  const fetchReactions = async () => {
-    try {
-      const response = await fetch(`/api/posts/${postId}/reactions`);
-      if (!response.ok) throw new Error('Failed to fetch reactions');
-      const data = await response.json();
-      setReactions(data.reactions || []);
-      setUserReactions(data.userReactions || []);
-    } catch (error) {
-      console.error('Error fetching reactions:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleReaction = async (type: string) => {
     if (!session) return;
 
@@ -120,7 +120,7 @@ export default function QuickReactions({ postId, onReactionToggled }: QuickReact
   };
 
   if (isLoading) {
-    return <div className="animate-pulse h-6 w-24 bg-gray-200 rounded" />;
+    return <div data-testid="loading-reactions" className="animate-pulse h-6 w-24 bg-gray-200 rounded" />;
   }
 
   // Filter out reactions with count 0

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import RecipeForm from './RecipeForm';
 import RecipeSearch from './RecipeSearch';
 import Link from 'next/link';
@@ -115,7 +115,7 @@ export default function RecipeList({
   };
 
   // Fetch user reactions for all recipes
-  const fetchUserReactions = async (recipeIds: string[]) => {
+  const fetchUserReactions = useCallback(async (recipeIds: string[]) => {
     if (!session?.user?.id) return;
 
     try {
@@ -136,10 +136,10 @@ export default function RecipeList({
     } catch (error) {
       console.error('Error fetching user reactions:', error);
     }
-  };
+  }, [session?.user?.id]);
 
   // Fetch comment counts for all recipes
-  const fetchCommentCounts = async (recipeIds: string[]) => {
+  const fetchCommentCounts = useCallback(async (recipeIds: string[]) => {
     try {
       const counts: Record<string, number> = {};
 
@@ -155,7 +155,7 @@ export default function RecipeList({
     } catch (error) {
       console.error('Error fetching comment counts:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const fetchRecipes = async () => {
@@ -215,7 +215,7 @@ export default function RecipeList({
     };
 
     fetchRecipes();
-  }, [userId, isMyRecipesView, session?.user?.id, filterByDate, selectedDate, publicOnly]);
+  }, [userId, isMyRecipesView, session?.user?.id, filterByDate, selectedDate, publicOnly, fetchUserReactions, fetchCommentCounts]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this recipe?')) {
@@ -442,8 +442,25 @@ export default function RecipeList({
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-32">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+      <div data-testid="recipe-list-loading" className="container mx-auto p-4 max-w-7xl">
+        <div className="flex flex-col space-y-4">
+          <div className="animate-pulse bg-gray-300 h-12 w-full rounded"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, index) => (
+              <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 flex flex-col space-y-2">
+                <div className="animate-pulse bg-gray-300 h-48 w-full rounded"></div>
+                <div className="animate-pulse bg-gray-300 h-6 w-3/4 rounded"></div>
+                <div className="animate-pulse bg-gray-300 h-4 w-1/2 rounded"></div>
+                <div className="animate-pulse bg-gray-300 h-4 w-full rounded"></div>
+                <div className="animate-pulse bg-gray-300 h-4 w-full rounded"></div>
+                <div className="flex justify-between mt-2">
+                  <div className="animate-pulse bg-gray-300 h-8 w-24 rounded"></div>
+                  <div className="animate-pulse bg-gray-300 h-8 w-16 rounded"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
