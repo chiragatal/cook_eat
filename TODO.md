@@ -138,6 +138,7 @@ A post is basically a recipe.
 - [ ] Add tests for the mobile
 - [ ] Negative tests
 - [ ] Enable more linting errors instead of ignoring them
+- [ ] End to End tests
 
 ### Optimisations
 
