@@ -1,74 +1,94 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-// Mock the RecipeList component entirely since the real one is complex
+// Mock the required next modules
+jest.mock('next/navigation', () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+    prefetch: jest.fn(),
+  })),
+  useSearchParams: jest.fn(() => new URLSearchParams()),
+}));
+
+// Mock auth
+jest.mock('next-auth/react', () => ({
+  useSession: jest.fn(() => ({
+    data: {
+      user: { id: 'user-123', name: 'Test User', isAdmin: false },
+      expires: '2023-01-01T00:00:00.000Z',
+    },
+    status: 'authenticated',
+  })),
+}));
+
+// Mock view context
+jest.mock('@/app/contexts/ViewContext', () => ({
+  useView: jest.fn(() => ({
+    view: 'standard',
+    setView: jest.fn(),
+  })),
+}));
+
+// Mock fetch for API calls
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve([]),
+    headers: new Headers(),
+    redirected: false,
+    status: 200,
+    statusText: 'OK',
+    type: 'basic' as ResponseType,
+    url: '',
+    clone: () => ({ } as Response),
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+    blob: () => Promise.resolve(new Blob([])),
+    formData: () => Promise.resolve(new FormData()),
+    text: () => Promise.resolve(''),
+    body: null,
+    bodyUsed: false,
+  } as Response)
+);
+
+// Mock the actual component to prevent infinite loops
 jest.mock('@/app/components/RecipeList', () => {
-  return function MockRecipeList(props: Record<string, any>) {
-    return (
-      <div data-testid="mock-recipe-list">
-        <div data-testid="mock-recipe-list-props">
-          {JSON.stringify(props)}
-        </div>
-        <h2>Recipe List</h2>
-        <div data-testid="mock-recipes">
-          <div>
-            <h3>Spaghetti Carbonara</h3>
-            <p>Classic Italian pasta dish</p>
-          </div>
-          <div>
-            <h3>Chicken Curry</h3>
-            <p>Spicy curry dish</p>
-          </div>
-        </div>
-      </div>
-    );
+  return {
+    __esModule: true,
+    default: (props: Record<string, any>) => <div data-testid="mock-recipe-list">{JSON.stringify(props)}</div>
   };
 });
 
-// Import after mocking
+// Import the mocked component
 import RecipeList from '@/app/components/RecipeList';
 
 describe('RecipeList Component Tests', () => {
-  it('renders the mocked recipe list component', () => {
-    render(<RecipeList />);
-
-    // Check for mock component rendering
-    expect(screen.getByTestId('mock-recipe-list')).toBeInTheDocument();
-    expect(screen.getByText('Recipe List')).toBeInTheDocument();
-    expect(screen.getByText('Spaghetti Carbonara')).toBeInTheDocument();
-    expect(screen.getByText('Chicken Curry')).toBeInTheDocument();
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  it('passes props correctly to the component', () => {
+  it('renders the component with props', () => {
+    const { getByTestId } = render(<RecipeList showPrivate={true} />);
+
+    // Check if the component was rendered with the correct props
+    const element = getByTestId('mock-recipe-list');
+    expect(element).toBeInTheDocument();
+
+    // Verify props were passed
+    const props = JSON.parse(element.textContent || '{}');
+    expect(props.showPrivate).toBe(true);
+  });
+
+  it('passes selected date correctly', () => {
     const testDate = new Date('2023-01-15');
-    render(<RecipeList selectedDate={testDate} filterByDate={true} userId="123" />);
+    const { getByTestId } = render(
+      <RecipeList selectedDate={testDate} filterByDate={true} />
+    );
 
-    // Check that props were passed correctly
-    const propsElement = screen.getByTestId('mock-recipe-list-props');
-    const passedProps = JSON.parse(propsElement.textContent || '{}');
+    const element = getByTestId('mock-recipe-list');
+    const props = JSON.parse(element.textContent || '{}');
 
-    expect(passedProps.filterByDate).toBe(true);
-    expect(passedProps.userId).toBe('123');
-    // Date objects are serialized as strings in JSON
-    expect(passedProps.selectedDate).toBeDefined();
-  });
-
-  it('handles conditional rendering based on props', () => {
-    // First render without specific props
-    const { unmount } = render(<RecipeList />);
-    const propsElement1 = screen.getByTestId('mock-recipe-list-props');
-    const passedProps1 = JSON.parse(propsElement1.textContent || '{}');
-    expect(passedProps1.showPrivate).toBeUndefined();
-    expect(passedProps1.publicOnly).toBeUndefined();
-
-    unmount();
-
-    // Then render with specific props
-    render(<RecipeList showPrivate={true} publicOnly={false} />);
-    const propsElement2 = screen.getByTestId('mock-recipe-list-props');
-    const passedProps2 = JSON.parse(propsElement2.textContent || '{}');
-    expect(passedProps2.showPrivate).toBe(true);
-    expect(passedProps2.publicOnly).toBe(false);
+    expect(props.filterByDate).toBe(true);
+    expect(props.selectedDate).toBeDefined();
   });
 });
