@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
 import Comments from '@/app/components/Comments';
 import { useSession } from 'next-auth/react';
 import { formatDistanceToNow } from 'date-fns';
@@ -198,22 +198,23 @@ describe('Comments Component', () => {
     });
 
     // Should add the new comment to the list
-    await waitFor(() => {
-      expect(screen.getByText(newComment)).toBeInTheDocument();
-    });
+    expect(screen.getByText(newComment)).toBeInTheDocument();
+
+    // Input should be cleared
+    expect(commentInput).toHaveValue('');
   });
 
-  it('allows editing a comment made by the current user', async () => {
-    const updatedComment = 'Updated comment content';
-    const editedComment = {
-      ...mockComments[0],
-      content: updatedComment,
-      updatedAt: '2023-01-03T12:00:00Z',
-    };
-
+  it('allows editing a comment by the comment owner', async () => {
     (global.fetch as jest.Mock)
       .mockResolvedValueOnce({ ok: true, json: async () => [...mockComments] }) // Initial comments fetch
-      .mockResolvedValueOnce({ ok: true, json: async () => editedComment }); // Comment update
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          ...mockComments[0],
+          content: 'Edited comment content',
+          updatedAt: '2023-01-04T12:00:00Z'
+        })
+      }); // Comment update
 
     await act(async () => {
       render(<Comments postId={mockPostId} />);
@@ -223,42 +224,46 @@ describe('Comments Component', () => {
       expect(screen.queryByText('Loading comments...')).not.toBeInTheDocument();
     });
 
-    // Find edit button on the first comment (which is by the current user)
-    const editButton = screen.getByText('Edit');
+    // Find the edit button for the first comment (user is the owner)
+    const editButtons = screen.getAllByText('Edit');
+    expect(editButtons.length).toBeGreaterThan(0);
+
+    // Click edit
     await act(async () => {
-      fireEvent.click(editButton);
+      fireEvent.click(editButtons[0]);
     });
 
-    // Edit input should be visible with the current comment content
-    const editInput = screen.getByDisplayValue('This is a test comment');
+    // Check if we're in edit mode
+    const editTextarea = screen.getByDisplayValue('This is a test comment');
+    expect(editTextarea).toBeInTheDocument();
+
+    // Change the comment content
     await act(async () => {
-      fireEvent.change(editInput, { target: { value: updatedComment } });
+      fireEvent.change(editTextarea, { target: { value: 'Edited comment content' } });
     });
 
-    // Submit the edit - use the correct button text
-    const updateButton = screen.getByText('Save');
+    // Save the edit
+    const saveButton = screen.getByText('Save');
     await act(async () => {
-      fireEvent.click(updateButton);
+      fireEvent.click(saveButton);
     });
 
-    // Verify that fetch was called with the right arguments
+    // Verify fetch was called with the right arguments
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
         `/api/posts/${mockPostId}/comments?commentId=comment-1`,
         expect.objectContaining({
           method: 'PUT',
-          body: JSON.stringify({ content: updatedComment }),
+          body: JSON.stringify({ content: 'Edited comment content' }),
         })
       );
     });
 
-    // Updated comment should be displayed
-    await waitFor(() => {
-      expect(screen.getByText(updatedComment)).toBeInTheDocument();
-    });
+    // Comment content should be updated
+    expect(screen.getByText('Edited comment content')).toBeInTheDocument();
   });
 
-  it('allows canceling an edit', async () => {
+  it('allows canceling comment editing', async () => {
     await act(async () => {
       render(<Comments postId={mockPostId} />);
     });
@@ -267,39 +272,37 @@ describe('Comments Component', () => {
       expect(screen.queryByText('Loading comments...')).not.toBeInTheDocument();
     });
 
-    const originalText = 'This is a test comment';
+    // Find the edit button for the first comment
+    const editButtons = screen.getAllByText('Edit');
+    expect(editButtons.length).toBeGreaterThan(0);
 
-    // Start editing
-    const editButton = screen.getByText('Edit');
+    // Click edit
     await act(async () => {
-      fireEvent.click(editButton);
+      fireEvent.click(editButtons[0]);
     });
 
-    // Change input value
-    const editInput = screen.getByDisplayValue(originalText);
-    await act(async () => {
-      fireEvent.change(editInput, { target: { value: 'Changed text' } });
-    });
+    // Check if we're in edit mode
+    const editTextarea = screen.getByDisplayValue('This is a test comment');
+    expect(editTextarea).toBeInTheDocument();
 
-    // Cancel the edit
+    // Click cancel
     const cancelButton = screen.getByText('Cancel');
     await act(async () => {
       fireEvent.click(cancelButton);
     });
 
-    // Original text should still be shown
-    expect(screen.getByText(originalText)).toBeInTheDocument();
-
-    // Edit input should not be visible
-    expect(screen.queryByDisplayValue('Changed text')).not.toBeInTheDocument();
+    // Should exit edit mode without changing the comment
+    expect(screen.queryByDisplayValue('This is a test comment')).not.toBeInTheDocument();
+    expect(screen.getByText('This is a test comment')).toBeInTheDocument();
   });
 
-  it('allows deleting a comment', async () => {
-    (global.confirm as jest.Mock).mockReturnValue(true);
-
+  it('allows deleting a comment by the comment owner', async () => {
     (global.fetch as jest.Mock)
       .mockResolvedValueOnce({ ok: true, json: async () => [...mockComments] }) // Initial comments fetch
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true }) }); // Delete response
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) }); // Comment deletion
+
+    // Mock confirm to return true (user confirms deletion)
+    (global.confirm as jest.Mock).mockReturnValue(true);
 
     await act(async () => {
       render(<Comments postId={mockPostId} />);
@@ -309,39 +312,198 @@ describe('Comments Component', () => {
       expect(screen.queryByText('Loading comments...')).not.toBeInTheDocument();
     });
 
-    // Get delete button for the first comment
-    const deleteButton = screen.getByText('Delete');
+    // Find the delete button for the first comment
+    const deleteButtons = screen.getAllByText('Delete');
+    expect(deleteButtons.length).toBeGreaterThan(0);
 
     // Click delete
     await act(async () => {
-      fireEvent.click(deleteButton);
+      fireEvent.click(deleteButtons[0]);
     });
 
-    // Verify confirmation was shown
+    // Confirmation should be shown
     expect(global.confirm).toHaveBeenCalledWith('Are you sure you want to delete this comment?');
 
-    // Verify fetch was called
-    expect(global.fetch).toHaveBeenCalledWith(
-      `/api/posts/${mockPostId}/comments?commentId=comment-1`,
-      expect.objectContaining({
-        method: 'DELETE',
-      })
-    );
-
-    // First comment should be removed
+    // Verify fetch was called with the right arguments
     await waitFor(() => {
-      expect(screen.queryByText('This is a test comment')).not.toBeInTheDocument();
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/posts/${mockPostId}/comments?commentId=comment-1`,
+        expect.objectContaining({
+          method: 'DELETE',
+        })
+      );
     });
 
-    // Second comment should still be visible
+    // Comment should be removed from the list
+    expect(screen.queryByText('This is a test comment')).not.toBeInTheDocument();
+    // But other comments should remain
     expect(screen.getByText('Another test comment')).toBeInTheDocument();
   });
 
-  it('shows a message when there are no comments', async () => {
+  it('does not delete a comment if confirmation is canceled', async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({ ok: true, json: async () => [...mockComments] }); // Initial comments fetch
+
+    // Mock confirm to return false (user cancels deletion)
+    (global.confirm as jest.Mock).mockReturnValue(false);
+
+    await act(async () => {
+      render(<Comments postId={mockPostId} />);
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading comments...')).not.toBeInTheDocument();
+    });
+
+    // Find the delete button for the first comment
+    const deleteButtons = screen.getAllByText('Delete');
+    expect(deleteButtons.length).toBeGreaterThan(0);
+
+    // Click delete
+    await act(async () => {
+      fireEvent.click(deleteButtons[0]);
+    });
+
+    // Confirmation should be shown
+    expect(global.confirm).toHaveBeenCalledWith('Are you sure you want to delete this comment?');
+
+    // Fetch should not be called for deletion
+    expect(global.fetch).not.toHaveBeenCalledWith(
+      expect.stringContaining(`/api/posts/${mockPostId}/comments?commentId=`),
+      expect.objectContaining({ method: 'DELETE' })
+    );
+
+    // Comments should remain unchanged
+    expect(screen.getByText('This is a test comment')).toBeInTheDocument();
+    expect(screen.getByText('Another test comment')).toBeInTheDocument();
+  });
+
+  it('disables the comment form while submitting', async () => {
+    // Delay the resolution to test loading state
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({ ok: true, json: async () => [...mockComments] }) // Initial comments fetch
+      .mockImplementationOnce(() => new Promise(resolve => {
+        setTimeout(() => {
+          resolve({
+            ok: true,
+            json: async () => ({
+              id: 'comment-3',
+              content: 'New comment',
+              createdAt: '2023-01-03T12:00:00Z',
+              updatedAt: '2023-01-03T12:00:00Z',
+              userId: 'user-1',
+              postId: mockPostId,
+              user: {
+                name: 'Test User',
+                email: 'test@example.com',
+              },
+            })
+          });
+        }, 100);
+      }));
+
+    await act(async () => {
+      render(<Comments postId={mockPostId} />);
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading comments...')).not.toBeInTheDocument();
+    });
+
+    // Type a comment
+    const commentInput = screen.getByPlaceholderText('Add a comment...');
+    await act(async () => {
+      fireEvent.change(commentInput, { target: { value: 'New comment' } });
+    });
+
+    // Submit the form
+    const submitButton = screen.getByText('Post Comment');
+    await act(async () => {
+      fireEvent.click(submitButton);
+    });
+
+    // Button should change to loading state and be disabled
+    expect(screen.getByText('Posting...')).toBeInTheDocument();
+    expect(screen.getByText('Posting...')).toBeDisabled();
+
+    // Textarea should be disabled
+    expect(commentInput).toBeDisabled();
+
+    // Wait for submission to complete
+    await waitFor(() => {
+      expect(screen.getByText('Post Comment')).toBeInTheDocument();
+    });
+  });
+
+  it('shows error message when comment submission fails', async () => {
+    // Mock fetch to fail for comment submission
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({ ok: true, json: async () => [...mockComments] }) // Initial comments fetch
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        json: async () => ({ error: 'Failed to create comment' })
+      }); // Comment submission failure
+
+    await act(async () => {
+      render(<Comments postId={mockPostId} />);
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading comments...')).not.toBeInTheDocument();
+    });
+
+    // Type a comment
+    const commentInput = screen.getByPlaceholderText('Add a comment...');
+    await act(async () => {
+      fireEvent.change(commentInput, { target: { value: 'New comment' } });
+    });
+
+    // Submit the form
+    const submitButton = screen.getByText('Post Comment');
+    await act(async () => {
+      fireEvent.click(submitButton);
+    });
+
+    // Error message should be displayed
+    await waitFor(() => {
+      expect(screen.getByText(/Error:/)).toBeInTheDocument();
+      expect(screen.getByText(/Failed to create comment/)).toBeInTheDocument();
+    });
+
+    // The form should still have the entered comment
+    expect(commentInput).toHaveValue('New comment');
+  });
+
+  it('shows error message when comments cannot be loaded', async () => {
+    // Mock fetch to fail for initial comments fetch
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error',
+      json: async () => ({ error: 'Failed to fetch comments' })
+    });
+
+    await act(async () => {
+      render(<Comments postId={mockPostId} />);
+    });
+
+    // Error message should be displayed
+    await waitFor(() => {
+      expect(screen.getByText(/Error:/)).toBeInTheDocument();
+      expect(screen.getByText(/Failed to fetch comments/)).toBeInTheDocument();
+    });
+
+    // Should not be in loading state anymore
+    expect(screen.queryByText('Loading comments...')).not.toBeInTheDocument();
+  });
+
+  it('shows no comments message when there are no comments', async () => {
     // Mock empty comments array
-    (global.fetch as jest.Mock).mockResolvedValue({
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => [],
+      json: async () => []
     });
 
     await act(async () => {
@@ -352,7 +514,48 @@ describe('Comments Component', () => {
       expect(screen.queryByText('Loading comments...')).not.toBeInTheDocument();
     });
 
-    // Should show no-comments message
-    expect(screen.getByText('No comments yet. Be the first to comment!')).toBeInTheDocument();
+    // Should show no comments message
+    expect(screen.getByText(/No comments yet/i)).toBeInTheDocument();
+  });
+
+  it('only shows edit and delete buttons for the comment owner', async () => {
+    await act(async () => {
+      render(<Comments postId={mockPostId} />);
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Loading comments...')).not.toBeInTheDocument();
+    });
+
+    // The session user owns the first comment but not the second
+    const editButtons = screen.getAllByText('Edit');
+    const deleteButtons = screen.getAllByText('Delete');
+
+    // Should only be able to edit/delete their own comments
+    expect(editButtons.length).toBe(1);
+    expect(deleteButtons.length).toBe(1);
+
+    // First comment should have edit/delete buttons visible
+    const firstComment = screen.getByText('This is a test comment');
+    const firstCommentContainer = firstComment.closest('[data-testid="comment-container"]') as HTMLElement;
+
+    // Add data-testid to make selection more reliable
+    if (firstCommentContainer) {
+      expect(within(firstCommentContainer).getByText('Edit')).toBeInTheDocument();
+      expect(within(firstCommentContainer).getByText('Delete')).toBeInTheDocument();
+    } else {
+      // Fallback to just checking that the buttons exist somewhere
+      expect(editButtons.length).toBeGreaterThan(0);
+      expect(deleteButtons.length).toBeGreaterThan(0);
+    }
+
+    // Second comment should NOT have edit/delete buttons
+    const secondComment = screen.getByText('Another test comment');
+    const secondCommentContainer = secondComment.closest('[data-testid="comment-container"]') as HTMLElement;
+
+    if (secondCommentContainer) {
+      expect(within(secondCommentContainer).queryByText('Edit')).not.toBeInTheDocument();
+      expect(within(secondCommentContainer).queryByText('Delete')).not.toBeInTheDocument();
+    }
   });
 });

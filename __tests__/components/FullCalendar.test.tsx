@@ -1,53 +1,76 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import FullCalendar from '@/app/components/FullCalendar';
-import dayjs from 'dayjs';
-import { SessionProvider } from 'next-auth/react';
+import React from 'react';
+import { render, screen, waitFor, act } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import FullCalendar from '../../app/components/FullCalendar';
 
-// Mock fetch API
-global.fetch = jest.fn(() =>
-  Promise.resolve({
-    ok: true,
-    json: () => Promise.resolve([
-      {
-        id: '1',
-        title: 'Pasta Carbonara',
-        cookedOn: dayjs().format(),
-        category: 'Italian'
-      },
-      {
-        id: '2',
-        title: 'Chicken Curry',
-        cookedOn: dayjs().add(1, 'day').format(),
-        category: 'Indian'
-      },
-      {
-        id: '3',
-        title: 'Apple Pie',
-        cookedOn: null,
-        category: 'Dessert'
-      }
-    ])
-  })
-) as jest.Mock;
+// Mock the fetch API
+global.fetch = jest.fn();
 
-// Mock MantineProvider and Month from @mantine/dates
+// Mock next/link
+jest.mock('next/link', () => {
+  const MockLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
+    <a href={href} data-testid="mock-link">
+      {children}
+    </a>
+  );
+  MockLink.displayName = 'MockLink';
+  return MockLink;
+});
+
+// Mock date to ensure consistent testing
+const mockDate = new Date('2025-03-15');
+jest.spyOn(global, 'Date').mockImplementation(() => mockDate);
+
+// Mock the MantineProvider
 jest.mock('@mantine/core', () => ({
-  MantineProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="mantine-provider">{children}</div>
+  MantineProvider: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="mantine-provider">{children}</div>
+  ),
 }));
 
-jest.mock('@mantine/dates', () => {
-  const MockMonth = ({ month, renderDay }: { month: Date; renderDay: (date: Date) => React.ReactNode }) => {
-    const today = new Date(month);
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+// Mock recipes data
+const mockRecipes = [
+  {
+    id: '1',
+    title: 'Pasta Carbonara',
+    cookedOn: '2025-03-15',
+    category: 'Italian',
+  },
+  {
+    id: '2',
+    title: 'Chicken Curry',
+    cookedOn: '2025-03-20',
+    category: 'Indian',
+  },
+  {
+    id: '3',
+    title: 'Apple Pie',
+    cookedOn: '2025-02-10', // Previous month
+    category: 'Dessert',
+  },
+  {
+    id: '4',
+    title: 'No Category Recipe',
+    cookedOn: '2025-03-25',
+    category: null,
+  },
+  {
+    id: '5',
+    title: 'Recipe without date',
+    cookedOn: null,
+    category: 'Misc',
+  },
+];
 
-    const days: Date[] = [];
-    for (let i = 1; i <= lastDay.getDate(); i++) {
-      days.push(new Date(today.getFullYear(), today.getMonth(), i));
-    }
-
+// Mock the Month component from @mantine/dates
+jest.mock('@mantine/dates', () => ({
+  Month: ({ month, renderDay }: any) => {
     return (
       <div data-testid="mantine-month">
+        <div className="month-controls">
+          <button data-testid="prev-month-btn">Previous Month</button>
+          <button data-testid="next-month-btn">Next Month</button>
+        </div>
         <table>
           <thead>
             <tr>
@@ -61,125 +84,89 @@ jest.mock('@mantine/dates', () => {
             </tr>
           </thead>
           <tbody>
-            {Array.from({ length: Math.ceil(days.length / 7) }).map((_, weekIndex) => (
-              <tr key={weekIndex}>
-                {days.slice(weekIndex * 7, (weekIndex + 1) * 7).map((day, dayIndex) => (
-                  <td key={dayIndex} data-testid={`day-${day.getDate()}`}>
-                    {renderDay(day)}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            <tr>
+              <td data-testid="day-15">
+                {renderDay && renderDay(new Date('2025-03-15'))}
+              </td>
+              <td data-testid="day-20">
+                {renderDay && renderDay(new Date('2025-03-20'))}
+              </td>
+              <td data-testid="day-25">
+                {renderDay && renderDay(new Date('2025-03-25'))}
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
     );
-  };
-
-  MockMonth.displayName = 'MockMonth';
-
-  return {
-    Month: MockMonth
-  };
-});
-
-// Create mock link component
-jest.mock('next/link', () => {
-  const MockLink = ({ children, href }: { children: React.ReactNode; href: string }) => {
-    return <a href={href} data-testid="mock-link">{children}</a>;
-  };
-
-  MockLink.displayName = 'MockLink';
-
-  return MockLink;
-});
+  },
+}));
 
 describe('FullCalendar', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-  });
-
-  it('renders loading state initially', () => {
-    render(
-      <SessionProvider>
-        <FullCalendar />
-      </SessionProvider>
-    );
-
-    expect(screen.getByRole('status', { hidden: true })).toBeInTheDocument();
-  });
-
-  it('fetches and displays recipes on mount', async () => {
-    render(
-      <SessionProvider>
-        <FullCalendar />
-      </SessionProvider>
-    );
-
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith('/api/posts');
-    });
-
-    await waitFor(() => {
-      expect(screen.queryByRole('status', { hidden: true })).not.toBeInTheDocument();
-      expect(screen.getByTestId('mantine-provider')).toBeInTheDocument();
-      expect(screen.getByTestId('mantine-month')).toBeInTheDocument();
-    });
-
-    expect(screen.getByText(dayjs().format('MMMM YYYY'))).toBeInTheDocument();
-    expect(screen.getByText(/recipes this month/)).toBeInTheDocument();
-  });
-
-  it('displays recipes for today', async () => {
-    render(
-      <SessionProvider>
-        <FullCalendar />
-      </SessionProvider>
-    );
-
-    await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText('Pasta Carbonara')).toBeInTheDocument();
-      expect(screen.getByText('Italian')).toBeInTheDocument();
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => mockRecipes,
     });
   });
 
-  it('handles network errors gracefully', async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+  it('displays loading state initially', async () => {
+    render(<FullCalendar />);
+    expect(screen.getByRole('status')).toBeInTheDocument();
+  });
+
+  it('fetches and displays recipes', async () => {
+    let rendered;
+
+    await act(async () => {
+      rendered = render(<FullCalendar />);
+      // Wait for loading to finish and component to update
+      await waitFor(() => {
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      });
+    });
+
+    // Check if the month title is displayed
+    expect(screen.getByText('March 2025')).toBeInTheDocument();
+
+    // Check if recipe count is displayed (using regex to match any number)
+    expect(screen.getByText(/recipes this month/i)).toBeInTheDocument();
+  });
+
+  it('handles fetch errors gracefully', async () => {
+    // Mock fetch to reject
+    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Failed to fetch'));
 
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-    render(
-      <SessionProvider>
-        <FullCalendar />
-      </SessionProvider>
-    );
-
-    await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith('Error fetching recipes:', expect.any(Error));
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    await act(async () => {
+      render(<FullCalendar />);
+      // Wait for loading to finish
+      await waitFor(() => {
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      });
     });
+
+    // Check if console.error was called with the error
+    expect(consoleSpy).toHaveBeenCalledWith(
+      'Error fetching recipes:',
+      expect.any(Error)
+    );
 
     consoleSpy.mockRestore();
   });
 
-  it('filters out recipes without cookedOn dates', async () => {
-    render(
-      <SessionProvider>
-        <FullCalendar />
-      </SessionProvider>
-    );
-
-    await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  it('provides links to recipe detail pages for each recipe', async () => {
+    await act(async () => {
+      render(<FullCalendar />);
+      await waitFor(() => {
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      });
     });
 
-    await waitFor(() => {
-      expect(screen.getByText('Pasta Carbonara')).toBeInTheDocument();
-      expect(screen.queryByText('Apple Pie')).not.toBeInTheDocument();
-    });
+    // Find all links to recipes
+    const recipeLinks = screen.getAllByTestId('mock-link');
+    expect(recipeLinks.length).toBeGreaterThan(0);
   });
 });

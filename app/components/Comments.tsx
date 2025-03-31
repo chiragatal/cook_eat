@@ -204,7 +204,11 @@ export default function Comments({ postId }: { postId: string }) {
       ) : (
         <div className="space-y-6">
           {comments.map((comment) => (
-            <div key={comment.id} className="border-b border-gray-200 dark:border-gray-700 pb-6 last:border-b-0">
+            <div
+              key={comment.id}
+              className="p-4 mb-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+              data-testid="comment-container"
+            >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-start">
                   <div className="mr-3 bg-gray-200 dark:bg-gray-600 rounded-full h-10 w-10 flex items-center justify-center">
