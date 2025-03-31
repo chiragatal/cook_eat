@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/config';
 import { REACTION_TYPES, ReactionType } from './types';
-import { prisma } from '../../../../../lib/db';
-import { createReactionNotification } from '@/app/utils/notifications';
+import { prisma } from '../../../../../lib/prisma';
+import { createReactionNotification } from '../../../../utils/notifications';
 
 // GET reactions for a post
 export async function GET(
@@ -24,7 +24,9 @@ export async function GET(
 
     // Get all reactions for the post with user info
     const allReactions = await prisma.reaction.findMany({
-      where: { postId },
+      where: {
+        postId
+      },
       include: {
         user: {
           select: {
@@ -64,7 +66,7 @@ export async function GET(
     let userReactions: string[] = [];
     if (session?.user?.id) {
       userReactions = allReactions
-        .filter(r => r.userId === session.user.id)
+        .filter(r => r.userId === session.user.id.toString())
         .map(r => r.type);
     }
 
@@ -118,7 +120,7 @@ export async function POST(
     const existingReaction = await prisma.reaction.findFirst({
       where: {
         postId,
-        userId: session.user.id,
+        userId: session.user.id.toString(),
         type,
       },
     });
@@ -127,14 +129,16 @@ export async function POST(
     // Toggle the reaction
     if (existingReaction) {
       await prisma.reaction.delete({
-        where: { id: existingReaction.id },
+        where: {
+          id: existingReaction.id
+        }
       });
     } else {
       reaction = await prisma.reaction.create({
         data: {
           type,
           postId,
-          userId: session.user.id,
+          userId: session.user.id.toString(),
         },
       });
 
@@ -151,7 +155,7 @@ export async function POST(
         if (post) {
           await createReactionNotification(
             reaction.postId,
-            session.user.id,
+            session.user.id.toString(),
             post.userId,
             type,
             post.title
@@ -162,7 +166,9 @@ export async function POST(
 
     // Get updated reactions with user info
     const allReactions = await prisma.reaction.findMany({
-      where: { postId },
+      where: {
+        postId
+      },
       include: {
         user: {
           select: {
@@ -199,9 +205,12 @@ export async function POST(
     }));
 
     // Get user's reactions
-    const userReactions = allReactions
-      .filter(r => r.userId === session.user.id)
-      .map(r => r.type);
+    const userReactions: string[] = [];
+    allReactions.forEach(reaction => {
+      if (reaction.userId === session.user.id.toString()) {
+        userReactions.push(reaction.type);
+      }
+    });
 
     return NextResponse.json({
       reactions,

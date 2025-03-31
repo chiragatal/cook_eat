@@ -1,6 +1,6 @@
-import { NextAuthOptions, User } from 'next-auth';
+import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 
 // Use a singleton pattern for Prisma to prevent too many connections
@@ -68,16 +68,13 @@ export const authOptions: NextAuthOptions = {
 
           console.log('Authentication successful, returning user data');
 
-          // Create a User object that matches your custom User type
-          const authUser: User = {
-            id: user.id, // UUID string from database
+          return {
+            id: user.id.toString(),
             email: user.email,
             name: user.name,
             isAdmin: user.isAdmin,
             image: null
           };
-
-          return authUser;
         } catch (error) {
           console.error('Auth error:', error);
           return null;
@@ -91,17 +88,15 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        // Type assertion to match your custom User type
-        const typedUser = user as User;
-        token.id = typedUser.id;
-        token.isAdmin = typedUser.isAdmin;
+        token.id = user.id.toString();
+        token.isAdmin = user.isAdmin;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id;
-        session.user.isAdmin = token.isAdmin as boolean;
+        session.user.id = token.id.toString();
+        session.user.isAdmin = token.isAdmin;
       }
       return session;
     }

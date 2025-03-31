@@ -110,9 +110,11 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   const updatePreference = async (type: NotificationType, enabled: boolean) => {
     try {
+      console.log(`Updating preference: ${type} to ${enabled ? 'enabled' : 'disabled'}`);
+
       if (!session) {
         console.error('Cannot update preference without session');
-        return;
+        throw new Error('Authentication required');
       }
 
       const response = await fetch('/api/notifications/preferences', {
@@ -120,9 +122,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type, enabled }),
       });
-      if (!response.ok) throw new Error('Failed to update notification preference');
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Server error (${response.status}):`, errorText);
+        throw new Error(`Failed to update notification preference: ${response.statusText}`);
+      }
 
       const updatedPreference = await response.json();
+      console.log('Received updated preference:', updatedPreference);
 
       // Update the state with the new preference
       setPreferences(prev => {
@@ -132,13 +140,23 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
         const index = prev.findIndex(p => p.type === type);
         if (index >= 0) {
-          return [...prev.slice(0, index), { ...prev[index], enabled }, ...prev.slice(index + 1)];
+          const updated = [...prev.slice(0, index), { ...prev[index], enabled }, ...prev.slice(index + 1)];
+          console.log('Updated preferences state:', updated);
+          return updated;
         } else {
-          return [...prev, { type, enabled }];
+          const updated = [...prev, { type, enabled }];
+          console.log('Added new preference to state:', updated);
+          return updated;
         }
       });
+
+      // Refresh preferences from server to ensure consistency
+      fetchPreferences();
+
+      return updatedPreference;
     } catch (error) {
       console.error('Error updating notification preference:', error);
+      throw error; // Re-throw to allow the component to handle it
     }
   };
 

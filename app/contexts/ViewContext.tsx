@@ -9,7 +9,7 @@ type ViewContextType = {
   selectedUserId: string | null;
   selectedUserName: string | null;
   toggleView: () => void;
-  setSelectedUser: (userId: string | number | null, userName: string | null) => void;
+  setSelectedUser: (userId: string | null, userName: string | null) => void;
 };
 
 const ViewContext = createContext<ViewContextType | undefined>(undefined);
@@ -43,15 +43,13 @@ export function ViewProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const setSelectedUser = (userId: string | number | null, userName: string | null) => {
+  const setSelectedUser = (userId: string | null, userName: string | null) => {
     if (userId) {
-      // Ensure userId is always a string
-      const userIdString = String(userId);
-      setSelectedUserId(userIdString);
+      setSelectedUserId(userId);
       setSelectedUserName(userName);
       setIsMyRecipesView(false);
       // Use replaceState to update URL without triggering a navigation
-      window.history.replaceState({}, '', `/?user=${userIdString}`);
+      window.history.replaceState({}, '', `/?user=${userId}`);
     } else {
       setSelectedUserId(null);
       setSelectedUserName(null);

@@ -1,18 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/config';
-import { PrismaClient } from '@prisma/client';
-
-// Use a singleton pattern for Prisma to prevent too many connections
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
-
-const prisma = globalForPrisma.prisma ?? new PrismaClient();
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
-}
+import { prisma } from '../../../lib/prisma';
 
 export async function GET(request: Request) {
   try {

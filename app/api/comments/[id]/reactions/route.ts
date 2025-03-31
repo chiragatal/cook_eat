@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/config';
 import { COMMENT_REACTION_TYPES, CommentReactionType } from './types';
 import { prisma } from '../../../../../lib/prisma';
-import { createCommentReactionNotification } from '@/app/utils/notifications';
+import { createCommentReactionNotification } from '../../../../utils/notifications';
 
 // GET reactions for a comment
 export async function GET(

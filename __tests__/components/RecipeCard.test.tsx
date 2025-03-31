@@ -5,7 +5,7 @@ import RecipeCard from '@/app/components/RecipeCard';
 
 describe('RecipeCard Component', () => {
   const mockRecipe = {
-    id: 1,
+    id: '1',
     title: 'Test Recipe',
     description: 'This is a test recipe description',
     category: 'Dinner',

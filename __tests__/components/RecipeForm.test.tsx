@@ -9,7 +9,7 @@ import { CATEGORIES, DIFFICULTIES } from '@/app/lib/constants';
 jest.mock('next-auth/react', () => ({
   useSession: jest.fn(() => ({
     data: {
-      user: { id: 1, name: 'Test User' },
+      user: { id: '1', name: 'Test User' },
       expires: '2023-01-01T00:00:00.000Z',
     },
     status: 'authenticated',

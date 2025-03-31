@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/config';
-import { prisma } from '@/lib/prisma';
-import { createCommentNotification, createCommentMentionNotification } from '@/app/utils/notifications';
+import { prisma } from '../../../../../lib/prisma';
+import { createCommentNotification, createCommentMentionNotification } from '../../../../../app/utils/notifications';
 
 // GET comments for a post
 export async function GET(
@@ -133,12 +133,12 @@ export async function POST(
 
       // Create notifications for mentioned users (excluding commenter)
       for (const user of mentionedUsers) {
-        if (user.id !== session.user.id) {
+        if (user.id !== session.user.id.toString()) {
           await createCommentMentionNotification(
             comment.id,
             post.id,
-            session.user.id,
-            user.id,
+            session.user.id.toString(),
+            user.id.toString(),
             content
           );
         }
@@ -190,7 +190,7 @@ export async function PUT(
       );
     }
 
-    if (comment.userId !== session.user.id && !session.user.isAdmin) {
+    if (comment.userId !== session.user.id.toString() && !session.user.isAdmin) {
       return NextResponse.json(
         { error: 'Not authorized to update this comment' },
         { status: 403 }
@@ -263,7 +263,7 @@ export async function DELETE(
       );
     }
 
-    if (comment.userId !== session.user.id && !session.user.isAdmin) {
+    if (comment.userId !== session.user.id.toString() && !session.user.isAdmin) {
       return NextResponse.json(
         { error: 'Not authorized to delete this comment' },
         { status: 403 }

@@ -4,13 +4,11 @@ const prisma = new PrismaClient();
 
 async function main() {
   try {
-    // Check if user with ID 1 exists
-    const user = await prisma.user.findUnique({
-      where: { id: 1 }
-    });
+    // Find the first user
+    const user = await prisma.user.findFirst();
 
     if (!user) {
-      console.log('User with ID 1 not found. Please run create-user.js first.');
+      console.log('No users found. Please create a user first.');
       return;
     }
 

@@ -58,7 +58,7 @@ interface SearchFilters {
 interface RecipeListProps {
   selectedDate?: Date | null;
   filterByDate?: boolean;
-  userId?: string | number | undefined;
+  userId?: string | undefined;
   showPrivate?: boolean;
   publicOnly?: boolean;
 }

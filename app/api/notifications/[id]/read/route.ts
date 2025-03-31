@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/config';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '../../../../../lib/prisma';
 
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -22,14 +22,6 @@ export async function POST(
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
     const notification = await prisma.notification.findUnique({
       where: { id: notificationId },
     });
@@ -41,7 +33,7 @@ export async function POST(
       );
     }
 
-    if (notification.userId !== user.id) {
+    if (notification.userId !== session.user.id.toString()) {
       return NextResponse.json(
         { error: 'Not authorized to update this notification' },
         { status: 403 }
