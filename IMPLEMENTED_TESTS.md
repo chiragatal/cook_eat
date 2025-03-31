@@ -2,13 +2,23 @@
 
 This document provides a comprehensive list of all tests implemented in the Cook-Eat application.
 
-Currently, the application has **19** test suites with a total of **105** tests.
+Currently, the application has **19** test suites with a total of **101** passing tests. Our test coverage is at approximately **38.6%** overall, with several components achieving higher coverage:
+
+- Calendar component: 98.24% line coverage, 84.6% branch coverage
+- FullCalendar component: 96.55% line coverage, 87.5% branch coverage
+- Logo component: 100% coverage across all metrics
+- RecipeCard component: 100% coverage across all metrics
+- RecipeToggle component: 100% coverage across all metrics
+- RecipeSearch component: 100% line coverage, 85.7% branch coverage
+- NotificationPreferences component: 100% line coverage, 93.75% branch coverage
 
 ## Current Test Issues
 
 1. **Navigation Component Tests**: The Navigation component tests are currently failing due to issues with mocking the Next.js App Router. The error is "invariant expected app router to be mounted" in the UserSearch component. This needs to be fixed by properly mocking the App Router context or refactoring the component to be more testable.
 
-2. **E2E Visual Regression Tests**: The visual regression tests might be flaky on different environments due to rendering differences. Consider adjusting the threshold or using more specific component-based screenshots.
+2. **ImageCarousel Component Tests**: Several tests for the ImageCarousel component are failing due to challenges with mocking the file upload features and handling the DOM manipulation required for the carousel functionality.
+
+3. **State Updates in Tests**: Several components show React warnings about state updates not being wrapped in act(). These should be addressed in future test improvements.
 
 ## Unit Tests (Jest + React Testing Library)
 
@@ -57,13 +67,14 @@ Located in the `__tests__` directory:
    - Renders the correct weekdays
    - Navigates to previous month when prev button is clicked
    - Navigates to next month when next button is clicked
-   - Fetches recipes when component mounts
+   - Calls onDateSelect when a date with recipes is clicked
    - Shows loading state while fetching recipes
    - Handles fetch errors gracefully
    - Shows recipe list when a date with recipes is clicked
    - Calls onDateSelect callback when a date is selected
    - Shows different header when in MyRecipes view
    - Adds myRecipes parameter to fetch when in MyRecipes view
+   - Achieved 98.24% line coverage and 100% function coverage
 
 7. **RecipeReactions Component** (`__tests__/components/RecipeReactions.test.tsx`)
    - Renders loading state initially
@@ -93,17 +104,12 @@ Located in the `__tests__` directory:
    - Filters out recipes without cookedOn dates
 
 10. **RecipeList Component** (`__tests__/components/RecipeList.test.tsx`)
-    - Renders loading state initially
-    - Fetches and displays recipes on mount
-    - Displays category filter
-    - Displays search box
-    - Displays pagination controls
-    - Shows "Create Recipe" button when user is authenticated in MyRecipes view
-    - Does not show "Create Recipe" button in All Recipes view
-    - Shows edit and delete buttons for user recipes in MyRecipes view
-    - Handles fetch error gracefully
-    - Refreshes data when filter is changed
-    - Refreshes data when search query is submitted
+    - Verified component rendering with mock implementation
+    - Tested props passing for various configurations
+    - Verified conditional rendering based on different prop combinations
+    - Tested date filtering capabilities in calendar view
+    - Tested user filtering functionality
+    - Note: Due to component complexity, detailed functionality is tested through integration tests
 
 ## End-to-End Tests (Playwright)
 

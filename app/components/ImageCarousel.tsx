@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 
 interface ImageCarouselProps {
   images: string[];
@@ -11,6 +12,7 @@ interface ImageCarouselProps {
   onIndicatorChange?: (index: number) => void;
   navigationButtonSize?: 'small' | 'medium' | 'large';
   showAlways?: boolean;
+  onChange?: (images: string[]) => void;
 }
 
 export default function ImageCarousel({
@@ -83,7 +85,7 @@ export default function ImageCarousel({
         galleryRef.current.style.scrollBehavior = 'smooth';
       }
     }, 100);
-  }, [images.length, isInitialized]);
+  }, [images.length, isInitialized, scrollToIndex]);
 
   // Handle manual scrolling and update indicators
   const handleScroll = () => {
@@ -247,7 +249,7 @@ export default function ImageCarousel({
         gallery.removeEventListener('touchend', onTouchEnd);
       }
     };
-  }, [images.length, currentImageIndex]);
+  }, [images.length, currentImageIndex, handleScroll, scrollToIndex]);
 
   if (images.length === 0) {
     return null;
@@ -269,13 +271,15 @@ export default function ImageCarousel({
         {extendedImages.map((image, index) => (
           <div key={index} className="flex-none w-full h-full snap-center relative">
             <div className="w-full h-full flex items-center justify-center">
-              <img
+              <Image
                 src={image}
                 alt={`${title} - Image ${(index % images.length) + 1}`}
                 className={imageClassName}
                 style={{ pointerEvents: 'none' }}
+                width={800}
+                height={600}
                 onError={(e) => {
-                  e.currentTarget.src = 'https://via.placeholder.com/800x600?text=Failed+to+Load';
+                  (e.target as HTMLImageElement).src = 'https://via.placeholder.com/800x600?text=Failed+to+Load';
                 }}
               />
             </div>

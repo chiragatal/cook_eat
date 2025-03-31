@@ -1,21 +1,22 @@
 import React from 'react';
-import { render, act, waitFor } from '@testing-library/react';
-import { screen, fireEvent } from '@testing-library/dom';
+import { render, act, waitFor, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import Navigation from '@/app/components/Navigation';
-import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { NotificationProvider } from '@/app/contexts/NotificationContext';
 import { ViewProvider } from '@/app/contexts/ViewContext';
 import { ThemeProvider } from '@/app/contexts/ThemeContext';
+import { MockAppRouterProvider } from '../test-utils/appRouterMock';
 
 // Mock next-auth/react
 jest.mock('next-auth/react', () => ({
   useSession: jest.fn(),
+  signOut: jest.fn(),
 }));
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
-  usePathname: jest.fn(),
+  usePathname: jest.fn().mockReturnValue('/'),
   useRouter: jest.fn(() => ({
     push: jest.fn(),
     replace: jest.fn(),
@@ -33,7 +34,8 @@ jest.mock('next/navigation', () => ({
     keys: jest.fn(),
     values: jest.fn(),
     toString: jest.fn()
-  }))
+  })),
+  useSelectedLayoutSegments: jest.fn().mockReturnValue([])
 }));
 
 // Mock the NotificationContext
@@ -64,6 +66,7 @@ jest.mock('@/app/contexts/ViewContext', () => {
       selectedUserId: null,
       selectedUserName: null,
       toggleView: jest.fn(),
+      setSelectedUser: jest.fn(),
     })),
   };
 });
@@ -120,13 +123,15 @@ global.fetch = jest.fn((url) =>
 // Create a wrapper component with all necessary providers
 const TestWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
-    <ThemeProvider>
-      <NotificationProvider>
-        <ViewProvider>
-          {children}
-        </ViewProvider>
-      </NotificationProvider>
-    </ThemeProvider>
+    <MockAppRouterProvider>
+      <ThemeProvider>
+        <NotificationProvider>
+          <ViewProvider>
+            {children}
+          </ViewProvider>
+        </NotificationProvider>
+      </ThemeProvider>
+    </MockAppRouterProvider>
   );
 };
 
@@ -147,8 +152,8 @@ const customRender = async (ui: React.ReactElement) => {
   });
 
   // Wait for all async operations to complete
-  await act(async () => {
-    await Promise.resolve();
+  await waitFor(() => {
+    expect(global.fetch).toHaveBeenCalledTimes(2);
   });
 
   return result;
@@ -160,15 +165,11 @@ describe('Navigation Component', () => {
     jest.clearAllMocks();
     (global.fetch as jest.Mock).mockClear();
 
-    // Set mocked path value
-    const usePathnameFunc = usePathname as jest.MockedFunction<typeof usePathname>;
-    usePathnameFunc.mockReturnValue('/');
-
-    // Set up document element for theme toggle tests
-    document.documentElement.classList.remove('dark');
-
     // Clear localStorage
     window.localStorage.clear();
+
+    // Remove dark mode class if present
+    document.documentElement.classList.remove('dark');
   });
 
   it('renders the navigation bar with logo and title', async () => {
@@ -187,26 +188,48 @@ describe('Navigation Component', () => {
     await customRender(<Navigation />);
     const themeToggleButton = screen.getByLabelText('Toggle dark mode');
 
+    // Click the theme toggle button
     await act(async () => {
       fireEvent.click(themeToggleButton);
     });
+
+    // Should add dark class
     expect(document.documentElement.classList.contains('dark')).toBe(true);
 
+    // Click again to toggle back
     await act(async () => {
       fireEvent.click(themeToggleButton);
     });
+
+    // Should remove dark class
     expect(document.documentElement.classList.contains('dark')).toBe(false);
   });
 
   it('shows "My Recipes" when in my recipes view', async () => {
+    // Override the mock for this specific test
     require('@/app/contexts/ViewContext').useView.mockReturnValue({
       isMyRecipesView: true,
       selectedUserId: null,
       selectedUserName: null,
       toggleView: jest.fn(),
+      setSelectedUser: jest.fn(),
     });
 
     await customRender(<Navigation />);
     expect(screen.getByText('Viewing: My Recipes')).toBeInTheDocument();
+  });
+
+  it('shows user name when viewing another user\'s recipes', async () => {
+    // Override the mock for this specific test
+    require('@/app/contexts/ViewContext').useView.mockReturnValue({
+      isMyRecipesView: false,
+      selectedUserId: '2',
+      selectedUserName: 'John Doe',
+      toggleView: jest.fn(),
+      setSelectedUser: jest.fn(),
+    });
+
+    await customRender(<Navigation />);
+    expect(screen.getByText('Viewing: John Doe\'s Recipes')).toBeInTheDocument();
   });
 });
