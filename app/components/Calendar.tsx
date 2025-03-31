@@ -11,7 +11,7 @@ import styles from './Calendar.module.css';
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 interface Recipe {
-  id: number;
+  id: string;
   title: string;
   cookedOn: string;
 }

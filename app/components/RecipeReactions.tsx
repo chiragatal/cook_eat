@@ -8,13 +8,13 @@ interface Reaction {
   type: ReactionType;
   count: number;
   users?: Array<{
-    id: number;
+    id: string;
     name: string | null;
   }>;
 }
 
 interface RecipeReactionsProps {
-  postId: number;
+  postId: string;
   onReactionToggled?: () => void;
 }
 

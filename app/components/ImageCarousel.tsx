@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 interface ImageCarouselProps {
   images: string[];
   title: string;
-  carouselId: string | number;
+  carouselId: string;
   className?: string;
   imageClassName?: string;
   onIndicatorChange?: (index: number) => void;

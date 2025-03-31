@@ -9,7 +9,7 @@ import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
 
 interface Recipe {
-  id: number;
+  id: string;
   title: string;
   cookedOn: string | null;
   category: string | null;

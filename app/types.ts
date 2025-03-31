@@ -33,11 +33,11 @@ export interface Recipe {
 }
 
 export interface Comment {
-  id: number;
+  id: string;
   content: string;
   createdAt: string;
   updatedAt: string;
-  postId: number;
+  postId: string;
   userId: string;
   user: {
     name: string;
@@ -46,9 +46,9 @@ export interface Comment {
 }
 
 export interface Reaction {
-  id: number;
+  id: string;
   type: string;
-  postId: number;
+  postId: string;
   userId: string;
   createdAt: string;
   user?: {
