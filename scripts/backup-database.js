@@ -25,25 +25,36 @@ async function main() {
     // Use Prisma to export data
     console.log('Exporting all tables...');
 
-    // Create an array of models to export
-    const models = ['User', 'Post', 'Reaction', 'Comment'];
+    // Map of model names to their corresponding Prisma client methods
+    const modelMap = {
+      'User': 'user',
+      'Post': 'post',
+      'Reaction': 'reaction',
+      'Comment': 'comment',
+      'CommentReaction': 'commentReaction',
+      'Notification': 'notification',
+      'NotificationPreference': 'notificationPreference'
+    };
 
     // Object to store all data
     const allData = {};
 
-    for (const model of models) {
-      console.log(`Exporting ${model} data...`);
+    for (const [modelName, prismaMethod] of Object.entries(modelMap)) {
+      console.log(`Exporting ${modelName} data...`);
 
       try {
-        // Get the data using Prisma's findMany
-        const modelLowerCase = model.toLowerCase();
-        const data = await prisma[modelLowerCase].findMany();
-
-        allData[model] = data;
-        console.log(`Exported ${data.length} ${model} records`);
+        // Check if the method exists in the Prisma client
+        if (typeof prisma[prismaMethod]?.findMany === 'function') {
+          const data = await prisma[prismaMethod].findMany();
+          allData[modelName] = data;
+          console.log(`Exported ${data.length} ${modelName} records`);
+        } else {
+          console.log(`Skipping ${modelName} - method not found in Prisma client`);
+          allData[modelName] = [];
+        }
       } catch (error) {
-        console.error(`Error exporting ${model} data:`, error.message);
-        allData[model] = [];
+        console.error(`Error exporting ${modelName} data:`, error.message);
+        allData[modelName] = [];
       }
     }
 
