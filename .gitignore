@@ -11,6 +11,7 @@
 /test-results/
 /test-results.json
 /screenshots/
+e2e/setup/auth-state.json
 
 # next.js
 /.next/
