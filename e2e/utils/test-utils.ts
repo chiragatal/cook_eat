@@ -1,5 +1,18 @@
 import { Page, expect } from '@playwright/test';
 import { resetTestDatabase } from '../setup/test-database';
+import path from 'path';
+import fs from 'fs';
+
+// Ensure screenshots directory exists
+const screenshotsDir = path.join(process.cwd(), 'screenshots');
+const screenshotsDebugDir = path.join(screenshotsDir, 'debug');
+
+// Create directories if they don't exist
+[screenshotsDir, screenshotsDebugDir].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
 
 /**
  * Login with the test user account
@@ -47,6 +60,20 @@ export async function waitForNetworkIdle(page: Page) {
  */
 export async function takeSnapshot(page: Page, name: string) {
   await expect(page).toHaveScreenshot(`${name}.png`);
+}
+
+/**
+ * Take a debug screenshot and save it directly to the screenshots/debug directory
+ */
+export async function takeDebugScreenshot(page: Page, name: string) {
+  // Ensure filename is safe for all filesystems
+  const safeName = name.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+  const filename = `${safeName}-${new Date().getTime()}.png`;
+  const filePath = path.join(screenshotsDebugDir, filename);
+
+  await page.screenshot({ path: filePath });
+  console.log(`Debug screenshot saved to: ${filePath}`);
+  return filePath;
 }
 
 /**

@@ -1,5 +1,18 @@
 import { defineConfig, devices } from '@playwright/test';
 import path from 'path';
+import fs from 'fs';
+
+// Ensure screenshots directory exists
+const screenshotsDir = path.join(__dirname, 'screenshots');
+const screenshotsDebugDir = path.join(screenshotsDir, 'debug');
+const screenshotsFailuresDir = path.join(screenshotsDir, 'failures');
+
+// Create directories if they don't exist
+[screenshotsDir, screenshotsDebugDir, screenshotsFailuresDir].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
 
 export default defineConfig({
   testDir: './e2e',
@@ -18,7 +31,12 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
+    // Set custom screenshot paths
+    screenshotPath: screenshotsFailuresDir,
   },
+
+  // Screenshots for snapshots and visual regression tests
+  snapshotPathTemplate: '{testDir}/{testFileDir}/{testFileName}-snapshots/{arg}{ext}',
 
   projects: [
     {

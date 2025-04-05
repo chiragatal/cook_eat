@@ -3,7 +3,8 @@ import {
   resetDatabase,
   verifyCommonElements,
   resizeForDevice,
-  waitForNetworkIdle
+  waitForNetworkIdle,
+  takeDebugScreenshot
 } from './utils/test-utils';
 
 // Test prefix matches what's in test-database.ts
@@ -20,7 +21,7 @@ test.describe('Recipe Functionality', () => {
     await page.goto('/recipes');
 
     // Take a screenshot to help with debugging
-    await page.screenshot({ path: `./recipe-test-${Date.now()}.png` });
+    await takeDebugScreenshot(page, 'recipe-test');
   });
 
   test('can view recipe list', async ({ page }) => {
@@ -81,7 +82,7 @@ test.describe('Recipe Functionality', () => {
     await page.waitForTimeout(1000);
 
     // Take screenshot of search results for debugging
-    await page.screenshot({ path: './search-results.png' });
+    await takeDebugScreenshot(page, 'search-results');
 
     // Check if we can find our test recipe title
     try {
@@ -125,7 +126,7 @@ test.describe('Recipe Functionality', () => {
     await page.waitForLoadState('networkidle');
 
     // Take screenshot of recipe details page
-    await page.screenshot({ path: './recipe-details.png' });
+    await takeDebugScreenshot(page, 'recipe-details');
 
     // We should be taken to a detail page with recipe information
     // Look for common recipe detail elements with flexible selectors
@@ -146,7 +147,7 @@ test.describe('Recipe Functionality', () => {
     await resizeForDevice(page, 'mobile');
 
     // Take screenshot of mobile view
-    await page.screenshot({ path: './recipe-mobile.png' });
+    await takeDebugScreenshot(page, 'recipe-mobile');
 
     // Check for mobile-specific elements with flexible selectors
     const mobileMenu = page.getByRole('button', { name: /menu/i }).or(
@@ -172,7 +173,7 @@ test.describe('Recipe Functionality', () => {
     await expect(recipeCards.first()).toBeVisible();
 
     // Take screenshot before clicking
-    await page.screenshot({ path: './before-recipe-click-mobile.png' });
+    await takeDebugScreenshot(page, 'before-recipe-click-mobile');
 
     // Click on a recipe
     await recipeCards.first().click();
@@ -181,7 +182,7 @@ test.describe('Recipe Functionality', () => {
     await page.waitForLoadState('networkidle');
 
     // Take screenshot after clicking
-    await page.screenshot({ path: './after-recipe-click-mobile.png' });
+    await takeDebugScreenshot(page, 'after-recipe-click-mobile');
 
     // Check for recipe content on detail page
     const recipeTitle = page.getByRole('heading').first();

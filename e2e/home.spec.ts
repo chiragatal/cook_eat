@@ -1,10 +1,11 @@
 import { test, expect } from '@playwright/test';
+import { takeDebugScreenshot } from './utils/test-utils';
 
 test('home page loads successfully', async ({ page }) => {
   await page.goto('/');
 
-  // Take screenshot for debugging
-  await page.screenshot({ path: './home-page.png' });
+  // Take screenshot for debugging directly to screenshots directory
+  await takeDebugScreenshot(page, 'home-page');
 
   // Check that the page has content
   await expect(page.locator('body')).not.toBeEmpty();
@@ -34,8 +35,8 @@ test('home page loads successfully', async ({ page }) => {
 test('navigation links work correctly', async ({ page }) => {
   await page.goto('/');
 
-  // Take screenshot for debugging
-  await page.screenshot({ path: './home-page-before-nav.png' });
+  // Take screenshot for debugging directly to screenshots directory
+  await takeDebugScreenshot(page, 'home-page-before-nav');
 
   // Find navigation links with flexible selectors
   const recipesLink = page.getByRole('link', { name: /recipes/i }).or(
@@ -55,7 +56,7 @@ test('navigation links work correctly', async ({ page }) => {
   await page.waitForLoadState('networkidle');
 
   // Take screenshot after navigation
-  await page.screenshot({ path: './after-nav-click.png' });
+  await takeDebugScreenshot(page, 'after-nav-click');
 
   // Verify we navigated to a recipes-related page
   const currentUrl = page.url();
@@ -72,8 +73,8 @@ test('responsive design works on mobile', async ({ page }) => {
 
   await page.goto('/');
 
-  // Take screenshot of mobile view
-  await page.screenshot({ path: './home-page-mobile.png' });
+  // Take screenshot of mobile view directly to screenshots directory
+  await takeDebugScreenshot(page, 'home-page-mobile');
 
   // Look for mobile menu button with flexible selectors
   const menuButton = page.locator('button[aria-label*="menu" i], button[class*="hamburger" i], button[class*="mobile" i][class*="menu" i]').first();
@@ -91,8 +92,8 @@ test('responsive design works on mobile', async ({ page }) => {
     // Try to open mobile menu if button is found
     await menuButton.click();
 
-    // Take screenshot after menu click
-    await page.screenshot({ path: './home-page-mobile-menu-open.png' });
+    // Take screenshot after menu click directly to screenshots directory
+    await takeDebugScreenshot(page, 'home-page-mobile-menu-open');
 
     // Look for any navigation links after opening menu
     const navLinks = page.locator('a, [role="menuitem"]');
