@@ -73,7 +73,7 @@ A post is basically a recipe.
 - [x] Mobile friendly
 - [x] Dark mode
 
-## Old Bugs
+### Old Bugs
 
 - [x] Images are not showing up
 - [x] The post list does not show the description in rich text format
@@ -100,6 +100,10 @@ A post is basically a recipe.
 
 - [ ] Multiple filters
 - [ ] There should be sections, the top one would be all filters matching, and the second one would be some filters matching
+- [ ] Negative filters, like "not this tag"
+- [ ] Nutritional filters
+- [ ] Time filters
+- [ ] Global filters which are always applied
 
 ### Notifications
 
@@ -125,16 +129,52 @@ A post is basically a recipe.
 - [ ] Users should be able to view their shopping list
 - [ ] Users should be able to clear their shopping list
 - [ ] Users should be able to add some/all items to the shopping list from a post
+- [ ] Support to add items to the shopping list for the whole week plan
+- [ ] Tick off items from the shopping list
+
+### Week plan
+
+- [ ] Select and assign dishes that I want to cook for the week
+- [ ] Show the week plan in a calendar
+- [ ] Show the week plan in a list
+- [ ] Add support to add recipes to the week plan
+- [ ] Add support to remove recipes from the week plan
+- [ ] Add support to edit the week plan
+- [ ] Add support to move recipes in the week plan
+- [ ] Show what I have to cook today, and a peak of what I have to cook tomorrow
+
+### Cook mode
+
+- [ ] Auto show the ingredients in the current step
+- [ ] Also show a peak of the next step in the cook mode
+- [ ] Auto start timers
+- [ ] Ability to add/subtract from the timer
+
+### Recipe improvements
+
+- [ ] Support for images for steps
+- [ ] Support for sections for ingredients and steps
+- [ ] Support for servings
+
+### General improvements
+
+- [ ] Images in comments
 
 ### Smart features
 
 - [ ] Voice input for creating recipes
+- [ ] Voice for reacing out the recipe
 - [ ] Cook along
 - [ ] Auto detect nutritional information
+- [ ] Auto create week plan based on the recipes I cooked and the recipes I want to cook and the ingredients I have
+- [ ] Cartoonish diagramatic view of the recipe like a flowchart
+- [ ] Auto detect if the recipe is already in the database, when creating a new recipe
+- [ ] MCP server
 
 ### Tests
 
 - [x] Add automated tests
+- [ ] Remove mock implementations from the tests to actually test the code
 - [ ] Add tests for the mobile
 - [ ] Negative tests
 - [ ] Enable more linting errors instead of ignoring them
@@ -143,7 +183,7 @@ A post is basically a recipe.
 ### Optimisations
 
 - [ ] Limit the number of posts that are loaded at the same time
-- [ ] Don't fetch the notifications in a loop. Fetch on new page
+- [ ] Don't fetch the notifications in a loop. Fetch on new page load or refresh or when I open the notifications section
 - [ ] Get the reactions and other things from the cloud in a single request
 - [ ] On the home page, load just the first image in the carousel, fetch the others a little later
 

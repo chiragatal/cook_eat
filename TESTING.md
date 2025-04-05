@@ -130,3 +130,87 @@ test('works on mobile', async ({ page }) => {
   // etc.
 });
 ```
+
+## Database Isolation in E2E Tests
+
+To ensure E2E tests don't affect production data or other users, we've implemented the following safeguards:
+
+1. **Data Prefixing**: All test data uses a `test_e2e_` prefix to easily identify and isolate test data from real user data.
+
+2. **Targeted Cleanup**: Tests only delete data that starts with the test prefix, ensuring they never affect real user data.
+
+3. **Self-Contained Tests**: Each test suite creates and manages its own test data, with cleanup run before and after tests.
+
+4. **Isolated Authentication**: Tests use their own test user accounts, never testing with real user credentials.
+
+5. **Safe Search & Filtering**: Tests search for prefixed test data, avoiding accidental modification of real data.
+
+### How It Works
+
+1. Before running tests, our setup:
+   - Removes any existing data with the test prefix
+   - Creates fresh test users and data for testing
+
+2. During tests:
+   - All created data includes the test prefix
+   - Tests only modify data with the test prefix
+
+3. After tests complete:
+   - All test data is removed
+   - The database is left clean of test artifacts
+
+### Running Tests Safely
+
+To ensure tests are run safely:
+
+1. **Use the E2E test commands**: `npm run test:e2e`
+2. **Never** modify the test prefix unless you understand the implications
+3. Keep `.env.test` properly configured
+4. Run tests in the appropriate environment (not production)
+
+## Screenshot Management
+
+End-to-end tests often generate many screenshots for debugging and visual regression testing. We have implemented a robust screenshot management system to keep these organized:
+
+### Screenshot Organization
+
+All screenshots are automatically organized into a central `screenshots` directory with the following structure:
+
+- `screenshots/debug/` - Contains all debug screenshots taken during test runs
+- `screenshots/failures/` - Contains screenshots from test failures
+- `screenshots/visual/` - Contains visual regression test screenshots
+
+### Visual Test Report
+
+A visual HTML report is generated after test runs, showing all screenshots in an easy-to-navigate interface. This helps with:
+
+1. Quickly reviewing test failures
+2. Comparing visual regression tests
+3. Browsing all debug screenshots in one place
+
+### Running Tests with Report Generation
+
+To run end-to-end tests and generate a visual report:
+
+```bash
+npm run test:e2e:with-report
+```
+
+This will:
+1. Run the end-to-end tests
+2. Organize all screenshots
+3. Generate an HTML report
+
+### Working with Screenshots
+
+You can also run these commands individually:
+
+```bash
+# Organize screenshots into the screenshots directory
+npm run test:organize-screenshots
+
+# Generate the visual report
+npm run test:report
+```
+
+The report will be available at `screenshots/report.html`.
