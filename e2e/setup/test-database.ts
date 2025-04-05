@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 
-// Test database client
+// Test database client - intentionally uses a separate schema
 const prisma = new PrismaClient({
   datasources: {
     db: {
@@ -8,6 +8,11 @@ const prisma = new PrismaClient({
     }
   }
 });
+
+// Print warning about database usage
+console.log('\n⚠️  IMPORTANT: Tests are using the database configured in .env.test ⚠️');
+console.log('Database URL:', process.env.TEST_DATABASE_URL || process.env.DATABASE_URL);
+console.log('Make sure this points to a test database or uses schema isolation!\n');
 
 // Test prefix to distinguish test data
 const TEST_PREFIX = 'test_e2e_';
@@ -46,6 +51,10 @@ export async function setupTestDatabase() {
 
     // Clear existing test data (in reverse order of dependencies)
     console.log('Removing previous test data...');
+
+    // Only deleting data with the test prefix for safety
+    console.log(`Only deleting data with prefix: ${TEST_PREFIX}`);
+
     await prisma.notification.deleteMany({
       where: {
         OR: [
@@ -128,6 +137,7 @@ export async function setupTestDatabase() {
 export async function cleanupTestDatabase() {
   try {
     console.log('Cleaning up test database...');
+    console.log(`Only deleting data with prefix: ${TEST_PREFIX}`);
 
     // Only clear test data we created (in reverse order of dependencies)
     await prisma.notification.deleteMany({
