@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma migrate deploy && next build",
+    "build": "prisma generate && prisma db push && next build",
     "start": "next start",
     "lint": "next lint",
     "prepare": "husky",
@@ -25,6 +25,7 @@
     "test:report": "node scripts/analyze-test-results.js",
     "test:e2e:with-report": "playwright test && node scripts/analyze-test-results.js",
     "setup-test-db": "node scripts/setup-test-db.js",
+    "setup-preview-db": "node scripts/setup-preview-db.js",
     "test:all": "npm run test && npm run test:e2e",
     "deploy": "vercel --prod",
     "pre-deploy": "node scripts/pre-deploy.js",
