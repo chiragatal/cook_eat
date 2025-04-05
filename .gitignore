@@ -7,6 +7,10 @@
 
 # testing
 /coverage
+/playwright-report/
+/test-results/
+/test-results.json
+/screenshots/
 
 # next.js
 /.next/
@@ -49,3 +53,7 @@ prisma/*.db
 # backup files
 *.backup
 backups/
+
+# debug files
+*-page.html
+*.html.json
