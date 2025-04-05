@@ -30,13 +30,19 @@ function setupTestResultsDir() {
     // Define all the necessary directories
     const testResultsBaseDir = path.join(__dirname, '..', 'test-results');
     const testResultsDir = path.join(testResultsBaseDir, dateString);
+
+    // Create separate directories for HTML report and test artifacts to avoid conflicts
+    const htmlReportDir = path.join(testResultsDir, 'html-report');
+    const artifactsDir = path.join(testResultsDir, 'artifacts');
+
     const subDirs = [
-      'screenshots',
-      'screenshots/debug',
-      'screenshots/failures',
-      'reports',
-      'videos',
-      'traces'
+      'html-report',
+      'artifacts',
+      'artifacts/screenshots',
+      'artifacts/screenshots/debug',
+      'artifacts/screenshots/failures',
+      'artifacts/videos',
+      'artifacts/traces'
     ];
 
     // Create the base directory if it doesn't exist
@@ -92,17 +98,18 @@ This directory contains the test results from a test run on ${currentDate.toLoca
 
 ## Directory Structure
 
-- \`screenshots/\` - Screenshots captured during test runs
-  - \`debug/\` - Debug screenshots
-  - \`failures/\` - Screenshots captured on test failures
-- \`reports/\` - HTML test reports
-- \`videos/\` - Video recordings of test runs
-- \`traces/\` - Trace files for debugging
+- \`html-report/\` - HTML test reports
+- \`artifacts/\` - Test artifacts
+  - \`screenshots/\` - Screenshots captured during test runs
+    - \`debug/\` - Debug screenshots
+    - \`failures/\` - Screenshots captured on test failures
+  - \`videos/\` - Video recordings of test runs
+  - \`traces/\` - Trace files for debugging
 
 ## Viewing Test Results
 
 To view the HTML report, open the following file in your browser:
-\`reports/index.html\`
+\`html-report/index.html\`
 
 Or run:
 \`npm run test:view-latest\`
@@ -114,6 +121,10 @@ Or run:
     console.log(`\n${colors.cyan}Test results directory setup complete${colors.reset}`);
     console.log(`${colors.cyan}Test results will be stored in: ${testResultsDir}${colors.reset}`);
     console.log(`${colors.cyan}Access the latest test results with the 'latest' symlink${colors.reset}`);
+
+    // Set environment variable for Playwright to use
+    process.env.TEST_RESULTS_DIR = testResultsDir;
+    console.log(`${colors.green}✓ Set TEST_RESULTS_DIR environment variable: ${testResultsDir}${colors.reset}`);
 
     return {
       testResultsDir,
@@ -128,7 +139,12 @@ Or run:
 
 // If this script is run directly (not imported)
 if (require.main === module) {
-  setupTestResultsDir();
+  const result = setupTestResultsDir();
+
+  // Export the result to the environment for any child processes
+  if (result && result.testResultsDir) {
+    process.env.TEST_RESULTS_DIR = result.testResultsDir;
+  }
 }
 
 module.exports = setupTestResultsDir;

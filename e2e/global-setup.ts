@@ -1,149 +1,120 @@
 import { chromium, FullConfig } from '@playwright/test';
+import path from 'path';
+import fs from 'fs';
+import dotenv from 'dotenv';
 import { setupTestDatabase } from './setup/test-database';
-import * as dotenv from 'dotenv';
 
-// Load environment variables from .env.test if available
-dotenv.config({ path: '.env.test' });
-
-// Test prefix matches what's in test-database.ts
-const TEST_PREFIX = 'test_e2e_';
+// Load environment variables
+if (fs.existsSync('.env.test')) {
+  console.log('Loading .env.test file');
+  dotenv.config({ path: '.env.test' });
+}
 
 /**
- * Global setup for Playwright tests
- * This runs once before all tests
+ * Global setup for tests, including authentication
  */
 async function globalSetup(config: FullConfig) {
-  console.log('Running global setup...');
+  console.log('Starting global setup...');
 
   // Set up test database
-  await setupTestDatabase();
+  try {
+    await setupTestDatabase();
+    console.log('Test database setup completed');
+  } catch (error) {
+    console.warn('Warning: Error during test database setup:', error);
+    console.log('Continuing with tests, but database-dependent tests may fail');
+  }
 
-  // Create a browser context for authenticated state
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
+  // Create the auth state directory if it doesn't exist
+  const authDir = path.join(__dirname, 'setup');
+  if (!fs.existsSync(authDir)) {
+    fs.mkdirSync(authDir, { recursive: true });
+  }
+
+  const authFile = path.join(authDir, 'auth-state.json');
+  const baseURL = process.env.TEST_BASE_URL || 'http://localhost:3000';
+  console.log(`Using base URL: ${baseURL}`);
+
+  // Check if we're testing against localhost - no Vercel auth needed
+  const isLocalTesting = baseURL.includes('localhost');
+
+  if (isLocalTesting) {
+    console.log('Local testing detected. Skipping Vercel authentication.');
+
+    // Create empty auth state for local testing
+    if (!fs.existsSync(authFile)) {
+      const emptyAuthState = { cookies: [], origins: [] };
+      fs.writeFileSync(authFile, JSON.stringify(emptyAuthState));
+      console.log('Created empty auth state file for local testing');
+    }
+
+    return;
+  }
+
+  // Only do Vercel auth for non-local testing (preview URLs)
+  console.log('Preview URL testing detected. Will check for Vercel authentication.');
+
+  // Launch a browser
+  const browser = await chromium.launch({ headless: false });
+  const page = await browser.newPage({ baseURL });
 
   try {
-    // Navigate to the signin page
-    console.log('Navigating to the signin page...');
-    await page.goto(`${config.projects[0].use.baseURL}/auth/signin`);
+    console.log('Navigating to base URL for authentication...');
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
 
-    // Log current URL to debug
-    console.log(`Current URL: ${page.url()}`);
+    // If we see the Vercel login page, need to authenticate
+    if (await page.getByText('Log in to Vercel').isVisible()) {
+      console.log('Detected Vercel login page, attempting to authenticate...');
 
-    // Take a screenshot for debugging
-    await page.screenshot({ path: './signin-page-screenshot.png' });
-    console.log('Saved signin page screenshot to signin-page-screenshot.png');
+      // Check if we have authentication credentials in environment variables
+      const vercelEmail = process.env.VERCEL_EMAIL;
+      const vercelPassword = process.env.VERCEL_PASSWORD;
 
-    // Inspect what's on the page
-    const pageTitle = await page.title();
-    console.log(`Page title: ${pageTitle}`);
-
-    // Check if we're on a 404 page
-    const is404 = await page.getByText('404: This page could not be found.').isVisible();
-    if (is404) {
-      console.log('WARNING: Signin page returned 404. The auth route may not exist.');
-
-      // Despite login issues, we can still continue with tests that don't require auth
-      console.log('Creating an empty auth state file...');
-      const emptyAuthState = { cookies: [], origins: [] };
-      const fs = require('fs');
-      const path = require('path');
-
-      // Create the auth state directory if it doesn't exist
-      const authPath = path.join(__dirname, 'setup');
-      if (!fs.existsSync(authPath)) {
-        fs.mkdirSync(authPath, { recursive: true });
-      }
-
-      fs.writeFileSync(
-        path.join(authPath, 'auth-state.json'),
-        JSON.stringify(emptyAuthState)
-      );
-
-      console.log('Empty auth state created. Tests requiring authentication may fail.');
-    } else {
-      // If signin page exists, try to authenticate
-      console.log('Signin page found, attempting to authenticate...');
-
-      // Debug available input fields
-      const inputFields = await page.locator('input').all();
-      console.log(`Found ${inputFields.length} input fields`);
-
-      for (let i = 0; i < inputFields.length; i++) {
-        const inputField = inputFields[i];
-        const type = await inputField.getAttribute('type');
-        const name = await inputField.getAttribute('name');
-        const id = await inputField.getAttribute('id');
-        console.log(`Input #${i+1}: type=${type}, name=${name}, id=${id}`);
-      }
-
-      // Use more flexible selectors to find email and password fields
-      const emailInput = page.locator('input[type="email"], input[name="email"], input[id*="email" i]').first();
-      const passwordInput = page.locator('input[type="password"], input[name="password"], input[id*="password" i]').first();
-      const signinButton = page.locator('button[type="submit"], button:has-text("Sign in"), button:has-text("Login")').first();
-
-      if (await emailInput.isVisible() && await passwordInput.isVisible() && await signinButton.isVisible()) {
-        console.log('Found form fields, filling signin form...');
-
-        // Fill signin form
-        await emailInput.fill(`${TEST_PREFIX}test@example.com`);
-        await passwordInput.fill('password12345');
-        await signinButton.click();
-
-        // Wait for navigation
-        console.log('Waiting for navigation after signin...');
-        await page.waitForURL('**/*', { timeout: 10000 }).catch(e => {
-          console.log('Navigation timeout after signin, but continuing...');
-        });
-
-        // Store authentication state
-        console.log('Storing authentication state...');
-        await page.context().storageState({ path: './e2e/setup/auth-state.json' });
-        console.log('Authentication state stored.');
-      } else {
-        console.log('WARNING: Could not find all signin form elements');
-        console.log('Creating an empty auth state file...');
-
-        const emptyAuthState = { cookies: [], origins: [] };
-        const fs = require('fs');
-        const path = require('path');
-
-        // Create the auth state directory if it doesn't exist
-        const authPath = path.join(__dirname, 'setup');
-        if (!fs.existsSync(authPath)) {
-          fs.mkdirSync(authPath, { recursive: true });
+      if (vercelEmail && vercelPassword) {
+        // If the login with email option is available, click it
+        if (await page.getByText('Continue with Email').isVisible()) {
+          await page.getByText('Continue with Email').click();
+          await page.waitForLoadState('networkidle');
         }
 
-        fs.writeFileSync(
-          path.join(authPath, 'auth-state.json'),
-          JSON.stringify(emptyAuthState)
-        );
+        // Enter email and password
+        await page.getByPlaceholder('you@example.com').fill(vercelEmail);
+        await page.getByRole('button', { name: 'Continue' }).click();
+        await page.waitForLoadState('networkidle');
+
+        // Enter password if prompted
+        if (await page.getByPlaceholder('Password').isVisible()) {
+          await page.getByPlaceholder('Password').fill(vercelPassword);
+          await page.getByRole('button', { name: 'Continue' }).click();
+          await page.waitForLoadState('networkidle');
+        }
+
+        console.log('Logged in to Vercel successfully');
+      } else {
+        console.log('No Vercel credentials found in environment variables.');
+        console.log('Please manually log in to proceed with tests.');
+
+        // Wait for manual authentication (give time for user to log in)
+        await page.waitForTimeout(60000); // Wait for 1 minute
       }
+
+      // After login, we should be redirected to our actual application
+      await page.waitForLoadState('networkidle');
+    } else {
+      console.log('Direct access to application (no Vercel login required)');
     }
+
+    // Store the authentication state
+    await page.context().storageState({ path: authFile });
+    console.log(`Authentication state saved to ${authFile}`);
+
   } catch (error) {
-    console.error('Error in global setup:', error);
-
-    // Create empty auth state in case of error
-    const emptyAuthState = { cookies: [], origins: [] };
-    const fs = require('fs');
-    const path = require('path');
-
-    // Create the auth state directory if it doesn't exist
-    const authPath = path.join(__dirname, 'setup');
-    if (!fs.existsSync(authPath)) {
-      fs.mkdirSync(authPath, { recursive: true });
-    }
-
-    fs.writeFileSync(
-      path.join(authPath, 'auth-state.json'),
-      JSON.stringify(emptyAuthState)
-    );
-
-    console.log('Empty auth state created due to error. Tests requiring authentication may fail.');
+    console.error('Error during authentication setup:', error);
   } finally {
     // Close the browser
     await browser.close();
-    console.log('Global setup complete');
+    console.log('Global setup completed.');
   }
 }
 

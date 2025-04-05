@@ -39,8 +39,9 @@ function analyzeTestResults() {
     }
     console.log(`${colors.cyan}Test run timestamp: ${timestamp}${colors.reset}\n`);
 
-    // Count screenshots
-    const screenshotsDir = path.join(latestDir, 'screenshots');
+    // Count screenshots in the artifacts directory
+    const artifactsDir = path.join(latestDir, 'artifacts');
+    const screenshotsDir = path.join(artifactsDir, 'screenshots');
     const failuresDir = path.join(screenshotsDir, 'failures');
     const debugDir = path.join(screenshotsDir, 'debug');
 
@@ -86,8 +87,8 @@ function analyzeTestResults() {
       console.log(`${colors.yellow}No screenshots found${colors.reset}\n`);
     }
 
-    // Count videos
-    const videosDir = path.join(latestDir, 'videos');
+    // Count videos in the artifacts directory
+    const videosDir = path.join(artifactsDir, 'videos');
     let videoCount = 0;
 
     if (fs.existsSync(videosDir)) {
@@ -118,7 +119,7 @@ function analyzeTestResults() {
     }
 
     // Check for HTML report
-    const reportPath = path.join(latestDir, 'reports', 'index.html');
+    const reportPath = path.join(latestDir, 'html-report', 'index.html');
     if (fs.existsSync(reportPath)) {
       console.log(`${colors.green}HTML report available at:${colors.reset}`);
       console.log(`${reportPath}\n`);
@@ -170,7 +171,8 @@ Directory: ${dirName}
 Screenshots: ${screenshotCount} total, ${failureScreenshotCount} failures
 Videos: ${videoCount}
 
-View the full HTML report in the 'reports' directory.
+View the full HTML report in the 'html-report' directory.
+View artifacts in the 'artifacts' directory.
 `;
       fs.writeFileSync(summaryPath, summary);
       console.log(`${colors.green}Summary saved to:${colors.reset}`);
@@ -182,6 +184,9 @@ View the full HTML report in the 'reports' directory.
     // Offer to open the report
     console.log(`${colors.magenta}To view the full test report, run:${colors.reset}`);
     console.log(`npm run test:view-latest\n`);
+
+    console.log(`${colors.magenta}To view the screenshots, run:${colors.reset}`);
+    console.log(`npm run test:view-screenshots\n`);
 
     return latestDir;
 

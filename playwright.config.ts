@@ -9,54 +9,42 @@ if (fs.existsSync('.env.test')) {
   dotenv.config({ path: '.env.test' });
 }
 
-// Create a date-stamped folder for test results
-const currentDate = new Date();
-const dateString = currentDate.toISOString().replace(/:/g, '-').replace(/\..+/, '');
-const testResultsDir = path.join(__dirname, 'test-results', dateString);
-const screenshotsDir = path.join(testResultsDir, 'screenshots');
+// We'll use the environment variable set by setup-test-results-dir.js
+// or create the path to the 'latest' symlink if not available
+const testResultsBaseDir = path.join(__dirname, 'test-results');
+const testResultsDir = process.env.TEST_RESULTS_DIR
+  ? process.env.TEST_RESULTS_DIR
+  : path.join(testResultsBaseDir, 'latest');
+
+// Define directory paths
+const reportsDir = path.join(testResultsDir, 'html-report');
+const artifactsDir = path.join(testResultsDir, 'artifacts');
+const screenshotsDir = path.join(artifactsDir, 'screenshots');
 const screenshotsDebugDir = path.join(screenshotsDir, 'debug');
 const screenshotsFailuresDir = path.join(screenshotsDir, 'failures');
-const reportsDir = path.join(testResultsDir, 'reports');
-const videosDir = path.join(testResultsDir, 'videos');
-const tracesDir = path.join(testResultsDir, 'traces');
-
-// Create all test result directories
-[
-  testResultsDir,
-  screenshotsDir,
-  screenshotsDebugDir,
-  screenshotsFailuresDir,
-  reportsDir,
-  videosDir,
-  tracesDir
-].forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-});
-
-// Create a symlink to the most recent test results
-const latestDir = path.join(__dirname, 'test-results', 'latest');
-if (fs.existsSync(latestDir)) {
-  try {
-    fs.unlinkSync(latestDir);
-  } catch (error) {
-    console.warn('Could not remove latest symlink:', error);
-  }
-}
-try {
-  fs.symlinkSync(dateString, latestDir, 'dir');
-  console.log(`Created symlink to latest test results: ${latestDir} -> ${dateString}`);
-} catch (error) {
-  console.warn('Could not create latest symlink:', error);
-}
+const videosDir = path.join(artifactsDir, 'videos');
+const tracesDir = path.join(artifactsDir, 'traces');
 
 // Log the test results directory being used
-console.log(`Storing test results in: ${testResultsDir}`);
+console.log(`Playwright using test results directory: ${testResultsDir}`);
 
-// Log the base URL being used for tests
+// Determine the base URL - use TEST_BASE_URL environment variable if set
+// otherwise default to localhost. Allow preview-specific scripts to
+// override this with a direct URL.
 const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:3000';
 console.log(`Using test base URL: ${baseUrl}`);
+
+// Check if screenshots are enabled via environment variable
+const screenshotsOn = process.env.PLAYWRIGHT_SCREENSHOTS === 'on';
+const videoOn = process.env.PLAYWRIGHT_VIDEO === 'on';
+
+console.log(`Screenshots enabled: ${screenshotsOn ? 'YES' : 'NO'}`);
+console.log(`Video recording enabled: ${videoOn ? 'YES' : 'NO'}`);
+
+// Determine if we should start a local web server
+// We only need to start the server if we're testing against localhost
+const shouldStartWebServer = baseUrl.includes('localhost');
+console.log(`Starting local web server: ${shouldStartWebServer ? 'YES' : 'NO'}`);
 
 export default defineConfig({
   testDir: './e2e',
@@ -78,8 +66,10 @@ export default defineConfig({
   use: {
     baseURL: baseUrl,
     trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
-    video: 'on-first-retry',
+    // Take screenshots based on environment variable or on failure
+    screenshot: screenshotsOn ? 'on' : 'only-on-failure',
+    // Record video based on environment variable or on first retry
+    video: videoOn ? 'on' : 'on-first-retry',
 
     // Set custom paths for artifacts
     screenshotPath: screenshotsDir,
@@ -88,10 +78,10 @@ export default defineConfig({
   },
 
   // Screenshots for snapshots and visual regression tests
-  snapshotPathTemplate: path.join(testResultsDir, '{testDir}/{testFileDir}/{testFileName}-snapshots/{arg}{ext}'),
+  snapshotPathTemplate: path.join(artifactsDir, '{testDir}/{testFileDir}/{testFileName}-snapshots/{arg}{ext}'),
 
-  // Store artifacts in the date-specific folder
-  outputDir: testResultsDir,
+  // Store artifacts in the artifacts folder
+  outputDir: artifactsDir,
 
   projects: [
     {
@@ -132,8 +122,8 @@ export default defineConfig({
     },
   ],
 
-  // Only start a web server when testing locally, not against remote URLs
-  webServer: baseUrl.includes('localhost') ? {
+  // Only start a web server when testing locally
+  webServer: shouldStartWebServer ? {
     command: 'npm run dev',
     port: 3000,
     reuseExistingServer: !process.env.CI,
