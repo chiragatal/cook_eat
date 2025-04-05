@@ -103,16 +103,42 @@ For Git-based deployment, see `GIT-DEPLOYMENT.md` for the recommended workflow.
 
 ## Testing
 
+This project includes a comprehensive test suite with Jest and Playwright. Run tests with:
+
 ```bash
-# Run unit and integration tests
+# Run Jest unit tests
 npm test
 
 # Run end-to-end tests
 npm run test:e2e
-
-# Run all tests
-npm run test:all
 ```
+
+See [TESTING.md](./TESTING.md) for more details.
+
+### Testing Against Preview Deployment
+
+We've added support for testing against the preview deployment instead of production:
+
+```bash
+# Run tests against the preview deployment
+npm run test:preview
+
+# Set up the preview database and run tests
+npm run test:preview:setup
+```
+
+For detailed instructions, refer to [PREVIEW-TESTING.md](./PREVIEW-TESTING.md).
+
+### Testing Stack
+
+- **Unit Tests**: Jest and React Testing Library for component and utility testing
+- **End-to-End Tests**: Playwright for full application testing in real browsers
+- **Mobile Testing**: Playwright device emulation for responsive design testing
+- **Visual Regression**: Screenshot comparison to detect unexpected UI changes
+
+### Pre-commit Hooks
+
+The project uses Husky to run tests on staged files before commits, helping to ensure that only working code is committed.
 
 ## License
 
@@ -169,28 +195,3 @@ This project uses PostgreSQL with UUID string IDs. When deploying after the ID m
 3. Always take a backup before deployment: `node scripts/backup-database.js`
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## Testing
-
-This project includes a comprehensive test suite with Jest and Playwright. Run tests with:
-
-```bash
-# Run Jest unit tests
-npm test
-
-# Run end-to-end tests
-npm run test:e2e
-```
-
-See [TESTING.md](./TESTING.md) for more details.
-
-### Testing Stack
-
-- **Unit Tests**: Jest and React Testing Library for component and utility testing
-- **End-to-End Tests**: Playwright for full application testing in real browsers
-- **Mobile Testing**: Playwright device emulation for responsive design testing
-- **Visual Regression**: Screenshot comparison to detect unexpected UI changes
-
-### Pre-commit Hooks
-
-The project uses Husky to run tests on staged files before commits, helping to ensure that only working code is committed.

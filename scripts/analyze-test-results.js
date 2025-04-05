@@ -5,381 +5,227 @@ const path = require('path');
 const { execSync } = require('child_process');
 const organizeScreenshots = require('./organize-screenshots');
 
+// ANSI color codes for better readability
+const colors = {
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  red: '\x1b[31m',
+  cyan: '\x1b[36m',
+  magenta: '\x1b[35m',
+  blue: '\x1b[36m',
+  reset: '\x1b[0m',
+  bold: '\x1b[1m'
+};
+
 /**
  * Analyze test results and provide a summary of test failures
  */
 function analyzeTestResults() {
-  console.log('\n=========================================');
-  console.log('        TEST RESULTS ANALYSIS           ');
-  console.log('=========================================\n');
+  try {
+    console.log(`\n${colors.magenta}${colors.bold}=== TEST RESULTS ANALYSIS ===${colors.reset}\n`);
 
-  // First, organize all screenshots
-  const { debugDir, failuresDir, visualDir, screenshotsDir } = organizeScreenshots();
+    // Find the latest test results
+    const latestDir = findLatestTestResults();
+    const dirName = path.basename(latestDir);
+    console.log(`${colors.cyan}Analyzing test results from: ${colors.bold}${dirName}${colors.reset}\n`);
 
-  // Check if test-results directory exists
-  const testResultsDir = path.join(process.cwd(), 'test-results');
-  if (!fs.existsSync(testResultsDir)) {
-    console.log('No test-results directory found. Run tests first.');
-    return;
-  }
+    // Calculate timestamp from directory name
+    let timestamp = "Unknown";
+    try {
+      const dateStr = dirName.replace(/-/g, ':').replace('T', ' ');
+      timestamp = new Date(dateStr).toLocaleString();
+    } catch (e) {
+      // If there's an error parsing the date, just use the directory name
+    }
+    console.log(`${colors.cyan}Test run timestamp: ${timestamp}${colors.reset}\n`);
 
-  // Get all test directories
-  const testDirs = fs.readdirSync(testResultsDir)
-    .filter(dir => dir !== '.last-run.json' && fs.statSync(path.join(testResultsDir, dir)).isDirectory());
+    // Count screenshots
+    const screenshotsDir = path.join(latestDir, 'screenshots');
+    const failuresDir = path.join(screenshotsDir, 'failures');
+    const debugDir = path.join(screenshotsDir, 'debug');
 
-  console.log(`Found ${testDirs.length} test result directories\n`);
+    let screenshotCount = 0;
+    let failureScreenshotCount = 0;
+    let debugScreenshotCount = 0;
 
-  // Sort test directories by name
-  const failedTestDirs = testDirs.filter(dir => dir.includes('-retry'));
-  const passedTestDirs = testDirs.filter(dir => !dir.includes('-retry'));
+    if (fs.existsSync(screenshotsDir)) {
+      const countFiles = (dir) => {
+        if (!fs.existsSync(dir)) return 0;
+        let count = 0;
 
-  console.log('FAILED TESTS:');
-  console.log('-------------');
-
-  // Organize failures by file
-  const failuresByFile = {};
-
-  if (failedTestDirs.length === 0) {
-    console.log('All tests passed! 🎉');
-  } else {
-    failedTestDirs.forEach(dir => {
-      // Extract test file and test name from directory name
-      const match = dir.match(/^(.+?)-(.+?)-chromium/);
-      if (match) {
-        const [_, testFile, testNamePart] = match;
-
-        if (!failuresByFile[testFile]) {
-          failuresByFile[testFile] = [];
+        try {
+          const files = fs.readdirSync(dir);
+          for (const file of files) {
+            const fullPath = path.join(dir, file);
+            if (fs.statSync(fullPath).isDirectory()) {
+              count += countFiles(fullPath);
+            } else if (file.endsWith('.png') || file.endsWith('.jpg') || file.endsWith('.jpeg')) {
+              count++;
+            }
+          }
+        } catch (error) {
+          console.warn(`${colors.yellow}Warning: Error counting files in ${dir}: ${error.message}${colors.reset}`);
         }
 
-        // Get screenshot if available to help with debugging
-        const screenshotPath = path.join(testResultsDir, dir, 'test-failed-1.png');
-        const hasScreenshot = fs.existsSync(screenshotPath);
+        return count;
+      };
 
-        // Look for the organized version in the failures directory
-        const organizedScreenshot = path.join(
-          failuresDir,
-          `${dir.split('-chromium')[0]}-test-failed-1.png`
-        );
-        const hasOrganizedScreenshot = fs.existsSync(organizedScreenshot);
+      screenshotCount = countFiles(screenshotsDir);
+      failureScreenshotCount = countFiles(failuresDir);
+      debugScreenshotCount = countFiles(debugDir);
 
-        failuresByFile[testFile].push({
-          name: testNamePart.replace(/-/g, ' '),
-          dir,
-          hasScreenshot,
-          screenshotPath: hasScreenshot ? screenshotPath : null,
-          organizedScreenshot: hasOrganizedScreenshot ? organizedScreenshot : null
-        });
+      console.log(`${colors.yellow}Screenshots captured:${colors.reset}`);
+      console.log(`  Total: ${screenshotCount}`);
+      if (failureScreenshotCount > 0) {
+        console.log(`  Failures: ${colors.red}${failureScreenshotCount}${colors.reset}`);
+      } else {
+        console.log(`  Failures: ${colors.green}0${colors.reset}`);
       }
-    });
+      console.log(`  Debug: ${debugScreenshotCount}\n`);
+    } else {
+      console.log(`${colors.yellow}No screenshots found${colors.reset}\n`);
+    }
 
-    // Print failures grouped by file
-    Object.keys(failuresByFile).sort().forEach(file => {
-      console.log(`\n${file}.spec.ts:`);
-      failuresByFile[file].forEach(test => {
-        console.log(`  - ${test.name}`);
-        if (test.hasScreenshot) {
-          console.log(`    Screenshot: ${test.screenshotPath}`);
-          if (test.organizedScreenshot) {
-            console.log(`    Organized: ${test.organizedScreenshot}`);
+    // Count videos
+    const videosDir = path.join(latestDir, 'videos');
+    let videoCount = 0;
+
+    if (fs.existsSync(videosDir)) {
+      const countVideos = (dir) => {
+        let count = 0;
+
+        try {
+          const files = fs.readdirSync(dir);
+          for (const file of files) {
+            const fullPath = path.join(dir, file);
+            if (fs.statSync(fullPath).isDirectory()) {
+              count += countVideos(fullPath);
+            } else if (file.endsWith('.mp4') || file.endsWith('.webm')) {
+              count++;
+            }
+          }
+        } catch (error) {
+          console.warn(`${colors.yellow}Warning: Error counting videos in ${dir}: ${error.message}${colors.reset}`);
+        }
+
+        return count;
+      };
+
+      videoCount = countVideos(videosDir);
+      console.log(`${colors.yellow}Videos captured: ${videoCount}${colors.reset}\n`);
+    } else {
+      console.log(`${colors.yellow}No videos found${colors.reset}\n`);
+    }
+
+    // Check for HTML report
+    const reportPath = path.join(latestDir, 'reports', 'index.html');
+    if (fs.existsSync(reportPath)) {
+      console.log(`${colors.green}HTML report available at:${colors.reset}`);
+      console.log(`${reportPath}\n`);
+
+      // Try to get test summary from the report
+      try {
+        // Parse the HTML report to extract test summary
+        const reportHtml = fs.readFileSync(reportPath, 'utf8');
+
+        // Very basic regex-based extraction - might need improvement for complex reports
+        const passedMatch = reportHtml.match(/(\d+)\s*passed/i);
+        const failedMatch = reportHtml.match(/(\d+)\s*failed/i);
+        const skippedMatch = reportHtml.match(/(\d+)\s*skipped/i);
+
+        if (passedMatch || failedMatch) {
+          console.log(`${colors.yellow}Test Summary:${colors.reset}`);
+          const passed = passedMatch ? parseInt(passedMatch[1]) : 0;
+          const failed = failedMatch ? parseInt(failedMatch[1]) : 0;
+          const skipped = skippedMatch ? parseInt(skippedMatch[1]) : 0;
+          const total = passed + failed + skipped;
+
+          console.log(`  Total: ${total}`);
+          console.log(`  Passed: ${colors.green}${passed}${colors.reset}`);
+          if (failed > 0) {
+            console.log(`  Failed: ${colors.red}${failed}${colors.reset}`);
+          } else {
+            console.log(`  Failed: ${colors.green}0${colors.reset}`);
+          }
+          if (skipped > 0) {
+            console.log(`  Skipped: ${colors.yellow}${skipped}${colors.reset}`);
+          } else {
+            console.log(`  Skipped: 0`);
           }
         }
-      });
-    });
-  }
-
-  console.log('\n=========================================');
-
-  // Analyze any screenshots we took for debugging
-  const debugScreenshots = fs.readdirSync(debugDir)
-    .filter(file => file.match(/\.(png|jpg)$/));
-
-  if (debugScreenshots.length > 0) {
-    console.log('\nDEBUG SCREENSHOTS:');
-    console.log('-----------------');
-    console.log(`Found ${debugScreenshots.length} debug screenshots in ${debugDir}`);
-    debugScreenshots.slice(0, 10).forEach(screenshot => {
-      console.log(`- ${screenshot}`);
-    });
-    if (debugScreenshots.length > 10) {
-      console.log(`... and ${debugScreenshots.length - 10} more`);
+      } catch (e) {
+        console.log(`${colors.yellow}Could not extract test summary from report${colors.reset}`);
+      }
+    } else {
+      console.log(`${colors.yellow}No HTML report found${colors.reset}\n`);
     }
+
+    // Create a summary file
+    const summaryPath = path.join(latestDir, 'summary.txt');
+    try {
+      const summary = `TEST RESULTS SUMMARY
+Test run: ${timestamp}
+Directory: ${dirName}
+
+Screenshots: ${screenshotCount} total, ${failureScreenshotCount} failures
+Videos: ${videoCount}
+
+View the full HTML report in the 'reports' directory.
+`;
+      fs.writeFileSync(summaryPath, summary);
+      console.log(`${colors.green}Summary saved to:${colors.reset}`);
+      console.log(`${summaryPath}\n`);
+    } catch (e) {
+      console.log(`${colors.yellow}Could not create summary file: ${e.message}${colors.reset}\n`);
+    }
+
+    // Offer to open the report
+    console.log(`${colors.magenta}To view the full test report, run:${colors.reset}`);
+    console.log(`npm run test:view-latest\n`);
+
+    return latestDir;
+
+  } catch (error) {
+    console.error(`${colors.red}ERROR: ${error.message}${colors.reset}`);
+    process.exit(1);
   }
-
-  // Generate HTML report
-  generateHtmlReport({
-    failuresByFile,
-    debugScreenshots,
-    visualDir,
-    screenshotsDir,
-    passedCount: passedTestDirs.length,
-    failedCount: failedTestDirs.length
-  });
-
-  // Print HTML report location
-  console.log('\nHTML Reports:');
-  console.log('-----------');
-  console.log('1. Playwright Report:');
-  console.log('   To view the Playwright HTML report, run:');
-  console.log('   npx playwright show-report');
-  console.log('\n2. Screenshots Report:');
-  console.log(`   ${path.join(screenshotsDir, 'report.html')}`);
-  console.log();
 }
 
-/**
- * Generate an HTML report with links to all screenshots
- */
-function generateHtmlReport({ failuresByFile, debugScreenshots, visualDir, screenshotsDir, passedCount, failedCount }) {
-  const reportPath = path.join(screenshotsDir, 'report.html');
+// Helper to find the latest test results directory
+function findLatestTestResults() {
+  const testResultsBaseDir = path.join(__dirname, '..', 'test-results');
 
-  // Get visual screenshots
-  const visualScreenshots = fs.existsSync(visualDir)
-    ? fs.readdirSync(visualDir).filter(file => file.match(/\.(png|jpg)$/))
-    : [];
-
-  let html = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cook-Eat Test Results</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      line-height: 1.6;
-      color: #333;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    .header {
-      text-align: center;
-      margin-bottom: 30px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid #eee;
-    }
-    h1 {
-      color: #2c3e50;
-    }
-    h2 {
-      color: #2980b9;
-      margin-top: 40px;
-    }
-    h3 {
-      color: #3498db;
-      margin-top: 25px;
-    }
-    .summary {
-      display: flex;
-      justify-content: space-around;
-      margin: 30px 0;
-      background-color: #f8f9fa;
-      padding: 20px;
-      border-radius: 8px;
-    }
-    .stat {
-      text-align: center;
-    }
-    .stat-value {
-      font-size: 24px;
-      font-weight: bold;
-    }
-    .passed {
-      color: #27ae60;
-    }
-    .failed {
-      color: #e74c3c;
-    }
-    .test-group {
-      margin-bottom: 30px;
-      padding: 15px;
-      background-color: #f8f9fa;
-      border-radius: 8px;
-    }
-    .test-name {
-      font-weight: bold;
-      color: #e74c3c;
-    }
-    .screenshots {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 20px;
-      margin-top: 20px;
-    }
-    .screenshot {
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      padding: 10px;
-      background-color: white;
-    }
-    .screenshot img {
-      max-width: 100%;
-      height: auto;
-      display: block;
-      margin-bottom: 10px;
-      border: 1px solid #eee;
-    }
-    .screenshot-title {
-      font-size: 14px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .tabs {
-      display: flex;
-      border-bottom: 1px solid #ddd;
-      margin-bottom: 20px;
-    }
-    .tab {
-      padding: 10px 20px;
-      cursor: pointer;
-      background-color: #f1f1f1;
-      margin-right: 5px;
-      border-radius: 5px 5px 0 0;
-    }
-    .tab.active {
-      background-color: #2980b9;
-      color: white;
-    }
-    .tab-content {
-      display: none;
-    }
-    .tab-content.active {
-      display: block;
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>Cook-Eat Test Results</h1>
-    <p>End-to-end test results and screenshots</p>
-  </div>
-
-  <div class="summary">
-    <div class="stat">
-      <div class="stat-value passed">${passedCount}</div>
-      <div>Tests Passed</div>
-    </div>
-    <div class="stat">
-      <div class="stat-value failed">${failedCount}</div>
-      <div>Tests Failed</div>
-    </div>
-    <div class="stat">
-      <div class="stat-value">${debugScreenshots.length}</div>
-      <div>Debug Screenshots</div>
-    </div>
-    <div class="stat">
-      <div class="stat-value">${visualScreenshots.length}</div>
-      <div>Visual Tests</div>
-    </div>
-  </div>
-
-  <div class="tabs">
-    <div class="tab active" onclick="openTab(event, 'failures')">Failed Tests</div>
-    <div class="tab" onclick="openTab(event, 'debug')">Debug Screenshots</div>
-    <div class="tab" onclick="openTab(event, 'visual')">Visual Tests</div>
-  </div>
-
-  <div id="failures" class="tab-content active">
-    <h2>Failed Tests</h2>
-    ${failedCount === 0 ? '<p>All tests passed! 🎉</p>' : ''}
-`;
-
-  // Add failed tests
-  Object.keys(failuresByFile).sort().forEach(file => {
-    html += `
-    <div class="test-group">
-      <h3>${file}.spec.ts</h3>
-      <ul>
-    `;
-
-    failuresByFile[file].forEach(test => {
-      html += `<li class="test-name">${test.name}</li>`;
-    });
-
-    html += `</ul>`;
-
-    // Add screenshots for this file
-    html += `<div class="screenshots">`;
-    failuresByFile[file].forEach(test => {
-      if (test.organizedScreenshot) {
-        const relativePath = path.relative(screenshotsDir, test.organizedScreenshot);
-        html += `
-        <div class="screenshot">
-          <img src="${relativePath}" alt="${test.name}" />
-          <div class="screenshot-title">${test.name}</div>
-        </div>
-        `;
-      }
-    });
-    html += `</div></div>`;
-  });
-
-  // Add debug screenshots tab
-  html += `
-  </div>
-
-  <div id="debug" class="tab-content">
-    <h2>Debug Screenshots</h2>
-    <div class="screenshots">
-  `;
-
-  debugScreenshots.forEach(screenshot => {
-    html += `
-    <div class="screenshot">
-      <img src="debug/${screenshot}" alt="${screenshot}" />
-      <div class="screenshot-title">${screenshot}</div>
-    </div>
-    `;
-  });
-
-  html += `
-    </div>
-  </div>
-
-  <div id="visual" class="tab-content">
-    <h2>Visual Tests</h2>
-    <div class="screenshots">
-  `;
-
-  // Add visual test screenshots
-  visualScreenshots.forEach(screenshot => {
-    html += `
-    <div class="screenshot">
-      <img src="visual/${screenshot}" alt="${screenshot}" />
-      <div class="screenshot-title">${screenshot}</div>
-    </div>
-    `;
-  });
-
-  html += `
-    </div>
-  </div>
-
-  <script>
-  function openTab(evt, tabName) {
-    const tabs = document.getElementsByClassName('tab');
-    for (let i = 0; i < tabs.length; i++) {
-      tabs[i].className = tabs[i].className.replace(' active', '');
-    }
-
-    const tabContents = document.getElementsByClassName('tab-content');
-    for (let i = 0; i < tabContents.length; i++) {
-      tabContents[i].className = tabContents[i].className.replace(' active', '');
-    }
-
-    document.getElementById(tabName).className += ' active';
-    evt.currentTarget.className += ' active';
+  // Check if the test-results directory exists
+  if (!fs.existsSync(testResultsBaseDir)) {
+    throw new Error('Test results directory not found. Please run tests first.');
   }
-  </script>
-</body>
-</html>
-  `;
 
-  fs.writeFileSync(reportPath, html);
-  console.log(`\nGenerated HTML report at: ${reportPath}`);
+  // Check if latest symlink exists
+  const latestSymlinkPath = path.join(testResultsBaseDir, 'latest');
+  if (fs.existsSync(latestSymlinkPath)) {
+    try {
+      const latestTarget = fs.readlinkSync(latestSymlinkPath);
+      return path.join(testResultsBaseDir, latestTarget);
+    } catch (error) {
+      console.warn(`${colors.yellow}Warning: Could not read latest symlink. Finding latest directory by date instead.${colors.reset}`);
+    }
+  }
+
+  // Find latest directory by date
+  try {
+    const dirs = fs.readdirSync(testResultsBaseDir)
+      .filter(name => name !== 'latest' && fs.statSync(path.join(testResultsBaseDir, name)).isDirectory())
+      .map(name => ({ name, time: fs.statSync(path.join(testResultsBaseDir, name)).mtime.getTime() }))
+      .sort((a, b) => b.time - a.time);
+
+    if (dirs.length === 0) {
+      throw new Error('No test results directories found');
+    }
+
+    return path.join(testResultsBaseDir, dirs[0].name);
+  } catch (error) {
+    throw new Error(`Failed to find latest test results directory: ${error.message}`);
+  }
 }
 
 // Run the analysis
