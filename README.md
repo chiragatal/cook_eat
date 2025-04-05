@@ -1,4 +1,6 @@
-# Cook & Eat
+# Cook-Eat
+
+https://cook-eat.vercel.app/
 
 A recipe sharing and discovery app that helps you track what you're cooking and find inspiration from other cooks.
 
@@ -118,7 +120,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgments
 
-- Thanks to all contributors who have helped build and improve Cook & Eat!
+- Thanks to all contributors who have helped build and improve Cook-Eat!
 
 ## Learn More
 
