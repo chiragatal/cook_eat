@@ -48,14 +48,14 @@ test.describe('Visual regression testing', () => {
             threshold: 0.3, // Increased threshold for pixel-by-pixel comparison
             animations: 'disabled', // Disable animations for more stable screenshots
           });
-        } catch (e) {
+        } catch (e: any) {
           console.error(`Error in visual test for ${page.name} on ${device.name}:`, e.message);
 
           // Save a screenshot of the error state
           await pageObj.screenshot({ path: `./error-${page.name}-${device.name}.png` });
 
           // Continue with the test suite
-          test.skip();
+          test.skip(true);
         }
       });
     }

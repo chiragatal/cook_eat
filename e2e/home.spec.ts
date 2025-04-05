@@ -45,7 +45,7 @@ test('navigation links work correctly', async ({ page }) => {
 
   // Skip test if we can't find navigation links
   if (!(await recipesLink.isVisible())) {
-    test.skip('Navigation links not found');
+    test.skip(true, 'Navigation links not found');
     return;
   }
 
@@ -85,7 +85,7 @@ test('responsive design works on mobile', async ({ page }) => {
     if (hasAnyButtons) {
       console.log('Mobile menu button not found with standard selectors, but page has buttons');
     } else {
-      test.skip('No mobile menu button found and no buttons on page');
+      test.skip(true, 'No mobile menu button found and no buttons on page');
       return;
     }
   } else {

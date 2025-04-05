@@ -58,7 +58,7 @@ test.describe('Recipe Functionality', () => {
 
     // Skip test if search input is not found
     if (!(await searchInput.isVisible())) {
-      test.skip('Could not find search input');
+      test.skip(true, 'Could not find search input');
       return;
     }
 
@@ -68,7 +68,7 @@ test.describe('Recipe Functionality', () => {
 
     // Only proceed if we found some recipe cards
     if (initialRecipeCount === 0) {
-      test.skip('No recipe cards found, skipping search test');
+      test.skip(true, 'No recipe cards found, skipping search test');
       return;
     }
 
@@ -115,7 +115,7 @@ test.describe('Recipe Functionality', () => {
 
     // Skip if no recipe cards are found
     if (await recipeCards.count() === 0) {
-      test.skip('No recipe cards found');
+      test.skip(true, 'No recipe cards found');
       return;
     }
 
@@ -165,7 +165,7 @@ test.describe('Recipe Functionality', () => {
 
     // If no recipe cards are found, skip the rest of the test
     if (await recipeCards.count() === 0) {
-      test.skip('No recipe cards found in mobile view');
+      test.skip(true, 'No recipe cards found in mobile view');
       return;
     }
 

@@ -67,7 +67,7 @@ test.describe('Authentication flows', () => {
 
     // Skip test if form elements are not found
     if (!(await emailField.isVisible() && await passwordField.isVisible() && await signinButton.isVisible())) {
-      test.skip('Could not find all form elements');
+      test.skip(true, 'Could not find all form elements');
       return;
     }
 

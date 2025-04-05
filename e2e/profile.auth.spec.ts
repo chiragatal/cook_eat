@@ -12,7 +12,7 @@ test.describe('Authenticated User Profile', () => {
     // Check if we were redirected to signin
     const currentUrl = page.url();
     if (currentUrl.includes('/auth/signin') || currentUrl.includes('/login')) {
-      test.skip('Authentication did not work, skipping test');
+      test.skip(true, 'Authentication did not work, skipping test');
     }
   });
 

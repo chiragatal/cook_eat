@@ -32,7 +32,6 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
     // Set custom screenshot paths
-    screenshotPath: screenshotsFailuresDir,
   },
 
   // Screenshots for snapshots and visual regression tests
@@ -83,7 +82,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     env: {
       TEST_MODE: 'true',
-      DATABASE_URL: process.env.TEST_DATABASE_URL || process.env.DATABASE_URL,
+      DATABASE_URL: process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || '',
     },
     timeout: 60 * 1000,
   },
