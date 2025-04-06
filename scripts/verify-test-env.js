@@ -8,6 +8,8 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+require('dotenv').config({ path: '.env.test' });
+const { PrismaClient } = require('@prisma/client');
 
 // ANSI color codes for better readability
 const colors = {
@@ -19,154 +21,97 @@ const colors = {
   reset: '\x1b[0m'
 };
 
-function verifyTestEnvironment() {
-  console.log(`\n${colors.magenta}=== VERIFYING TEST ENVIRONMENT SETUP ===${colors.reset}\n`);
+async function verifyTestEnv() {
+  console.log('\n🔍 Verifying test environment setup...\n');
 
-  try {
-    // Check base directories
-    const testResultsBaseDir = path.join(__dirname, '..', 'test-results');
+  // Check environment variables
+  console.log('Environment Variables:');
+  console.log('---------------------');
+  console.log(`TEST_DATABASE_URL: ${process.env.TEST_DATABASE_URL ? '✅ Set' : '❌ Not set'}`);
+  console.log(`TEST_MODE: ${process.env.TEST_MODE ? '✅ Enabled' : '❌ Disabled'}`);
+  console.log(`USE_LOCAL_FRONTEND: ${process.env.USE_LOCAL_FRONTEND === 'true' ? '✅ Enabled' : '❌ Disabled'}`);
+  console.log(`USE_PREVIEW_DATABASE: ${process.env.USE_PREVIEW_DATABASE === 'true' ? '✅ Enabled' : '❌ Disabled'}`);
+  console.log(`E2E_QUIET_MODE: ${process.env.E2E_QUIET_MODE === 'true' ? '✅ Enabled' : '❌ Disabled'}`);
+  console.log(`E2E_ULTRA_QUIET_MODE: ${process.env.E2E_ULTRA_QUIET_MODE === 'true' ? '✅ Enabled' : '❌ Disabled'}`);
 
-    if (!fs.existsSync(testResultsBaseDir)) {
-      console.log(`${colors.red}❌ Test results base directory does not exist: ${testResultsBaseDir}${colors.reset}`);
-      fs.mkdirSync(testResultsBaseDir, { recursive: true });
-      console.log(`${colors.green}✓ Created test results base directory${colors.reset}`);
-    } else {
-      console.log(`${colors.green}✓ Test results base directory exists: ${testResultsBaseDir}${colors.reset}`);
-    }
-
-    // Check latest symlink
-    const latestSymlinkPath = path.join(testResultsBaseDir, 'latest');
-    if (!fs.existsSync(latestSymlinkPath)) {
-      console.log(`${colors.yellow}⚠️ 'latest' symlink does not exist${colors.reset}`);
-      console.log(`${colors.cyan}ℹ️ This is normal if no tests have been run yet${colors.reset}`);
-    } else {
-      console.log(`${colors.green}✓ 'latest' directory exists${colors.reset}`);
-
-      // Check if it's actually a directory (not a symlink)
-      const isSymlink = fs.lstatSync(latestSymlinkPath).isSymbolicLink();
-      if (isSymlink) {
-        try {
-          // Get the target of the symlink
-          const symlinkTarget = fs.readlinkSync(latestSymlinkPath);
-          console.log(`${colors.cyan}ℹ️ 'latest' symlink points to: ${symlinkTarget}${colors.reset}`);
-
-          // Check if the target directory exists
-          const targetDir = path.join(testResultsBaseDir, symlinkTarget);
-          if (fs.existsSync(targetDir)) {
-            console.log(`${colors.green}✓ Symlink target directory exists${colors.reset}`);
-          } else {
-            console.log(`${colors.red}❌ Symlink target directory does not exist: ${targetDir}${colors.reset}`);
-          }
-        } catch (error) {
-          console.log(`${colors.red}❌ Error reading symlink: ${error.message}${colors.reset}`);
-        }
-      } else {
-        console.log(`${colors.yellow}⚠️ 'latest' is a directory, not a symlink${colors.reset}`);
-        console.log(`${colors.cyan}ℹ️ This is fine, but symlinks are used to maintain dated results${colors.reset}`);
-      }
-
-      // Check latest subdirectories, regardless of whether it's a symlink or not
-      const expectedSubDirs = [
-        'html-report',
-        'artifacts'
-      ];
-
-      for (const subDir of expectedSubDirs) {
-        const subDirPath = path.join(latestSymlinkPath, subDir);
-        if (fs.existsSync(subDirPath)) {
-          console.log(`${colors.green}✓ Subdirectory exists: ${subDir}${colors.reset}`);
-        } else {
-          console.log(`${colors.red}❌ Subdirectory missing: ${subDir}${colors.reset}`);
-        }
-      }
-
-      // Check the test-specific artifact directories
-      const artifactsDir = path.join(latestSymlinkPath, 'artifacts');
-      if (fs.existsSync(artifactsDir)) {
-        const artifactItems = fs.readdirSync(artifactsDir, { withFileTypes: true });
-        const testDirs = artifactItems.filter(item => item.isDirectory() &&
-          !['screenshots', 'videos', 'traces'].includes(item.name));
-
-        console.log(`${colors.cyan}ℹ️ Found ${testDirs.length} test-specific directories${colors.reset}`);
-
-        // Check for screenshots in test directories
-        let totalScreenshots = 0;
-        for (const testDir of testDirs) {
-          const testDirPath = path.join(artifactsDir, testDir.name);
-          const files = fs.readdirSync(testDirPath, { withFileTypes: true });
-          const screenshots = files.filter(file => file.isFile() &&
-              (file.name.endsWith('.png') || file.name.endsWith('.jpg')));
-
-          totalScreenshots += screenshots.length;
-
-          if (screenshots.length > 0) {
-            console.log(`${colors.green}✓ Found ${screenshots.length} screenshots in ${testDir.name}${colors.reset}`);
-          } else {
-            console.log(`${colors.yellow}⚠️ No screenshots found in ${testDir.name}${colors.reset}`);
-          }
-        }
-
-        if (totalScreenshots > 0) {
-          console.log(`${colors.green}✓ Found ${totalScreenshots} total screenshots across all directories${colors.reset}`);
-        } else {
-          console.log(`${colors.red}❌ No screenshots found in any directory${colors.reset}`);
-        }
-      }
-    }
-
-    // Check if Playwright is installed
-    try {
-      const playwrightVersion = execSync('npx playwright -V', { encoding: 'utf8' }).trim();
-      console.log(`${colors.green}✓ Playwright is installed: ${playwrightVersion}${colors.reset}`);
-    } catch (error) {
-      console.log(`${colors.red}❌ Playwright is not installed or not in PATH${colors.reset}`);
-    }
-
-    // Check package.json scripts
-    try {
-      const packageJson = require(path.join(__dirname, '..', 'package.json'));
-      const scripts = packageJson.scripts || {};
-
-      const requiredScripts = [
-        'test:e2e',
-        'test:view-latest',
-        'test:view-screenshots'
-      ];
-
-      for (const script of requiredScripts) {
-        if (scripts[script]) {
-          console.log(`${colors.green}✓ Script exists in package.json: ${script}${colors.reset}`);
-        } else {
-          console.log(`${colors.red}❌ Script missing from package.json: ${script}${colors.reset}`);
-        }
-      }
-
-      // Check cross-env dependency
-      const devDependencies = packageJson.devDependencies || {};
-      if (devDependencies['cross-env']) {
-        console.log(`${colors.green}✓ cross-env dependency exists: ${devDependencies['cross-env']}${colors.reset}`);
-      } else {
-        console.log(`${colors.red}❌ cross-env dependency missing${colors.reset}`);
-        console.log(`${colors.cyan}ℹ️ Install with: npm install cross-env --save-dev${colors.reset}`);
-      }
-    } catch (error) {
-      console.log(`${colors.red}❌ Error checking package.json: ${error.message}${colors.reset}`);
-    }
-
-    console.log(`\n${colors.cyan}Test environment verification complete${colors.reset}`);
-
-  } catch (error) {
-    console.error(`${colors.red}ERROR: ${error.message}${colors.reset}`);
+  if (!process.env.TEST_DATABASE_URL) {
+    console.error('❌ TEST_DATABASE_URL is not set. Please check your .env.test file.');
     return false;
   }
 
+  // Check database connection
+  console.log('\nDatabase Connection:');
+  console.log('------------------');
+
+  let prisma;
+  try {
+    prisma = new PrismaClient({
+      datasourceUrl: process.env.TEST_DATABASE_URL
+    });
+
+    await prisma.$connect();
+    console.log('✅ Successfully connected to test database');
+
+    // Get database info
+    try {
+      const dbInfo = await prisma.$queryRaw`SELECT current_database(), current_schema();`;
+      console.log(`Database: ${dbInfo[0].current_database}`);
+      console.log(`Schema: ${dbInfo[0].current_schema}`);
+    } catch (error) {
+      console.error('❌ Error checking database info:', error.message);
+    }
+
+    // Check if the test_e2e schema exists
+    try {
+      const schemaExists = await prisma.$queryRaw`
+        SELECT EXISTS (
+          SELECT FROM information_schema.schemata
+          WHERE schema_name = 'test_e2e'
+        );
+      `;
+      console.log(`test_e2e schema exists: ${schemaExists[0].exists ? '✅ Yes' : '❌ No'}`);
+
+      if (schemaExists[0].exists) {
+        // Count tables in the test_e2e schema
+        const tables = await prisma.$queryRaw`
+          SELECT count(*) as table_count
+          FROM information_schema.tables
+          WHERE table_schema = 'test_e2e';
+        `;
+        console.log(`Tables in test_e2e schema: ${tables[0].table_count}`);
+
+        if (tables[0].table_count === 0) {
+          console.log('❌ No tables found in test_e2e schema. You may need to create them.');
+        }
+      } else {
+        console.log('❌ test_e2e schema does not exist. You may need to create it.');
+      }
+    } catch (error) {
+      console.error('❌ Error checking schema:', error.message);
+    }
+  } catch (error) {
+    console.error('❌ Failed to connect to test database:', error.message);
+    return false;
+  } finally {
+    if (prisma) {
+      await prisma.$disconnect().catch(console.error);
+    }
+  }
+
+  console.log('\n✅ Verification complete. If any issues were found, please check your .env.test file and database setup.');
   return true;
 }
 
-// If this script is run directly
+// Run if script is executed directly
 if (require.main === module) {
-  const success = verifyTestEnvironment();
-  process.exit(success ? 0 : 1);
+  verifyTestEnv()
+    .then(success => {
+      process.exit(success ? 0 : 1);
+    })
+    .catch(error => {
+      console.error('Error in verification:', error);
+      process.exit(1);
+    });
+} else {
+  module.exports = verifyTestEnv;
 }
-
-module.exports = verifyTestEnvironment;

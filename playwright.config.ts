@@ -1,136 +1,171 @@
 import { defineConfig, devices } from '@playwright/test';
-import path from 'path';
-import fs from 'fs';
+import { join } from 'path';
 import dotenv from 'dotenv';
 
-// Load the appropriate environment variables
-if (fs.existsSync('.env.test')) {
-  console.log('Loading .env.test file');
-  dotenv.config({ path: '.env.test' });
+// Load environment variables from .env.test
+dotenv.config({ path: '.env.test' });
+
+// Set base URL from environment or default to localhost
+const baseURL = process.env.TEST_BASE_URL || 'http://localhost:3000';
+
+// Check if we should use a local frontend for testing
+const useLocalFrontend = process.env.USE_LOCAL_FRONTEND === 'true';
+if (useLocalFrontend && !baseURL.includes('localhost')) {
+  console.log('Configuration flag USE_LOCAL_FRONTEND is set, forcing use of localhost frontend');
+  baseURL = 'http://localhost:3000';
 }
 
-// We'll use the environment variable set by setup-test-results-dir.js
-// or create the path to the 'latest' symlink if not available
-const testResultsBaseDir = path.join(__dirname, 'test-results');
-const testResultsDir = process.env.TEST_RESULTS_DIR
-  ? process.env.TEST_RESULTS_DIR
-  : path.join(testResultsBaseDir, 'latest');
+// Check if we explicitly want to use a preview database
+const usePreviewDatabase = process.env.USE_PREVIEW_DATABASE === 'true';
 
-// Define directory paths
-const reportsDir = path.join(testResultsDir, 'html-report');
-const artifactsDir = path.join(testResultsDir, 'artifacts');
-const screenshotsDir = path.join(artifactsDir, 'screenshots');
-const screenshotsDebugDir = path.join(screenshotsDir, 'debug');
-const screenshotsFailuresDir = path.join(screenshotsDir, 'failures');
-const videosDir = path.join(artifactsDir, 'videos');
-const tracesDir = path.join(artifactsDir, 'traces');
+// Check if we should enable quiet mode to reduce log noise
+const quietMode = process.env.E2E_QUIET_MODE === 'true';
 
-// Log the test results directory being used
-console.log(`Playwright using test results directory: ${testResultsDir}`);
+// Check if we should enable ultra-quiet mode (minimal output - test results only)
+const ultraQuietMode = process.env.E2E_ULTRA_QUIET_MODE === 'true';
 
-// Determine the base URL - use TEST_BASE_URL environment variable if set
-// otherwise default to localhost. Allow preview-specific scripts to
-// override this with a direct URL.
-const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:3000';
-console.log(`Using test base URL: ${baseUrl}`);
+// Determine the most appropriate quiet level
+const logLevel = ultraQuietMode ? 'ultra-quiet' : (quietMode ? 'quiet' : 'normal');
 
-// Check if screenshots are enabled via environment variable
-const screenshotsOn = process.env.PLAYWRIGHT_SCREENSHOTS === 'on';
-const videoOn = process.env.PLAYWRIGHT_VIDEO === 'on';
+// Determine if screenshots should be taken during tests
+const takeScreenshots = process.env.PLAYWRIGHT_SCREENSHOTS === 'on';
 
-console.log(`Screenshots enabled: ${screenshotsOn ? 'YES' : 'NO'}`);
-console.log(`Video recording enabled: ${videoOn ? 'YES' : 'NO'}`);
+// Determine if video should be recorded during tests
+const recordVideo = process.env.PLAYWRIGHT_VIDEO === 'on';
 
-// Determine if we should start a local web server
-// We only need to start the server if we're testing against localhost
-const shouldStartWebServer = baseUrl.includes('localhost');
-console.log(`Starting local web server: ${shouldStartWebServer ? 'YES' : 'NO'}`);
+// Define where test artifacts like screenshots and videos should be stored
+const artifactsDir = join('test-results', 'latest', 'artifacts');
+
+// Log configuration (unless in ultra-quiet mode)
+if (logLevel !== 'ultra-quiet') {
+  console.log(`Using test base URL: ${baseURL}`);
+  console.log(`Using preview database: ${usePreviewDatabase ? 'YES' : 'NO'}`);
+  console.log(`Quiet mode: ${logLevel === 'quiet' ? 'YES' : 'NO'}`);
+  console.log(`Screenshots enabled: ${takeScreenshots ? 'YES' : 'NO'}`);
+  console.log(`Video recording enabled: ${recordVideo ? 'YES' : 'NO'}`);
+  console.log(`Starting local web server: ${useLocalFrontend ? 'YES' : 'NO'}`);
+} else {
+  console.log(`[Test] Running in ultra-quiet mode with base URL: ${baseURL}`);
+}
 
 export default defineConfig({
-  testDir: './e2e',
-  timeout: 30000,
-  fullyParallel: true,
-  forbidOnly: process.env.CI ? true : false,
-  retries: process.env.CI ? 2 : 1,
-  workers: process.env.CI ? 1 : undefined,
+  /* Maximum time one test can run for. */
+  timeout: 30 * 1000,
 
-  // Updated reporter configuration to use the date-specific folder
+  /* Run tests in files in parallel */
+  fullyParallel: true,
+
+  /* Fail the build on CI if you accidentally left test.only in the source code. */
+  forbidOnly: !!process.env.CI,
+
+  /* Retry on CI only */
+  retries: process.env.CI ? 2 : 0,
+
+  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
-    ['html', { outputFolder: reportsDir }],
-    ['list']
+    // Always use the minimal reporter for ultra-quiet mode
+    ultraQuietMode ? ['list', { printSteps: false, printFailureReasons: false }] :
+    // Use configurable steps/reasons for quiet mode
+    ['list', { printSteps: !quietMode, printFailureReasons: true }],
+
+    // Always generate HTML report for later viewing
+    ['html', { outputFolder: 'test-results/latest/html-report', open: 'never' }]
   ],
 
+  /* Set up global setup that runs before all tests */
   globalSetup: require.resolve('./e2e/global-setup'),
-  globalTeardown: require.resolve('./e2e/global-teardown'),
 
-  use: {
-    baseURL: baseUrl,
-    trace: 'on-first-retry',
-    // Take screenshots based on environment variable or on failure
-    screenshot: screenshotsOn ? 'on' : 'only-on-failure',
-    // Record video based on environment variable or on first retry
-    video: videoOn ? 'on' : 'on-first-retry',
-
-    // Set custom paths for artifacts
-    screenshotPath: screenshotsDir,
-    videoPath: videosDir,
-    tracesPath: tracesDir,
-  },
-
-  // Screenshots for snapshots and visual regression tests
-  snapshotPathTemplate: path.join(artifactsDir, '{testDir}/{testFileDir}/{testFileName}-snapshots/{arg}{ext}'),
-
-  // Store artifacts in the artifacts folder
-  outputDir: artifactsDir,
-
+  /* Configure projects for major browsers */
   projects: [
     {
-      name: 'setup',
-      testMatch: /global-setup\.ts/,
-    },
-    {
-      name: 'authenticated',
-      testMatch: /.*\.auth\.spec\.ts/,
+      name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        storageState: path.join(__dirname, 'e2e/setup/auth-state.json'),
+        screenshot: takeScreenshots ? 'on' : 'off',
+        video: recordVideo ? 'on-first-retry' : 'off',
+        trace: 'on-first-retry',
       },
     },
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-    {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      use: {
+        ...devices['Desktop Firefox'],
+        screenshot: takeScreenshots ? 'on' : 'off',
+        video: recordVideo ? 'on-first-retry' : 'off',
+        trace: 'on-first-retry',
+      },
     },
     {
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      use: {
+        ...devices['Desktop Safari'],
+        screenshot: takeScreenshots ? 'on' : 'off',
+        video: recordVideo ? 'on-first-retry' : 'off',
+        trace: 'on-first-retry',
+      },
     },
     {
       name: 'Mobile Chrome',
-      use: { ...devices['Pixel 7'] },
+      use: {
+        ...devices['Pixel 5'],
+        screenshot: takeScreenshots ? 'on' : 'off',
+        video: recordVideo ? 'on-first-retry' : 'off',
+        trace: 'on-first-retry',
+      },
     },
     {
       name: 'Mobile Safari',
-      use: { ...devices['iPhone 14'] },
-    },
-    {
-      name: 'Tablet',
-      use: { ...devices['iPad Pro 11'] },
+      use: {
+        ...devices['iPhone 13'],
+        screenshot: takeScreenshots ? 'on' : 'off',
+        video: recordVideo ? 'on-first-retry' : 'off',
+        trace: 'on-first-retry',
+      },
     },
   ],
 
-  // Only start a web server when testing locally
-  webServer: shouldStartWebServer ? {
-    command: 'npm run dev',
-    port: 3000,
-    reuseExistingServer: !process.env.CI,
-    env: {
-      TEST_MODE: 'true',
-      DATABASE_URL: process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || '',
+  /* Folder for test artifacts such as screenshots, videos, traces, etc. */
+  outputDir: join(artifactsDir, 'output'),
+
+  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+  use: {
+    /* Base URL to use in actions like `await page.goto('/')`. */
+    baseURL,
+
+    /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
+    actionTimeout: 10000,
+
+    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
+    trace: 'on-first-retry',
+
+    /* Directory to save screenshots in */
+    screenshot: {
+      mode: 'on',
+      fullPage: true,
+      path: join(artifactsDir, 'screenshots'),
     },
-    timeout: 60 * 1000,
+
+    // Store videos in artifacts directory
+    video: recordVideo ? {
+      mode: 'on-first-retry',
+      path: join(artifactsDir, 'videos'),
+    } : 'off',
+  },
+
+  /* Run your local dev server before starting the tests */
+  webServer: useLocalFrontend ? {
+    command: 'npm run dev',
+    url: baseURL,
+    reuseExistingServer: !process.env.CI,
+    stderr: ultraQuietMode ? 'pipe' : 'inherit',
+    stdout: ultraQuietMode ? 'pipe' : 'inherit',
+    env: {
+      ...process.env,
+      NEXT_TELEMETRY_DISABLED: '1',
+      LOG_LEVEL: ultraQuietMode ? 'error' : (quietMode ? 'warn' : 'info'),
+      DATABASE_URL: process.env.TEST_DATABASE_URL,
+      TEST_MODE: 'true',
+      USE_PREVIEW_DATABASE: String(usePreviewDatabase)
+    }
   } : undefined,
 });

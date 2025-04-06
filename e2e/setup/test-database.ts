@@ -1,18 +1,46 @@
 import { PrismaClient, Prisma } from '@prisma/client';
+import dotenv from 'dotenv';
 
-// Test database client - intentionally uses a separate schema
+// Load environment variables
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: '.env.test' });
+}
+
+// Check if we're explicitly using a preview database
+const usePreviewDatabase = process.env.USE_PREVIEW_DATABASE === 'true';
+const quietMode = process.env.E2E_QUIET_MODE === 'true';
+
+// Determine the correct database URL with schema
+const baseDbUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
+// Ensure the URL includes the test_e2e schema
+const databaseUrl = baseDbUrl.includes('schema=test_e2e') ?
+  baseDbUrl :
+  baseDbUrl.includes('?') ?
+    baseDbUrl.replace('?', '?schema=test_e2e&') :
+    `${baseDbUrl}?schema=test_e2e`;
+
+// Print database connection details (only if not in quiet mode)
+if (!quietMode) {
+  console.log('\n⚠️  IMPORTANT: Tests are using the database configured in .env.test ⚠️');
+  console.log('Database URL:', databaseUrl.split('?')[0] + '?schema=test_e2e');
+  console.log('Using preview database:', usePreviewDatabase ? 'YES' : 'NO');
+  console.log('Make sure this points to a test database or uses schema isolation!\n');
+} else {
+  console.log(`[Database] Using ${usePreviewDatabase ? 'preview' : 'test'} database with schema isolation`);
+}
+
+// Configure Prisma log levels
+const logLevel = process.env.PRISMA_LOG_LEVEL || (quietMode ? 'error' : 'info');
+
+// Test database client - uses test_e2e schema
 const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.TEST_DATABASE_URL || process.env.DATABASE_URL
-    }
-  }
+  datasourceUrl: databaseUrl,
+  log: [
+    { level: 'error', emit: 'stdout' },
+    ...(logLevel !== 'error' ? [{ level: 'warn', emit: 'stdout' }] : []),
+    ...(logLevel === 'info' ? [{ level: 'info', emit: 'stdout' }, { level: 'query', emit: 'stdout' }] : []),
+  ],
 });
-
-// Print warning about database usage
-console.log('\n⚠️  IMPORTANT: Tests are using the database configured in .env.test ⚠️');
-console.log('Database URL:', process.env.TEST_DATABASE_URL || process.env.DATABASE_URL);
-console.log('Make sure this points to a test database or uses schema isolation!\n');
 
 // Test prefix to distinguish test data
 const TEST_PREFIX = 'test_e2e_';
@@ -43,62 +71,15 @@ const testPost = {
 };
 
 /**
- * Helper function to safely delete records from a table
- * Will catch and log errors if the table doesn't exist
- */
-async function safeDeleteMany(
-  model: any,
-  modelName: string,
-  where: any
-) {
-  try {
-    await model.deleteMany({ where });
-    return true;
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      // P2021 is the error code for "table does not exist"
-      if (error.code === 'P2021') {
-        console.log(`Table ${modelName} does not exist, skipping deletion`);
-        return false;
-      }
-    }
-    // For other errors, we should still throw
-    throw error;
-  }
-}
-
-/**
- * Helper function to safely create or update records
- * Will catch and log errors if the table doesn't exist
- */
-async function safeUpsert(model: any, modelName: string, args: any) {
-  try {
-    await model.upsert(args);
-    return true;
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      // P2021 is the error code for "table does not exist"
-      if (error.code === 'P2021') {
-        console.log(`Table ${modelName} does not exist, skipping data creation`);
-        return false;
-      }
-    }
-    // For other errors, we should still throw
-    throw error;
-  }
-}
-
-/**
- * Helper function to check if a table exists in the database
+ * Helper function to safely check if a table exists
  */
 async function tableExists(tableName: string): Promise<boolean> {
   try {
-    // Use a raw query to check if the table exists
-    const schemaName = 'test_e2e'; // This should match the schema in your TEST_DATABASE_URL
+    // Check if the table exists in the test_e2e schema
     const query = `
       SELECT EXISTS (
         SELECT FROM information_schema.tables
-        WHERE table_schema = '${schemaName}'
+        WHERE table_schema = 'test_e2e'
         AND table_name = '${tableName}'
       );
     `;
@@ -106,173 +87,85 @@ async function tableExists(tableName: string): Promise<boolean> {
     const result = await prisma.$queryRawUnsafe(query);
     return result[0]?.exists || false;
   } catch (error) {
-    console.log(`Error checking if table exists: ${error}`);
+    if (!quietMode) {
+      console.log(`Error checking if table exists: ${error}`);
+    }
     return false;
   }
 }
 
 /**
- * Set up the test database with consistent test data
+ * Helper function to safely create or update test data
+ */
+async function safeUpsert(model: any, modelName: string, args: any) {
+  try {
+    await model.upsert(args);
+    return true;
+  } catch (error) {
+    // Don't log in quiet mode
+    if (!quietMode) {
+      console.log(`Could not create ${modelName} test data: ${error.message}`);
+    }
+    return false;
+  }
+}
+
+/**
+ * Set up the test database with essential test data
  */
 export async function setupTestDatabase() {
-  try {
+  if (!quietMode) {
     console.log('Setting up test database with seed data...');
+  }
 
-    // Clear existing test data (in reverse order of dependencies)
-    console.log('Removing previous test data...');
-
-    // Only deleting data with the test prefix for safety
-    console.log(`Only deleting data with prefix: ${TEST_PREFIX}`);
-
-    // Safely delete records from each table, handling missing tables gracefully
-    await safeDeleteMany(prisma.notification, 'Notification', {
-      OR: [
-        { userId: { startsWith: TEST_PREFIX } },
-        { actorId: { startsWith: TEST_PREFIX } }
-      ]
-    });
-
-    await safeDeleteMany(prisma.notificationPreference, 'NotificationPreference', {
-      userId: { startsWith: TEST_PREFIX }
-    });
-
-    await safeDeleteMany(prisma.commentReaction, 'CommentReaction', {
-      OR: [
-        { userId: { startsWith: TEST_PREFIX } },
-        { comment: { userId: { startsWith: TEST_PREFIX } } }
-      ]
-    });
-
-    await safeDeleteMany(prisma.comment, 'Comment', {
-      OR: [
-        { userId: { startsWith: TEST_PREFIX } },
-        { postId: { startsWith: TEST_PREFIX } }
-      ]
-    });
-
-    await safeDeleteMany(prisma.reaction, 'Reaction', {
-      OR: [
-        { userId: { startsWith: TEST_PREFIX } },
-        { postId: { startsWith: TEST_PREFIX } }
-      ]
-    });
-
-    await safeDeleteMany(prisma.post, 'Post', {
-      OR: [
-        { userId: { startsWith: TEST_PREFIX } },
-        { id: { startsWith: TEST_PREFIX } }
-      ]
-    });
-
-    await safeDeleteMany(prisma.user, 'User', {
-      id: { startsWith: TEST_PREFIX }
-    });
-
-    // Check if tables exist before trying to create records
+  try {
+    // Check for essential tables first
     const userTableExists = await tableExists('User');
     const postTableExists = await tableExists('Post');
 
-    if (userTableExists) {
-      // Add test user
-      console.log('Creating test user...');
-      await safeUpsert(prisma.user, 'User', {
-        where: { email: testUser.email },
-        update: testUser,
-        create: testUser
-      });
-
-      if (postTableExists) {
-        // Add test recipe/post
-        console.log('Creating test recipe...');
-        await safeUpsert(prisma.post, 'Post', {
-          where: { id: testPost.id },
-          update: testPost,
-          create: testPost
-        });
-      } else {
-        console.log('Post table does not exist, skipping recipe creation');
+    if (!userTableExists) {
+      if (!quietMode) {
+        console.log('User table not found - have you run "npm run setup-test-db" first?');
       }
-    } else {
-      console.log('User table does not exist, skipping user and recipe creation');
-      // Even if tables don't exist, we can continue with tests that don't need database access
-      console.log('Continuing without test data - some tests may be skipped');
+      return;
     }
 
-    console.log('Test database setup complete');
+    // Create test user
+    if (!quietMode) {
+      console.log('Creating test user data...');
+    }
+
+    await safeUpsert(prisma.user, 'User', {
+      where: { email: testUser.email },
+      update: testUser,
+      create: testUser
+    });
+
+    if (postTableExists) {
+      // Create test post if Post table exists
+      if (!quietMode) {
+        console.log('Creating test post data...');
+      }
+
+      await safeUpsert(prisma.post, 'Post', {
+        where: { id: testPost.id },
+        update: testPost,
+        create: testPost
+      });
+    }
+
+    if (!quietMode) {
+      console.log('Test database setup complete');
+    }
   } catch (error) {
-    console.error('Failed to setup test database:', error);
-    // Instead of throwing, just log and continue
-    console.log('Continuing with tests despite database setup issues');
+    console.error('Error setting up test database:', error.message);
   }
 }
 
 /**
- * Clean up the test database after tests
+ * Required for backwards compatibility
  */
 export async function cleanupTestDatabase() {
-  try {
-    console.log('Cleaning up test database...');
-    console.log(`Only deleting data with prefix: ${TEST_PREFIX}`);
-
-    // Safely delete records from each table, handling missing tables gracefully
-    await safeDeleteMany(prisma.notification, 'Notification', {
-      OR: [
-        { userId: { startsWith: TEST_PREFIX } },
-        { actorId: { startsWith: TEST_PREFIX } }
-      ]
-    });
-
-    await safeDeleteMany(prisma.notificationPreference, 'NotificationPreference', {
-      userId: { startsWith: TEST_PREFIX }
-    });
-
-    await safeDeleteMany(prisma.commentReaction, 'CommentReaction', {
-      OR: [
-        { userId: { startsWith: TEST_PREFIX } },
-        { comment: { userId: { startsWith: TEST_PREFIX } } }
-      ]
-    });
-
-    await safeDeleteMany(prisma.comment, 'Comment', {
-      OR: [
-        { userId: { startsWith: TEST_PREFIX } },
-        { postId: { startsWith: TEST_PREFIX } }
-      ]
-    });
-
-    await safeDeleteMany(prisma.reaction, 'Reaction', {
-      OR: [
-        { userId: { startsWith: TEST_PREFIX } },
-        { postId: { startsWith: TEST_PREFIX } }
-      ]
-    });
-
-    await safeDeleteMany(prisma.post, 'Post', {
-      OR: [
-        { userId: { startsWith: TEST_PREFIX } },
-        { id: { startsWith: TEST_PREFIX } }
-      ]
-    });
-
-    await safeDeleteMany(prisma.user, 'User', {
-      id: { startsWith: TEST_PREFIX }
-    });
-
-    console.log('Test database cleanup complete');
-  } catch (error) {
-    console.error('Failed to cleanup test database:', error);
-    // Just log the error and continue
-    console.log('Continuing despite cleanup issues');
-  } finally {
-    // Close the Prisma client connection
-    await prisma.$disconnect();
-  }
-}
-
-/**
- * Reset the test database to a fresh state with seed data
- */
-export async function resetTestDatabase() {
-  await cleanupTestDatabase();
-  await setupTestDatabase();
+  // No cleanup needed for schema-isolated database
+  return;
 }

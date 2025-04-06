@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { ScreenshotHelper } from './utils/screenshot-helper';
 
 // Pages to take screenshots of
 const pages = [
@@ -21,24 +22,48 @@ test.describe('Visual regression testing', () => {
     for (const device of devices) {
       test(`${page.name} page on ${device.name}`, async ({ page: pageObj }) => {
         try {
-          // Set viewport size
-          await pageObj.setViewportSize({ width: device.width, height: device.height });
+          // Create screenshot helper
+          const screenshots = new ScreenshotHelper(
+            pageObj,
+            `${page.name.toLowerCase()}-${device.name.toLowerCase()}`,
+            'visual'
+          );
 
-          // Navigate to the page
-          await pageObj.goto(page.path, { timeout: 10000 }).catch(e => {
-            console.log(`Navigation to ${page.path} timed out, but continuing test`);
+          // Capture the viewport resize
+          await screenshots.captureAction('resize-viewport', async () => {
+            // Set viewport size
+            await pageObj.setViewportSize({ width: device.width, height: device.height });
           });
 
-          // Wait for page to stabilize
-          await pageObj.waitForLoadState('networkidle', { timeout: 5000 }).catch(e => {
-            console.log(`Wait for networkidle timed out for ${page.path}, but continuing test`);
+          // Capture the navigation to the page
+          await screenshots.captureAction('page-navigation', async () => {
+            // Navigate to the page
+            await pageObj.goto(page.path, { timeout: 10000 }).catch(e => {
+              console.log(`Navigation to ${page.path} timed out, but continuing test`);
+            });
+
+            // Wait for page to stabilize
+            await pageObj.waitForLoadState('networkidle', { timeout: 5000 }).catch(e => {
+              console.log(`Wait for networkidle timed out for ${page.path}, but continuing test`);
+            });
+
+            // Additional wait for any animations/loading to complete
+            await pageObj.waitForTimeout(1000);
           });
 
-          // Additional wait for any animations/loading to complete
-          await pageObj.waitForTimeout(1000);
+          // Take a standardized screenshot
+          await screenshots.take('visual-comparison');
 
-          // Save a debug screenshot in case visual comparison fails
-          await pageObj.screenshot({ path: `./debug-${page.name}-${device.name}.png` });
+          // Take screenshots of key UI elements
+          const heading = pageObj.getByRole('heading').first();
+          if (await heading.isVisible()) {
+            await screenshots.captureElement('h1, h2, h3', 'heading');
+          }
+
+          const content = pageObj.locator('main, article, section, [role="main"]').first();
+          if (await content.isVisible()) {
+            await screenshots.captureElement('main, article, section, [role="main"]', 'main-content');
+          }
 
           // Take a screenshot for visual comparison
           // Using a higher threshold and masking to avoid false positives from small differences
@@ -51,8 +76,15 @@ test.describe('Visual regression testing', () => {
         } catch (e: any) {
           console.error(`Error in visual test for ${page.name} on ${device.name}:`, e.message);
 
+          // Create error screenshot helper
+          const errorScreenshots = new ScreenshotHelper(
+            pageObj,
+            `error-${page.name.toLowerCase()}-${device.name.toLowerCase()}`,
+            'visual-errors'
+          );
+
           // Save a screenshot of the error state
-          await pageObj.screenshot({ path: `./error-${page.name}-${device.name}.png` });
+          await errorScreenshots.take('error-state');
 
           // Continue with the test suite
           test.skip(true);

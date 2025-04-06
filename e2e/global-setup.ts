@@ -6,7 +6,6 @@ import { setupTestDatabase } from './setup/test-database';
 
 // Load environment variables
 if (fs.existsSync('.env.test')) {
-  console.log('Loading .env.test file');
   dotenv.config({ path: '.env.test' });
 }
 
@@ -14,12 +13,30 @@ if (fs.existsSync('.env.test')) {
  * Global setup for tests, including authentication
  */
 async function globalSetup(config: FullConfig) {
-  console.log('Starting global setup...');
+  // Check if quiet mode is enabled
+  const quietMode = process.env.E2E_QUIET_MODE === 'true';
+
+  if (!quietMode) {
+    console.log('Starting global setup...');
+  }
+
+  // Check configuration
+  const useLocalFrontend = process.env.USE_LOCAL_FRONTEND === 'true';
+  const usePreviewDatabase = process.env.USE_PREVIEW_DATABASE === 'true';
+
+  if (!quietMode) {
+    console.log(`Using local frontend: ${useLocalFrontend ? 'YES' : 'NO'}`);
+    console.log(`Using preview database: ${usePreviewDatabase ? 'YES' : 'NO'}`);
+  } else {
+    console.log(`[Setup] Using local frontend: ${useLocalFrontend ? 'YES' : 'NO'}, preview database: ${usePreviewDatabase ? 'YES' : 'NO'}`);
+  }
 
   // Set up test database
   try {
     await setupTestDatabase();
-    console.log('Test database setup completed');
+    if (!quietMode) {
+      console.log('Test database setup completed');
+    }
   } catch (error) {
     console.warn('Warning: Error during test database setup:', error);
     console.log('Continuing with tests, but database-dependent tests may fail');
@@ -33,33 +50,44 @@ async function globalSetup(config: FullConfig) {
 
   const authFile = path.join(authDir, 'auth-state.json');
   const baseURL = process.env.TEST_BASE_URL || 'http://localhost:3000';
-  console.log(`Using base URL: ${baseURL}`);
+
+  if (!quietMode) {
+    console.log(`Using base URL: ${baseURL}`);
+  }
 
   // Check if we're testing against localhost - no Vercel auth needed
-  const isLocalTesting = baseURL.includes('localhost');
+  const isLocalTesting = baseURL.includes('localhost') || useLocalFrontend;
 
   if (isLocalTesting) {
-    console.log('Local testing detected. Skipping Vercel authentication.');
+    if (!quietMode) {
+      console.log('Local testing detected. Skipping Vercel authentication.');
+    }
 
     // Create empty auth state for local testing
     if (!fs.existsSync(authFile)) {
       const emptyAuthState = { cookies: [], origins: [] };
       fs.writeFileSync(authFile, JSON.stringify(emptyAuthState));
-      console.log('Created empty auth state file for local testing');
+      if (!quietMode) {
+        console.log('Created empty auth state file for local testing');
+      }
     }
 
     return;
   }
 
   // Only do Vercel auth for non-local testing (preview URLs)
-  console.log('Preview URL testing detected. Will check for Vercel authentication.');
+  if (!quietMode) {
+    console.log('Preview URL testing detected. Will check for Vercel authentication.');
+  }
 
   // Launch a browser
   const browser = await chromium.launch({ headless: false });
   const page = await browser.newPage({ baseURL });
 
   try {
-    console.log('Navigating to base URL for authentication...');
+    if (!quietMode) {
+      console.log('Navigating to base URL for authentication...');
+    }
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
@@ -101,20 +129,24 @@ async function globalSetup(config: FullConfig) {
 
       // After login, we should be redirected to our actual application
       await page.waitForLoadState('networkidle');
-    } else {
+    } else if (!quietMode) {
       console.log('Direct access to application (no Vercel login required)');
     }
 
     // Store the authentication state
     await page.context().storageState({ path: authFile });
-    console.log(`Authentication state saved to ${authFile}`);
+    if (!quietMode) {
+      console.log(`Authentication state saved to ${authFile}`);
+    }
 
   } catch (error) {
     console.error('Error during authentication setup:', error);
   } finally {
     // Close the browser
     await browser.close();
-    console.log('Global setup completed.');
+    if (!quietMode) {
+      console.log('Global setup completed.');
+    }
   }
 }
 

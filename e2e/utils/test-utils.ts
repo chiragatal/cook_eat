@@ -1,10 +1,11 @@
 import { Page, expect } from '@playwright/test';
-import { resetTestDatabase } from '../setup/test-database';
+import { setupTestDatabase } from '../setup/test-database';
 import path from 'path';
 import fs from 'fs';
+import { ScreenshotHelper } from './screenshot-helper';
 
 // Ensure screenshots directory exists
-const screenshotsDir = path.join(process.cwd(), 'screenshots');
+const screenshotsDir = path.join(process.cwd(), 'test-results', 'screenshots');
 const screenshotsDebugDir = path.join(screenshotsDir, 'debug');
 
 // Create directories if they don't exist
@@ -18,30 +19,55 @@ const screenshotsDebugDir = path.join(screenshotsDir, 'debug');
  * Login with the test user account
  */
 export async function loginAsTestUser(page: Page) {
+  // Create screenshot helper for login
+  const screenshots = new ScreenshotHelper(page, 'login-test-user', 'auth');
+
   await page.goto('/auth/login');
+  await screenshots.take('login-page');
+
   await page.fill('input[name="email"]', 'test@example.com');
   await page.fill('input[name="password"]', 'password12345');
-  await page.click('button[type="submit"]');
-  await page.waitForURL('**/*');
+
+  // Capture the form submission with before/after screenshots
+  await screenshots.captureAction('login-submission', async () => {
+    await page.click('button[type="submit"]');
+    await page.waitForURL('**/*');
+  });
 }
 
 /**
- * Reset the database to the initial test state
- * Can be used before tests that need a clean slate
+ * Setup test data in the database
+ * Sets up consistent test data for tests that need it
  */
 export async function resetDatabase() {
-  await resetTestDatabase();
+  // Just directly call setupTestDatabase instead of a reset function that no longer exists
+  await setupTestDatabase();
+  console.log('Test database setup complete');
 }
 
 /**
  * Navigate to a recipe by clicking the first recipe with the given title
  */
 export async function navigateToRecipe(page: Page, title: string) {
+  // Create screenshot helper for recipe navigation
+  const screenshots = new ScreenshotHelper(page, 'recipe-navigation', 'recipes');
+
   await page.goto('/recipes');
+  await screenshots.take('recipe-list');
 
   // Find and click the recipe with the given title
   const recipeCard = page.locator('.recipe-card', { hasText: title }).first();
-  await recipeCard.click();
+
+  // Capture element if visible
+  if (await recipeCard.isVisible()) {
+    await screenshots.captureElement('.recipe-card', 'recipe-card');
+  }
+
+  // Capture the click and navigation
+  await screenshots.captureAction('recipe-click', async () => {
+    await recipeCard.click();
+    await page.waitForLoadState('networkidle');
+  });
 
   // Verify we're on a recipe detail page
   await expect(page.locator('h1')).toBeVisible();
@@ -64,33 +90,52 @@ export async function takeSnapshot(page: Page, name: string) {
 
 /**
  * Take a debug screenshot and save it directly to the screenshots/debug directory
+ * Updated to use ScreenshotHelper
  */
-export async function takeDebugScreenshot(page: Page, name: string) {
-  // Ensure filename is safe for all filesystems
-  const safeName = name.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-  const filename = `${safeName}-${new Date().getTime()}.png`;
-  const filePath = path.join(screenshotsDebugDir, filename);
+export async function takeDebugScreenshot(page: Page, name: string, category: string = 'debug') {
+  // Create screenshot helper for debug screenshots
+  const screenshots = new ScreenshotHelper(page, name, category);
 
-  await page.screenshot({ path: filePath });
-  console.log(`Debug screenshot saved to: ${filePath}`);
-  return filePath;
+  // Take the screenshot with a standardized name
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const screenshotPath = await screenshots.take(`debug-${timestamp}`);
+
+  return screenshotPath;
 }
 
 /**
  * Check for common UI elements that should be present in most pages
  */
 export async function verifyCommonElements(page: Page) {
+  // Create screenshot helper for common elements
+  const screenshots = new ScreenshotHelper(page, 'common-elements', 'layout');
+
   // Header/Navigation should be present
-  await expect(page.locator('header')).toBeVisible();
+  const header = page.locator('header');
+  await expect(header).toBeVisible();
+
+  // Capture header screenshot
+  if (await header.isVisible()) {
+    await screenshots.captureElement('header', 'header');
+  }
 
   // Footer should be present
-  await expect(page.locator('footer')).toBeVisible();
+  const footer = page.locator('footer');
+  await expect(footer).toBeVisible();
+
+  // Capture footer screenshot
+  if (await footer.isVisible()) {
+    await screenshots.captureElement('footer', 'footer');
+  }
 }
 
 /**
  * Helper to resize the browser for different device tests
  */
 export async function resizeForDevice(page: Page, device: 'desktop' | 'tablet' | 'mobile') {
+  // Create screenshot helper for responsive testing
+  const screenshots = new ScreenshotHelper(page, `responsive-${device}`, 'responsive');
+
   switch (device) {
     case 'desktop':
       await page.setViewportSize({ width: 1280, height: 800 });
@@ -102,4 +147,7 @@ export async function resizeForDevice(page: Page, device: 'desktop' | 'tablet' |
       await page.setViewportSize({ width: 375, height: 667 });
       break;
   }
+
+  // Take screenshot after resize
+  await screenshots.take(`after-resize-${device}`);
 }

@@ -140,6 +140,28 @@ For detailed instructions, refer to [PREVIEW-TESTING.md](./PREVIEW-TESTING.md).
 
 The project uses Husky to run tests on staged files before commits, helping to ensure that only working code is committed.
 
+## Running Tests
+
+### Unit Tests
+```bash
+# Run all unit tests
+npm run test
+
+# Run unit tests in watch mode
+npm run test:watch
+```
+
+### End-to-End Tests
+```bash
+# RECOMMENDED: Run tests with reduced logging and screenshot summary
+npm run test:e2e:simple
+
+# Run a specific test file
+npm run test:e2e:simple -- auth.spec.ts
+```
+
+See [TESTING.md](./TESTING.md) for more detailed testing instructions.
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.

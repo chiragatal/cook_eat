@@ -1,6 +1,6 @@
-# Cook-Eat End-to-End Tests
+# E2E Testing
 
-This directory contains end-to-end tests for the Cook-Eat application using Playwright.
+This directory contains end-to-end tests using Playwright. These tests verify the functionality of the application by simulating user interactions in a browser environment.
 
 ## Test Design Principles
 
@@ -18,48 +18,96 @@ This directory contains end-to-end tests for the Cook-Eat application using Play
 
 ## Running Tests
 
-### Prerequisites
+Here are the recommended commands for running E2E tests:
 
-1. Create a test database:
+### Primary Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run test:e2e:simple` | **RECOMMENDED**: Run tests with reduced logging and screenshot summary |
+| `npm run test:e2e` | Standard test run with default logging |
+| `npm run test:e2e:min` | Ultra-quiet mode with minimal logging |
+
+### Specific Browsers
+
+| Command | Description |
+|---------|-------------|
+| `npm run test:e2e:chrome` | Run tests in Chrome only |
+| `npm run test:e2e:firefox` | Run tests in Firefox only |
+| `npm run test:e2e:safari` | Run tests in Safari only |
+
+### Debugging
+
+| Command | Description |
+|---------|-------------|
+| `npm run test:e2e:ui` | Run tests with Playwright UI for interactive debugging |
+| `npm run test:e2e:debug` | Run tests with step-by-step debugging |
+
+### Viewing Results
+
+| Command | Description |
+|---------|-------------|
+| `npm run test:view-report` | Open the HTML test report |
+| `npm run test:view-screenshots` | Open the screenshots directory |
+| `npm run test:e2e:view-summary` | View a summary of screenshots taken |
+
+### Running Specific Tests
+
+To run a specific test file:
+
+```bash
+npm run test:e2e:simple -- auth.spec.ts
+```
+
+To run tests with specific filters:
+
+```bash
+npm run test:e2e:simple -- --grep "login page"
+```
+
+## Screenshot Helper
+
+Tests use the `ScreenshotHelper` class to standardize screenshot capture. Examples:
+
+```typescript
+// Create a screenshot helper
+const screenshots = new ScreenshotHelper(page, 'test-name', 'category');
+
+// Take a simple screenshot
+await screenshots.take('page-loaded');
+
+// Take a screenshot of a specific element
+await screenshots.captureElement('#login-form', 'login-form');
+
+// Take before/after screenshots around an action
+await screenshots.captureAction('click-button', async () => {
+  await page.click('#submit-button');
+  await page.waitForTimeout(500);
+});
+```
+
+## Verbosity Levels
+
+Three levels of logging verbosity are available:
+
+1. **Normal Mode**: Shows all test output and screenshots
    ```bash
-   createdb cook_eat_test
+   npm run test:e2e
    ```
 
-2. Set up environment variables in `.env.test`
+2. **Quiet Mode**: Reduces screenshot logging to every 10th screenshot
+   ```bash
+   npm run test:e2e:simple
+   ```
 
-### Commands
+3. **Ultra Quiet Mode**: Completely disables screenshot logging
+   ```bash
+   npm run test:e2e:min
+   ```
 
-- Run all tests:
-  ```bash
-  npm run test:e2e
-  ```
+## Test Database
 
-- Run tests with UI mode:
-  ```bash
-  npm run test:e2e:ui
-  ```
-
-- Run tests in debug mode:
-  ```bash
-  npm run test:e2e:debug
-  ```
-
-- Run tests in specific browsers:
-  ```bash
-  npm run test:e2e:chrome
-  npm run test:e2e:firefox
-  npm run test:e2e:safari
-  npm run test:e2e:mobile
-  ```
-
-- Setup test database manually:
-  ```bash
-  npm run test:setup-db
-  ```
-
-## Test Data Management
-
-Tests use a dedicated database with consistent test data. The data is reset before each test suite runs to ensure tests are reliable and repeatable.
+Tests use a dedicated test/preview database to avoid interfering with production data.
 
 ### Test User Account
 
