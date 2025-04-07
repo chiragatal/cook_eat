@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { ScreenshotHelper } from './utils/screenshot-helper';
+import { takeDebugScreenshot, waitForNetworkIdle } from './utils/test-utils';
 
 test.describe('Authentication flows', () => {
   test('signin page loads correctly', async ({ page }) => {
@@ -7,6 +8,7 @@ test.describe('Authentication flows', () => {
     const screenshots = new ScreenshotHelper(page, 'signin-page', 'auth');
 
     await page.goto('/auth/signin');
+    await waitForNetworkIdle(page);
 
     // Take a screenshot using the helper
     await screenshots.take('initial-view');
@@ -44,6 +46,7 @@ test.describe('Authentication flows', () => {
     const screenshots = new ScreenshotHelper(page, 'signup-page', 'auth');
 
     await page.goto('/auth/signup');
+    await waitForNetworkIdle(page);
 
     // Take a screenshot using the helper
     await screenshots.take('initial-view');
@@ -84,6 +87,10 @@ test.describe('Authentication flows', () => {
     const screenshots = new ScreenshotHelper(page, 'login-error', 'auth');
 
     await page.goto('/auth/signin');
+    await waitForNetworkIdle(page);
+
+    // Take debug screenshot to see the initial state
+    await takeDebugScreenshot(page, 'login-error-initial', 'auth');
 
     // Take an initial screenshot
     await screenshots.take('before-login');
@@ -93,9 +100,18 @@ test.describe('Authentication flows', () => {
     const passwordField = page.locator('input[type="password"], input[name="password"], input[id*="password" i]').first();
     const signinButton = page.locator('button[type="submit"], button:has-text("Sign in"), button:has-text("Login")').first();
 
-    // Skip test if form elements are not found
-    if (!(await emailField.isVisible() && await passwordField.isVisible() && await signinButton.isVisible())) {
-      test.skip(true, 'Could not find all form elements');
+    // Check if form elements are visible
+    const emailVisible = await emailField.isVisible();
+    const passwordVisible = await passwordField.isVisible();
+    const buttonVisible = await signinButton.isVisible();
+
+    // Log the form state
+    console.log(`Form elements: Email visible: ${emailVisible}, Password visible: ${passwordVisible}, Button visible: ${buttonVisible}`);
+
+    // Skip test if we can't find all form elements
+    if (!(emailVisible && passwordVisible && buttonVisible)) {
+      console.log('Could not find all form elements, skipping test');
+      test.skip();
       return;
     }
 
@@ -103,40 +119,84 @@ test.describe('Authentication flows', () => {
     await emailField.fill('nonexistent@example.com');
     await passwordField.fill('wrongpassword');
 
+    // Take screenshot before submission
+    await screenshots.take('filled-form');
+
     // Use the captureAction helper to take before/after screenshots around submission
-    await screenshots.captureAction('form-submission', async () => {
+    const submitResult = await screenshots.captureAction('form-submission', async () => {
+      // Click the button and wait for response
       await signinButton.click();
-      await page.waitForTimeout(1000); // Wait for response
+
+      // Wait for network requests to complete
+      await waitForNetworkIdle(page);
+
+      // Additional wait for any error messages to appear
+      await page.waitForTimeout(1000);
     });
 
-    // Wait for error - either specific text or general error styling
-    const errorText = page.getByText(/invalid|incorrect|wrong|failed|error/i);
-    const errorElement = page.locator('[class*="error" i], [class*="alert" i], [role="alert"]');
+    // Check if submission had errors
+    if (submitResult.error) {
+      console.log(`Error during form submission: ${submitResult.error}`);
+      await screenshots.captureError(`Form submission error: ${submitResult.error}`);
+    }
 
-    try {
-      // Try waiting for specific error text first
-      await errorText.waitFor({ timeout: 5000 });
-      await expect(errorText).toBeVisible();
+    // Take debug screenshot to see the state after submission
+    await takeDebugScreenshot(page, 'login-error-after-submit', 'auth');
 
-      // Capture screenshot of the error message
-      await screenshots.captureElement(errorText, 'error-message');
-    } catch (e) {
-      // Fall back to checking for general error styling
-      try {
-        await errorElement.waitFor({ timeout: 5000 });
-        await expect(errorElement).toBeVisible();
+    // Check for errors in multiple ways to be resilient
+    // 1. Look for error messages with various selectors
+    const errorSelectors = [
+      '[role="alert"]',
+      '.error',
+      '[class*="error"]',
+      '.form-error',
+      '.alert',
+      '[class*="alert"]',
+      'p:has-text("Invalid")',
+      'p:has-text("incorrect")',
+      'p:has-text("wrong")',
+      'div:has-text("Invalid")',
+      'span:has-text("Invalid")'
+    ];
 
-        // Capture screenshot of the error element
-        await screenshots.captureElement(errorElement, 'error-styling');
-      } catch (e2) {
-        // Take a screenshot of the failed state
-        await screenshots.take('error-not-found');
-        console.log('Could not find error message, checking if still on login page');
+    let errorFound = false;
+    let errorMessage = '';
 
-        // Check if we're still on the login page and the form is still visible
-        const stillOnLoginPage = await emailField.isVisible() && await passwordField.isVisible();
-        expect(stillOnLoginPage).toBeTruthy();
+    // Try each error selector
+    for (const selector of errorSelectors) {
+      const errorElement = page.locator(selector).first();
+      const isVisible = await errorElement.isVisible().catch(() => false);
+
+      if (isVisible) {
+        errorFound = true;
+        errorMessage = await errorElement.textContent() || 'Unknown error';
+        console.log(`Found error with selector "${selector}": "${errorMessage}"`);
+        await screenshots.captureElement(errorElement, 'error-element');
+        break;
       }
+    }
+
+    // 2. Check if we're still on the login page (this is also a valid outcome)
+    const currentUrl = page.url();
+    const stillOnLoginPage =
+      (currentUrl.includes('/auth/signin') || currentUrl.includes('/auth/login')) &&
+      (await emailField.isVisible() || await passwordField.isVisible());
+
+    console.log(`Current URL: ${currentUrl}, Still on login page: ${stillOnLoginPage}`);
+
+    // The test should pass if either:
+    // - We found an error message, OR
+    // - We're still on the login page (didn't redirect)
+    if (errorFound) {
+      console.log(`Login error display test passed: Found error message "${errorMessage}"`);
+    } else if (stillOnLoginPage) {
+      console.log(`Login error display test passed: Still on login page after submission`);
+      await screenshots.take('no-visible-error-but-no-redirect');
+    } else {
+      console.log(`Login error display test failed: No error message found and redirected away from login page`);
+      await screenshots.captureError('No error message found');
+      // Only fail the test if neither condition is met
+      expect(errorFound || stillOnLoginPage).toBeTruthy();
     }
   });
 
@@ -148,6 +208,10 @@ test.describe('Authentication flows', () => {
     await page.setViewportSize({ width: 375, height: 667 });
 
     await page.goto('/auth/signin');
+    await waitForNetworkIdle(page);
+
+    // Take debug screenshot
+    await takeDebugScreenshot(page, 'mobile-login-initial', 'auth');
 
     // Wait for the page to load
     await page.waitForLoadState('domcontentloaded');

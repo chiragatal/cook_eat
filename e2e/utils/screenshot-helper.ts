@@ -67,20 +67,32 @@ export class ScreenshotHelper {
       const options = { path: screenshotPath, fullPage: !element };
 
       if (element) {
-        // Convert string selector to locator if needed
-        const elementLocator = typeof element === 'string'
-          ? this.page.locator(element).first()
-          : element;
+        try {
+          // Convert string selector to locator if needed
+          const elementLocator = typeof element === 'string'
+            ? this.page.locator(element).first()
+            : element;
 
-        // Only take screenshot if element is visible
-        const isVisible = await elementLocator.isVisible();
-        if (isVisible) {
-          await elementLocator.screenshot(options);
-        } else {
-          if (process.env.E2E_QUIET_MODE !== 'true') {
-            console.log(`Element for screenshot '${label}' not visible, skipping`);
+          // Check if element is visible before taking screenshot
+          const isVisible = await elementLocator.isVisible().catch(() => false);
+
+          if (isVisible) {
+            await elementLocator.screenshot(options).catch(async (error) => {
+              // If we got an error for the element screenshot, fall back to page
+              console.log(`Error taking element screenshot: ${error.message}`);
+              console.log('Falling back to page screenshot');
+              await this.page.screenshot(options);
+            });
+          } else {
+            console.log(`Element for screenshot '${label}' not visible, taking page screenshot instead`);
+            await this.page.screenshot(options);
+            return `${screenshotPath}-fallback-page`;
           }
-          return 'element-not-visible';
+        } catch (elementError) {
+          console.log(`Error with element for screenshot '${label}': ${elementError instanceof Error ? elementError.message : String(elementError)}`);
+          console.log('Falling back to page screenshot');
+          await this.page.screenshot(options);
+          return `${screenshotPath}-fallback-page`;
         }
       } else {
         await this.page.screenshot(options);
@@ -102,10 +114,17 @@ export class ScreenshotHelper {
 
       return screenshotPath;
     } catch (error: any) {
-      if (process.env.E2E_QUIET_MODE !== 'true') {
-        console.error(`Error taking screenshot '${label}':`, error.message);
+      console.error(`Error taking screenshot '${label}':`, error.message);
+
+      // Try to take a simple screenshot as fallback
+      try {
+        const fallbackPath = path.join(this.screenshotsDir, `${this.testName}-fallback-${timestamp}.png`);
+        await this.page.screenshot({ path: fallbackPath });
+        console.log(`Fallback screenshot saved: ${fallbackPath}`);
+        return fallbackPath;
+      } catch {
+        return 'screenshot-error-with-failed-fallback';
       }
-      return 'screenshot-error';
     }
   }
 
@@ -116,31 +135,39 @@ export class ScreenshotHelper {
    * @param action Function to execute between screenshots
    * @returns Object containing paths to before and after screenshots
    */
-  async captureAction(actionName: string, action: () => Promise<void>): Promise<{before: string, after: string}> {
+  async captureAction(actionName: string, action: () => Promise<void>): Promise<{before: string, after: string, error?: string}> {
     // Skip if in ultra-quiet mode
     if (process.env.E2E_ULTRA_QUIET_MODE === 'true') {
-      await action();
-      return { before: 'skipped', after: 'skipped' };
+      try {
+        await action();
+        return { before: 'skipped', after: 'skipped' };
+      } catch (error: any) {
+        return { before: 'skipped', after: 'skipped', error: error.message };
+      }
     }
 
     let before = 'skipped';
     let after = 'skipped';
+    let errorScreenshot = '';
 
     try {
       before = await this.take(`before-${actionName}`);
       await action();
       after = await this.take(`after-${actionName}`);
     } catch (error: any) {
-      // Only log if not in quiet mode
-      if (process.env.E2E_QUIET_MODE !== 'true') {
-        console.error(`Error during action capture '${actionName}':`, error.message);
-      }
+      // Log the error regardless of quiet mode for action failures
+      console.error(`Error during action '${actionName}':`, error.message);
+
       // Try to take an "error" screenshot
       try {
-        await this.take(`error-${actionName}`);
-      } catch {
-        // Ignore error taking the error screenshot
+        errorScreenshot = await this.take(`error-${actionName}`);
+        console.log(`Captured error state in screenshot: ${errorScreenshot}`);
+      } catch (screenshotError) {
+        console.error(`Failed to take error screenshot: ${screenshotError instanceof Error ? screenshotError.message : String(screenshotError)}`);
       }
+
+      // Return error details
+      return { before, after, error: error.message };
     }
 
     return { before, after };
@@ -152,20 +179,38 @@ export class ScreenshotHelper {
    * @param formSelector Selector for the form or submit button
    * @returns Object containing paths to before and after screenshots
    */
-  async captureFormSubmission(formSelector: string): Promise<{before: string, after: string}> {
+  async captureFormSubmission(formSelector: string): Promise<{before: string, after: string, error?: string}> {
     // Skip if in ultra-quiet mode
     if (process.env.E2E_ULTRA_QUIET_MODE === 'true') {
-      const submitButton = this.page.locator(formSelector);
-      await submitButton.click();
-      await this.page.waitForTimeout(1000); // Wait for response
-      return { before: 'skipped', after: 'skipped' };
+      try {
+        const submitButton = this.page.locator(formSelector);
+        await submitButton.click();
+        await this.page.waitForTimeout(1000); // Wait for response
+        return { before: 'skipped', after: 'skipped' };
+      } catch (error: any) {
+        return { before: 'skipped', after: 'skipped', error: error.message };
+      }
     }
 
     let before = 'skipped';
     let after = 'skipped';
+    let errorScreenshot = '';
 
     try {
-      const submitButton = this.page.locator(formSelector);
+      // Try to find the form or submit button with more resilient approach
+      let submitButton;
+
+      try {
+        // First try the exact selector
+        submitButton = this.page.locator(formSelector);
+        if (!(await submitButton.isVisible())) {
+          // Fall back to more generic selectors if the specific one isn't visible
+          submitButton = this.page.locator('button[type="submit"], input[type="submit"], [role="button"]:has-text("Submit")').first();
+        }
+      } catch {
+        // If first attempt fails, fall back to generic submit buttons
+        submitButton = this.page.locator('button[type="submit"], input[type="submit"], [role="button"]:has-text("Submit")').first();
+      }
 
       // Take before screenshot
       before = await this.take('before-submit');
@@ -177,16 +222,18 @@ export class ScreenshotHelper {
       // Take after screenshot
       after = await this.take('after-submit');
     } catch (error: any) {
-      // Only log if not in quiet mode
-      if (process.env.E2E_QUIET_MODE !== 'true') {
-        console.error(`Error during form submission:`, error.message);
-      }
+      // Log error regardless of quiet mode for form submission failures
+      console.error(`Error during form submission:`, error.message);
+
       // Try to take an error screenshot
       try {
-        await this.take('error-submit');
+        errorScreenshot = await this.take('error-submit');
+        console.log(`Captured form submission error in screenshot: ${errorScreenshot}`);
       } catch {
         // Ignore error taking the error screenshot
       }
+
+      return { before, after, error: error.message };
     }
 
     return { before, after };
@@ -205,14 +252,58 @@ export class ScreenshotHelper {
     }
 
     try {
-      // Take screenshot using the more resilient take method
-      return await this.take(`element-${label}`, selector);
+      // Use the more resilient take method which handles errors internally
+      const path = await this.take(`element-${label}`, selector);
+      return path;
     } catch (error: any) {
-      // Only log if not in quiet mode
-      if (process.env.E2E_QUIET_MODE !== 'true') {
-        console.error(`Error capturing element for '${label}':`, error.message);
+      console.error(`Error capturing element for '${label}':`, error.message);
+
+      // Try to take a screenshot of the page as fallback
+      try {
+        const fallbackPath = await this.take(`element-fallback-${label}`);
+        console.log(`Took fallback page screenshot instead of element: ${fallbackPath}`);
+        return fallbackPath;
+      } catch {
+        return null;
       }
-      return null;
     }
+  }
+
+  /**
+   * Capture current page state with error information
+   * Useful when a test encounters an unexpected state
+   *
+   * @param errorMessage Description of the error
+   * @returns Path to the error screenshot
+   */
+  async captureError(errorMessage: string): Promise<string> {
+    // Create an error marker for screenshot name
+    const safeErrorId = errorMessage.substring(0, 20)
+      .replace(/[^a-z0-9]/gi, '-')
+      .toLowerCase();
+
+    // Take a screenshot with the error message
+    const screenshotPath = await this.take(`error-${safeErrorId}`);
+
+    // Also save the error details to a text file
+    const timestamp = new Date().toISOString().replace(/:/g, '-');
+    const errorFilePath = path.join(this.screenshotsDir, `${this.testName}-error-${timestamp}.txt`);
+
+    // Include current URL and page title for debugging
+    let errorDetails = `Error: ${errorMessage}\n`;
+    errorDetails += `URL: ${this.page.url()}\n`;
+
+    try {
+      errorDetails += `Title: ${await this.page.title()}\n`;
+      errorDetails += `Time: ${new Date().toISOString()}\n`;
+      errorDetails += `Screenshot: ${screenshotPath}\n`;
+
+      // Save error details
+      fs.writeFileSync(errorFilePath, errorDetails);
+    } catch (e) {
+      console.error(`Failed to save detailed error info: ${e}`);
+    }
+
+    return screenshotPath;
   }
 }

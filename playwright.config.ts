@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '.env.test' });
 
 // Set base URL from environment or default to localhost
-const baseURL = process.env.TEST_BASE_URL || 'http://localhost:3000';
+let baseURL = process.env.TEST_BASE_URL || 'http://localhost:3000';
 
 // Check if we should use a local frontend for testing
 const useLocalFrontend = process.env.USE_LOCAL_FRONTEND === 'true';
@@ -60,6 +60,10 @@ export default defineConfig({
 
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
+
+  /* Only look for tests in the e2e directory */
+  testDir: './e2e',
+  testMatch: '**/*.spec.ts',
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
@@ -142,13 +146,11 @@ export default defineConfig({
     screenshot: {
       mode: 'on',
       fullPage: true,
-      path: join(artifactsDir, 'screenshots'),
     },
 
     // Store videos in artifacts directory
     video: recordVideo ? {
       mode: 'on-first-retry',
-      path: join(artifactsDir, 'videos'),
     } : 'off',
   },
 
@@ -157,13 +159,13 @@ export default defineConfig({
     command: 'npm run dev',
     url: baseURL,
     reuseExistingServer: !process.env.CI,
-    stderr: ultraQuietMode ? 'pipe' : 'inherit',
-    stdout: ultraQuietMode ? 'pipe' : 'inherit',
+    stderr: ultraQuietMode ? 'pipe' : 'pipe',
+    stdout: ultraQuietMode ? 'pipe' : 'pipe',
     env: {
       ...process.env,
       NEXT_TELEMETRY_DISABLED: '1',
       LOG_LEVEL: ultraQuietMode ? 'error' : (quietMode ? 'warn' : 'info'),
-      DATABASE_URL: process.env.TEST_DATABASE_URL,
+      DATABASE_URL: process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || '',
       TEST_MODE: 'true',
       USE_PREVIEW_DATABASE: String(usePreviewDatabase)
     }

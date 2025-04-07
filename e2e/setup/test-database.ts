@@ -11,7 +11,7 @@ const usePreviewDatabase = process.env.USE_PREVIEW_DATABASE === 'true';
 const quietMode = process.env.E2E_QUIET_MODE === 'true';
 
 // Determine the correct database URL with schema
-const baseDbUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
+const baseDbUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || '';
 // Ensure the URL includes the test_e2e schema
 const databaseUrl = baseDbUrl.includes('schema=test_e2e') ?
   baseDbUrl :
@@ -36,9 +36,12 @@ const logLevel = process.env.PRISMA_LOG_LEVEL || (quietMode ? 'error' : 'info');
 const prisma = new PrismaClient({
   datasourceUrl: databaseUrl,
   log: [
-    { level: 'error', emit: 'stdout' },
-    ...(logLevel !== 'error' ? [{ level: 'warn', emit: 'stdout' }] : []),
-    ...(logLevel === 'info' ? [{ level: 'info', emit: 'stdout' }, { level: 'query', emit: 'stdout' }] : []),
+    { level: 'error' as const, emit: 'stdout' as const },
+    ...(logLevel !== 'error' ? [{ level: 'warn' as const, emit: 'stdout' as const }] : []),
+    ...(logLevel === 'info' ? [
+      { level: 'info' as const, emit: 'stdout' as const },
+      { level: 'query' as const, emit: 'stdout' as const }
+    ] : []),
   ],
 });
 
@@ -84,11 +87,11 @@ async function tableExists(tableName: string): Promise<boolean> {
       );
     `;
 
-    const result = await prisma.$queryRawUnsafe(query);
+    const result = await prisma.$queryRawUnsafe(query) as Array<{exists: boolean}>;
     return result[0]?.exists || false;
   } catch (error) {
     if (!quietMode) {
-      console.log(`Error checking if table exists: ${error}`);
+      console.log(`Error checking if table exists: ${String(error)}`);
     }
     return false;
   }
@@ -104,7 +107,7 @@ async function safeUpsert(model: any, modelName: string, args: any) {
   } catch (error) {
     // Don't log in quiet mode
     if (!quietMode) {
-      console.log(`Could not create ${modelName} test data: ${error.message}`);
+      console.log(`Could not create ${modelName} test data: ${error instanceof Error ? error.message : String(error)}`);
     }
     return false;
   }
@@ -158,7 +161,7 @@ export async function setupTestDatabase() {
       console.log('Test database setup complete');
     }
   } catch (error) {
-    console.error('Error setting up test database:', error.message);
+    console.error('Error setting up test database:', error instanceof Error ? error.message : String(error));
   }
 }
 
