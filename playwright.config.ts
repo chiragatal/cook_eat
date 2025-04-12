@@ -65,7 +65,10 @@ export default defineConfig({
     ['list', { printSteps: !quietMode, printFailureReasons: true }],
 
     // Always generate HTML report for later viewing
-    ['html', { outputFolder: 'test-results/latest/html-report', open: 'never' }]
+    ['html', { outputFolder: 'test-results/latest/html-report', open: 'never' }],
+
+    // Use our custom reporter to attach screenshots to the HTML report
+    ['./e2e/custom-reporter.ts']
   ],
 
   /* Set up global setup that runs before all tests */
@@ -78,7 +81,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         screenshot: takeScreenshots ? 'on' : 'off',
-        video: recordVideo ? 'on-first-retry' : 'off',
+        video: recordVideo ? 'on' : 'off',
         trace: 'on-first-retry',
       },
     },
@@ -87,7 +90,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Firefox'],
         screenshot: takeScreenshots ? 'on' : 'off',
-        video: recordVideo ? 'on-first-retry' : 'off',
+        video: recordVideo ? 'on' : 'off',
         trace: 'on-first-retry',
       },
     },
@@ -96,7 +99,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Safari'],
         screenshot: takeScreenshots ? 'on' : 'off',
-        video: recordVideo ? 'on-first-retry' : 'off',
+        video: recordVideo ? 'on' : 'off',
         trace: 'on-first-retry',
       },
     },
@@ -105,7 +108,7 @@ export default defineConfig({
       use: {
         ...devices['Pixel 5'],
         screenshot: takeScreenshots ? 'on' : 'off',
-        video: recordVideo ? 'on-first-retry' : 'off',
+        video: recordVideo ? 'on' : 'off',
         trace: 'on-first-retry',
       },
     },
@@ -114,7 +117,7 @@ export default defineConfig({
       use: {
         ...devices['iPhone 13'],
         screenshot: takeScreenshots ? 'on' : 'off',
-        video: recordVideo ? 'on-first-retry' : 'off',
+        video: recordVideo ? 'on' : 'off',
         trace: 'on-first-retry',
       },
     },
@@ -142,7 +145,7 @@ export default defineConfig({
 
     // Store videos in artifacts directory
     video: recordVideo ? {
-      mode: 'on-first-retry',
+      mode: 'on',
     } : 'off',
   },
 

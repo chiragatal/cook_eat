@@ -297,6 +297,9 @@ test.describe('Complete Recipe Journey', () => {
     // Create screenshot helper
     const screenshots = new ScreenshotHelper(page, 'complete-journey', 'e2e');
 
+    // Set a unique test ID for associating all screenshots with this test run
+    screenshots.setTestId(`recipe-journey-${Date.now()}`);
+
     try {
       // Log in first
       await loginAsTestUser(page);
