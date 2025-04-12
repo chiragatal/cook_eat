@@ -16,6 +16,7 @@ const env = {
   ...process.env,
   E2E_QUIET_MODE: quietMode ? 'true' : 'false',
   PLAYWRIGHT_SCREENSHOTS: 'on',
+  TEST_BASE_URL: 'https://cook-eat-preview.vercel.app',
   // This skips any Jest tests by setting a Jest worker ID
   JEST_WORKER_ID: 'playwright-only'
 };
@@ -32,12 +33,12 @@ if (args.length > 0) {
   commandArgs.push('--project=chromium');
 }
 
-console.log(`Using test base URL: ${process.env.TEST_BASE_URL || 'http://localhost:3000'}`);
-console.log(`Using preview database: ${process.env.USE_PREVIEW_DATABASE === 'true' ? 'YES' : 'NO'}`);
+console.log(`Using test base URL: https://cook-eat-preview.vercel.app`);
+console.log(`Using preview database: YES`);
 console.log(`Quiet mode: ${quietMode ? 'YES' : 'NO'}`);
 console.log(`Screenshots enabled: ${env.PLAYWRIGHT_SCREENSHOTS === 'on' ? 'YES' : 'NO'}`);
 console.log(`Video recording enabled: ${env.PLAYWRIGHT_VIDEO === 'on' ? 'YES' : 'NO'}`);
-console.log(`Starting local web server: ${process.env.USE_LOCAL_SERVER !== 'false' ? 'YES' : 'NO'}`);
+console.log(`Starting local web server: NO`);
 
 // Run the command
 const result = spawnSync(command, commandArgs, {

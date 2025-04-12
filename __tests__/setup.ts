@@ -53,7 +53,7 @@ Object.defineProperty(window, 'location', {
     assign: jest.fn(),
     replace: jest.fn(),
     reload: jest.fn(),
-    href: 'http://localhost:3000/',
+    href: 'https://cook-eat-preview.vercel.app/',
   },
 });
 

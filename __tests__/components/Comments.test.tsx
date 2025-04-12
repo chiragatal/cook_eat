@@ -28,7 +28,7 @@ global.fetch = jest.fn();
 // Mock window.location.href for the sign-in link
 Object.defineProperty(window, 'location', {
   value: {
-    href: 'http://localhost:3000/recipe/123',
+    href: 'https://cook-eat-preview.vercel.app/recipe/123',
   },
   writable: true,
 });

@@ -16,6 +16,7 @@ const env = {
   ...process.env,
   E2E_QUIET_MODE: quietMode ? 'true' : 'false',
   PLAYWRIGHT_SCREENSHOTS: 'on',
+  TEST_BASE_URL: 'https://cook-eat-preview.vercel.app',
 };
 
 // Construct the command - force running within the e2e folder
@@ -33,8 +34,8 @@ if (!args.some(arg => arg.includes('--project'))) {
 }
 
 // We need to run the command directly with npx
-console.log(`Using test base URL: ${process.env.TEST_BASE_URL || 'http://localhost:3000'}`);
-console.log(`Using preview database: ${process.env.USE_PREVIEW_DATABASE === 'true' ? 'YES' : 'NO'}`);
+console.log(`Using test base URL: https://cook-eat-preview.vercel.app`);
+console.log(`Using preview database: YES`);
 console.log(`Quiet mode: ${quietMode ? 'YES' : 'NO'}`);
 console.log(`Screenshots enabled: ${env.PLAYWRIGHT_SCREENSHOTS === 'on' ? 'YES' : 'NO'}`);
 console.log(`Running command: npx playwright test ${testFiles.join(' ')}`);

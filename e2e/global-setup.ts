@@ -20,15 +20,13 @@ async function globalSetup(config: FullConfig) {
     console.log('Starting global setup...');
   }
 
-  // Check configuration
-  const useLocalFrontend = process.env.USE_LOCAL_FRONTEND === 'true';
-  const usePreviewDatabase = process.env.USE_PREVIEW_DATABASE === 'true';
+  // Always use preview settings
+  const usePreviewDatabase = true;
 
   if (!quietMode) {
-    console.log(`Using local frontend: ${useLocalFrontend ? 'YES' : 'NO'}`);
-    console.log(`Using preview database: ${usePreviewDatabase ? 'YES' : 'NO'}`);
+    console.log('Using preview database: YES');
   } else {
-    console.log(`[Setup] Using local frontend: ${useLocalFrontend ? 'YES' : 'NO'}, preview database: ${usePreviewDatabase ? 'YES' : 'NO'}`);
+    console.log('[Setup] Using preview database: YES');
   }
 
   // Set up test database
@@ -49,35 +47,15 @@ async function globalSetup(config: FullConfig) {
   }
 
   const authFile = path.join(authDir, 'auth-state.json');
-  const baseURL = process.env.TEST_BASE_URL || 'http://localhost:3000';
+  const baseURL = 'https://cook-eat-preview.vercel.app';
 
   if (!quietMode) {
     console.log(`Using base URL: ${baseURL}`);
   }
 
-  // Check if we're testing against localhost - no Vercel auth needed
-  const isLocalTesting = baseURL.includes('localhost') || useLocalFrontend;
-
-  if (isLocalTesting) {
-    if (!quietMode) {
-      console.log('Local testing detected. Skipping Vercel authentication.');
-    }
-
-    // Create empty auth state for local testing
-    if (!fs.existsSync(authFile)) {
-      const emptyAuthState = { cookies: [], origins: [] };
-      fs.writeFileSync(authFile, JSON.stringify(emptyAuthState));
-      if (!quietMode) {
-        console.log('Created empty auth state file for local testing');
-      }
-    }
-
-    return;
-  }
-
-  // Only do Vercel auth for non-local testing (preview URLs)
+  // Always perform Vercel auth for preview URL
   if (!quietMode) {
-    console.log('Preview URL testing detected. Will check for Vercel authentication.');
+    console.log('Preview URL testing configured. Will check for Vercel authentication.');
   }
 
   // Launch a browser
