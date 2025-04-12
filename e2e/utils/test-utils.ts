@@ -22,15 +22,25 @@ export async function loginAsTestUser(page: Page) {
   // Create screenshot helper for login
   const screenshots = new ScreenshotHelper(page, 'login-test-user', 'auth');
 
-  await page.goto('/auth/login');
+  await page.goto('/auth/signin');
   await screenshots.take('login-page');
 
-  await page.fill('input[name="email"]', 'test@example.com');
-  await page.fill('input[name="password"]', 'password12345');
+  // Wait for elements to be available with a timeout
+  await page.waitForSelector('input[type="email"], input[name="email"], input[placeholder*="email" i]', { timeout: 5000 })
+    .catch(() => console.log('Email input not found, trying alternative selectors'));
+
+  // More flexible selectors to find inputs
+  const emailField = page.locator('input[type="email"], input[name="email"], input[placeholder*="email" i]').first();
+  const passwordField = page.locator('input[type="password"], input[name="password"], input[placeholder*="password" i]').first();
+  const signinButton = page.locator('button[type="submit"], button:has-text("Sign in"), button:has-text("Login")').first();
+
+  // Fill in credentials with better error handling
+  await emailField.fill('test@example.com');
+  await passwordField.fill('password12345');
 
   // Capture the form submission with before/after screenshots
   await screenshots.captureAction('login-submission', async () => {
-    await page.click('button[type="submit"]');
+    await signinButton.click();
     await page.waitForURL('**/*');
   });
 }
