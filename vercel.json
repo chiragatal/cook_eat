@@ -6,5 +6,7 @@
   "outputDirectory": ".next",
   "env": {
     "PRISMA_ENGINE_TYPE": "binary"
-  }
+  },
+  "protection": false,
+  "public": true
 }
