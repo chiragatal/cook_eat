@@ -1,122 +1,207 @@
 import { test, expect } from '@playwright/test';
 import { ScreenshotHelper } from './utils/screenshot-helper';
-import { takeDebugScreenshot, waitForNetworkIdle } from './utils/test-utils';
+import {
+  resetDatabase,
+  verifyCommonElements,
+  resizeForDevice,
+  waitForNetworkIdle,
+  takeDebugScreenshot,
+  loginAsTestUser
+} from './utils/test-utils';
 
-test('home page loads successfully', async ({ page }) => {
-  // Create screenshot helper
-  const screenshots = new ScreenshotHelper(page, 'home-page', 'home');
-
-  await page.goto('/');
-
-  // Wait for the page to be fully loaded
-  await waitForNetworkIdle(page);
-
-  // Take a debug screenshot
-  await takeDebugScreenshot(page, 'home-debug', 'home');
-
-  // Check that the page has loaded with extended timeout
-  await expect(page.locator('body')).toBeVisible({ timeout: 10000 });
-
-  // Take screenshot using helper
-  await screenshots.take('initial-view');
-
-  // Check that the page has content
-  await expect(page.locator('body')).not.toBeEmpty();
-
-  // Look for common home page elements with flexible selectors
-  const navbar = page.locator('nav, header, [role="navigation"], div[class*="navbar"], div[class*="header"]').first();
-  const logo = page.getByText(/cook.?eat/i).or(page.locator('header img, nav img, a img, svg')).first();
-  const mainContent = page.locator('main, [role="main"], article, section, div[class*="content"], div[class*="container"]').first();
-
-  // Capture navbar if found
-  if (await navbar.isVisible()) {
-    await screenshots.captureElement(navbar, 'navbar');
-    await expect(navbar).toBeVisible();
-  } else {
-    console.log('Navigation bar not found with standard selectors');
-  }
-
-  // Capture logo if found
-  if (await logo.isVisible()) {
-    await screenshots.captureElement(logo, 'logo');
-    await expect(logo).toBeVisible();
-  } else {
-    console.log('Logo not found with standard selectors');
-  }
-
-  // Capture main content
-  if (await mainContent.isVisible()) {
-    await screenshots.captureElement(mainContent, 'main-content');
-    await expect(mainContent).toBeVisible();
-  } else {
-    // If we can't find main content, just check for any meaningful content
-    const anyContent = page.locator('div:not(:empty)');
-    await expect(anyContent.first()).toBeVisible();
-    console.log('Main content not found with standard selectors, but page has content');
-  }
-});
-
-test('navigation links work correctly', async ({ page }) => {
-  // Create screenshot helper
-  const screenshots = new ScreenshotHelper(page, 'navigation', 'home');
-
-  await page.goto('/');
-
-  // Wait for the page to be fully loaded
-  await waitForNetworkIdle(page);
-
-  // Take initial screenshot
-  await screenshots.take('before-navigation');
-
-  // Find navigation links with more flexible selectors
-  const navLinks = page.locator([
-    'nav a',
-    'header a',
-    '[role="navigation"] a',
-    'a[href="/recipes"]',
-    'a[href="/all-recipes"]',
-    'a[href="/my-recipes"]',
-    'a:has-text("Recipe")',
-    'a:has-text("Home")',
-    'a:has-text("Cook")',
-    'a:has-text("Eat")'
-  ].join(', '));
-
-  // Count available links
-  const linkCount = await navLinks.count();
-  console.log(`Found ${linkCount} potential navigation links`);
-
-  // Capture first navigation link if found
-  if (linkCount > 0) {
-    await screenshots.captureElement(navLinks.first(), 'nav-link');
-  }
-
-  // Skip test if we can't find navigation links
-  if (linkCount === 0) {
-    console.log('Navigation links not found, skipping test');
-    test.skip();
-    return;
-  }
-
-  // Get the href of the first link
-  const firstLinkHref = await navLinks.first().getAttribute('href');
-  console.log(`Clicking link with href: ${firstLinkHref}`);
-
-  // Capture the navigation action
-  await screenshots.captureAction('nav-link-click', async () => {
-    // Click on the link and check navigation
-    await navLinks.first().click();
-
-    // Wait for navigation to complete
-    await waitForNetworkIdle(page);
+test.describe('Home Page', () => {
+  // Reset database before running tests
+  test.beforeAll(async () => {
+    await resetDatabase();
   });
 
-  // Take screenshot after navigation
-  await screenshots.take('after-navigation');
+  test('home page loads correctly', async ({ page }) => {
+    // Create screenshot helper
+    const screenshots = new ScreenshotHelper(page, 'home-page', 'home');
 
-  // Verify the page loaded some content
-  const content = page.locator('div:not(:empty)');
-  await expect(content.first()).toBeVisible();
+    // Navigate to home page
+    await page.goto('/');
+    await waitForNetworkIdle(page);
+
+    // Take screenshot of the home page
+    await screenshots.take('home-page-initial');
+
+    // Verify header/navigation is visible
+    const header = page.locator('header, nav, .navigation');
+    if (await header.isVisible()) {
+      await screenshots.captureElement('header, nav, .navigation', 'header');
+      console.log('Header is visible');
+    } else {
+      console.log('Header not found');
+    }
+
+    // Check if hero/welcome section exists
+    const heroSection = page.locator('.hero, section:first-child, main > div:first-child');
+
+    if (await heroSection.isVisible()) {
+      await screenshots.captureElement('.hero, section:first-child, main > div:first-child', 'hero-section');
+      console.log('Hero section is visible');
+
+      // Look for headings in the hero section
+      const heading = heroSection.locator('h1, h2').first();
+      if (await heading.isVisible()) {
+        const headingText = await heading.textContent();
+        console.log(`Found heading: "${headingText}"`);
+      }
+    } else {
+      console.log('Hero section not found');
+    }
+
+    // Check for main content area
+    const mainContent = page.locator('main');
+    await expect(mainContent).toBeVisible();
+    await screenshots.captureElement('main', 'main-content');
+
+    // Check for footer
+    const footer = page.locator('footer');
+    if (await footer.isVisible()) {
+      await screenshots.captureElement('footer', 'footer');
+      console.log('Footer is visible');
+    } else {
+      console.log('Footer not found');
+    }
+  });
+
+  test('home page loads content when logged in', async ({ page }) => {
+    // Create screenshot helper
+    const screenshots = new ScreenshotHelper(page, 'home-logged-in', 'home');
+
+    // Login as test user
+    await loginAsTestUser(page);
+
+    // Navigate to home page
+    await page.goto('/');
+    await waitForNetworkIdle(page);
+
+    // Take screenshot of the home page when logged in
+    await screenshots.take('home-page-logged-in');
+
+    // Verify user-specific content is visible
+    const userGreeting = page.locator('text=Welcome back, text="Test User"');
+
+    // Check for any user-specific elements
+    const userSpecificElements = [
+      page.locator('text="My Recipes"'),
+      page.locator('text="Favorites"'),
+      page.locator('text="Profile"'),
+      page.locator('.user-menu, .profile-icon, [data-testid="user-menu"]')
+    ];
+
+    let foundUserSpecificContent = false;
+
+    for (const element of userSpecificElements) {
+      if (await element.isVisible().catch(() => false)) {
+        foundUserSpecificContent = true;
+        await screenshots.captureElement(element, 'user-specific-content');
+        const elementText = await element.textContent();
+        console.log(`Found user-specific content: "${elementText}"`);
+        break;
+      }
+    }
+
+    if (!foundUserSpecificContent) {
+      console.log('No user-specific content found, but user is logged in');
+    }
+
+    // Look for recipe cards or content specific to authenticated users
+    const recipeSection = page.locator('.recipe-list, .recipes-container, section:has(.recipe-card)').first();
+
+    if (await recipeSection.isVisible()) {
+      await screenshots.captureElement(recipeSection, 'recipe-section');
+      console.log('Recipe section is visible');
+
+      // Count recipe cards if they exist
+      const recipeCards = page.locator('.recipe-card, article');
+      const cardCount = await recipeCards.count();
+      console.log(`Found ${cardCount} recipe cards`);
+
+      if (cardCount > 0) {
+        await screenshots.captureElement('.recipe-card, article', 'recipe-card');
+      }
+    } else {
+      console.log('No recipe section found');
+    }
+  });
+
+  test('navigation menu works', async ({ page }) => {
+    // Create screenshot helper
+    const screenshots = new ScreenshotHelper(page, 'navigation', 'home');
+
+    // Login as test user
+    await loginAsTestUser(page);
+
+    // Navigate to home page
+    await page.goto('/');
+    await waitForNetworkIdle(page);
+
+    // Take screenshot of initial state
+    await screenshots.take('before-navigation');
+
+    // Look for main navigation links
+    const navLinks = page.locator('nav a, header a');
+    const linkCount = await navLinks.count();
+
+    if (linkCount === 0) {
+      console.log('No navigation links found, skipping test');
+      test.skip();
+      return;
+    }
+
+    console.log(`Found ${linkCount} navigation links`);
+
+    // Find a link to recipes or all recipes
+    const recipesLink = page.locator('a:has-text("Recipes"), a:has-text("All Recipes")').first();
+
+    if (!(await recipesLink.isVisible().catch(() => false))) {
+      console.log('Recipes link not found, trying to find any clickable navigation link');
+      // Try to find any navigation link as fallback
+      const anyLink = navLinks.first();
+      if (await anyLink.isVisible()) {
+        const linkText = await anyLink.textContent();
+        console.log(`Using alternative link: "${linkText}"`);
+
+        // Click the link
+        await screenshots.captureAction('click-nav-link', async () => {
+          await anyLink.click();
+          await waitForNetworkIdle(page);
+        });
+
+        // Take screenshot after navigation
+        await screenshots.take('after-navigation');
+
+        // Verify page has changed
+        const currentUrl = page.url();
+        expect(currentUrl).not.toEqual('/');
+        console.log(`Navigated to: ${currentUrl}`);
+      } else {
+        console.log('No clickable navigation links found, skipping test');
+        test.skip();
+      }
+      return;
+    }
+
+    // Capture recipes link
+    await screenshots.captureElement(recipesLink, 'recipes-link');
+
+    // Click recipes link
+    await screenshots.captureAction('click-recipes-link', async () => {
+      await recipesLink.click();
+      await waitForNetworkIdle(page);
+    });
+
+    // Take screenshot after navigation
+    await screenshots.take('recipes-page');
+
+    // Verify we're on recipes page
+    const currentUrl = page.url();
+    expect(currentUrl).toContain('/recipes');
+    console.log(`Navigated to: ${currentUrl}`);
+  });
 });
 
 test('responsive design works on mobile', async ({ page }) => {

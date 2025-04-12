@@ -34,8 +34,8 @@ export async function loginAsTestUser(page: Page) {
   const passwordField = page.locator('input[type="password"], input[name="password"], input[placeholder*="password" i]').first();
   const signinButton = page.locator('button[type="submit"], button:has-text("Sign in"), button:has-text("Login")').first();
 
-  // Fill in credentials with better error handling
-  await emailField.fill('test@example.com');
+  // Fill in credentials with better error handling - use the test user from test-database.ts
+  await emailField.fill('test_e2e_test@example.com');
   await passwordField.fill('password12345');
 
   // Capture the form submission with before/after screenshots

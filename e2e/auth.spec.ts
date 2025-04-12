@@ -1,8 +1,13 @@
 import { test, expect } from '@playwright/test';
 import { ScreenshotHelper } from './utils/screenshot-helper';
-import { takeDebugScreenshot, waitForNetworkIdle } from './utils/test-utils';
+import { resetDatabase, waitForNetworkIdle } from './utils/test-utils';
 
 test.describe('Authentication flows', () => {
+  // Reset database before running tests
+  test.beforeAll(async () => {
+    await resetDatabase();
+  });
+
   // Use a longer timeout for preview environments
   test.setTimeout(90000); // 90 seconds for preview tests
 
@@ -105,9 +110,6 @@ test.describe('Authentication flows', () => {
       await page.goto('/auth/signin', { timeout: 45000 });
       await waitForNetworkIdle(page);
 
-      // Take debug screenshot to see the initial state
-      await takeDebugScreenshot(page, 'login-error-initial', 'auth');
-
       // Take an initial screenshot
       await screenshots.take('before-login');
 
@@ -139,7 +141,7 @@ test.describe('Authentication flows', () => {
       await screenshots.take('filled-form');
 
       // Use the captureAction helper to take before/after screenshots around submission
-      const submitResult = await screenshots.captureAction('form-submission', async () => {
+      await screenshots.captureAction('form-submission', async () => {
         // Click the button and wait for response
         await signinButton.click();
 
@@ -150,14 +152,8 @@ test.describe('Authentication flows', () => {
         await page.waitForTimeout(1000);
       });
 
-      // Check if submission had errors
-      if (submitResult.error) {
-        console.log(`Error during form submission: ${submitResult.error}`);
-        await screenshots.captureError(`Form submission error: ${submitResult.error}`);
-      }
-
-      // Take debug screenshot to see the state after submission
-      await takeDebugScreenshot(page, 'login-error-after-submit', 'auth');
+      // Take screenshot after submission
+      await screenshots.take('after-submission');
 
       // Check for errors in multiple ways to be resilient
       // 1. Look for error messages with various selectors
@@ -198,85 +194,101 @@ test.describe('Authentication flows', () => {
         (currentUrl.includes('/auth/signin') || currentUrl.includes('/auth/login')) &&
         (await emailField.isVisible() || await passwordField.isVisible());
 
-      console.log(`Current URL: ${currentUrl}, Still on login page: ${stillOnLoginPage}`);
-
-      // The test should pass if either:
-      // - We found an error message, OR
-      // - We're still on the login page (didn't redirect)
-      if (errorFound) {
-        console.log(`Login error display test passed: Found error message "${errorMessage}"`);
-      } else if (stillOnLoginPage) {
-        console.log(`Login error display test passed: Still on login page after submission`);
-        await screenshots.take('no-visible-error-but-no-redirect');
+      if (stillOnLoginPage) {
+        console.log('Still on login page after submission with incorrect credentials, which is expected');
       } else {
-        console.log(`Login error display test failed: No error message found and redirected away from login page`);
-        await screenshots.captureError('No error message found');
-        // Only fail the test if neither condition is met
-        expect(errorFound || stillOnLoginPage).toBeTruthy();
+        console.log(`Unexpected navigation to ${currentUrl}`);
       }
+
+      // One of these conditions should be true
+      expect(errorFound || stillOnLoginPage).toBeTruthy();
+
     } catch (error) {
       console.error(`Error in login error test: ${error instanceof Error ? error.message : String(error)}`);
-      await screenshots.captureError(`Login error test: ${error instanceof Error ? error.message : String(error)}`);
+      await screenshots.captureError(`Login error test error: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   });
 
-  test('login page displays correctly on mobile', async ({ page }) => {
+  test('can login with valid credentials', async ({ page }) => {
     // Create a screenshot helper for this test
-    const screenshots = new ScreenshotHelper(page, 'signin-mobile', 'auth');
+    const screenshots = new ScreenshotHelper(page, 'successful-login', 'auth');
 
     try {
-      // Set viewport to mobile size
-      await page.setViewportSize({ width: 375, height: 667 });
-
       await page.goto('/auth/signin', { timeout: 45000 });
       await waitForNetworkIdle(page);
 
-      // Take debug screenshot
-      await takeDebugScreenshot(page, 'mobile-login-initial', 'auth');
+      // Take an initial screenshot
+      await screenshots.take('before-login');
 
-      // Wait for the page to load
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(500); // Give the page a moment to settle
-
-      // Take a screenshot for debugging
-      await screenshots.take('mobile-view');
-
-      // Find form elements with flexible selectors
+      // Find form elements
       const emailField = page.locator('input[type="email"], input[name="email"], input[id*="email" i]').first();
       const passwordField = page.locator('input[type="password"], input[name="password"], input[id*="password" i]').first();
+      const signinButton = page.locator('button[type="submit"], button:has-text("Sign in"), button:has-text("Login")').first();
 
-      // Capture form element on mobile - using a string selector to avoid issues
-      const formSelector = 'form, div.form, div.login-form, div.signin-form, div[class*="form"]';
-      const form = page.locator(formSelector).first();
+      // Check if form elements are visible
+      const emailVisible = await emailField.isVisible();
+      const passwordVisible = await passwordField.isVisible();
+      const buttonVisible = await signinButton.isVisible();
 
-      if (await form.isVisible()) {
-        // Use the string selector directly to avoid passing the locator object
-        await screenshots.captureElement(formSelector, 'mobile-form');
+      // Skip test if we can't find all form elements
+      if (!(emailVisible && passwordVisible && buttonVisible)) {
+        console.log('Could not find all form elements, skipping test');
+        test.skip();
+        return;
       }
 
-      // Check elements are visible with soft assertions
-      await expect.soft(emailField).toBeVisible();
-      await expect.soft(passwordField).toBeVisible();
+      // Fill in valid credentials for the test user created in test-database.ts
+      await emailField.fill('test_e2e_test@example.com');
+      await passwordField.fill('password12345');
 
-      // Verify at least one form element exists
-      const formElementExists = await emailField.isVisible() || await passwordField.isVisible();
-      expect(formElementExists).toBeTruthy();
+      // Take screenshot before submission
+      await screenshots.take('filled-form');
 
-      // For form size check, try to find the form or a container element
-      if (await form.isVisible()) {
-        // Take a screenshot of the form with the safer take method
-        await screenshots.take('form-view', form);
+      // Use the captureAction helper to take before/after screenshots around submission
+      await screenshots.captureAction('form-submission', async () => {
+        // Click the button
+        await signinButton.click();
 
-        const formBoundingBox = await form.boundingBox();
-        if (formBoundingBox) {
-          // The form should fit within the viewport width
-          expect(formBoundingBox.width).toBeLessThanOrEqual(375);
+        // Wait for navigation and page load
+        await page.waitForURL('**/*', { timeout: 30000 });
+        await waitForNetworkIdle(page);
+      });
+
+      // Take screenshot after login
+      await screenshots.take('after-login');
+
+      // Verify we've been redirected away from login page
+      const currentUrl = page.url();
+      expect(currentUrl).not.toContain('/auth/signin');
+      expect(currentUrl).not.toContain('/auth/login');
+      console.log(`Redirected to ${currentUrl} after successful login`);
+
+      // Look for elements that indicate successful login
+      const userSpecificElements = [
+        page.locator('text=My Recipes'),
+        page.locator('text=Profile'),
+        page.locator('text=Logout'),
+        page.locator('.user-menu, .profile-icon')
+      ];
+
+      let foundUserContent = false;
+      for (const element of userSpecificElements) {
+        if (await element.isVisible().catch(() => false)) {
+          foundUserContent = true;
+          const elementText = await element.textContent();
+          console.log(`Found user-specific element: "${elementText}"`);
+          await screenshots.captureElement(element, 'user-element');
+          break;
         }
       }
+
+      // Verify we found some indication of being logged in
+      expect(foundUserContent).toBeTruthy();
+
     } catch (error) {
-      console.error(`Error in mobile login test: ${error instanceof Error ? error.message : String(error)}`);
-      await screenshots.captureError(`Mobile login test: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(`Error in successful login test: ${error instanceof Error ? error.message : String(error)}`);
+      await screenshots.captureError(`Login test error: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   });

@@ -25,7 +25,9 @@
     "deploy": "vercel --prod",
     "pre-deploy": "node scripts/pre-deploy.js",
     "troubleshoot": "node scripts/troubleshoot-vercel.js",
-    "baseline": "node scripts/baseline-migration.js"
+    "baseline": "node scripts/baseline-migration.js",
+    "setup-test-db": "prisma migrate reset --force && ts-node --transpile-only prisma/reset-sequences.ts && ts-node --transpile-only e2e/setup/test-database.ts",
+    "setup-e2e": "node scripts/setup-e2e-tests.js"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.8.0",
