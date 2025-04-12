@@ -29,8 +29,7 @@ async function verifyTestEnv() {
   console.log('---------------------');
   console.log(`TEST_DATABASE_URL: ${process.env.TEST_DATABASE_URL ? '✅ Set' : '❌ Not set'}`);
   console.log(`TEST_MODE: ${process.env.TEST_MODE ? '✅ Enabled' : '❌ Disabled'}`);
-  console.log(`USE_LOCAL_FRONTEND: ${process.env.USE_LOCAL_FRONTEND === 'true' ? '✅ Enabled' : '❌ Disabled'}`);
-  console.log(`USE_PREVIEW_DATABASE: ${process.env.USE_PREVIEW_DATABASE === 'true' ? '✅ Enabled' : '❌ Disabled'}`);
+  console.log(`TEST_BASE_URL: 'https://cook-eat-preview.vercel.app'}`);
   console.log(`E2E_QUIET_MODE: ${process.env.E2E_QUIET_MODE === 'true' ? '✅ Enabled' : '❌ Disabled'}`);
   console.log(`E2E_ULTRA_QUIET_MODE: ${process.env.E2E_ULTRA_QUIET_MODE === 'true' ? '✅ Enabled' : '❌ Disabled'}`);
 

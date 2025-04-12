@@ -11,9 +11,6 @@ const baseURL = 'https://cook-eat-preview.vercel.app';
 // Force preview usage flags by default
 const usePreviewDatabase = true;
 
-// Log current setup mode before any other logging
-console.log(`[CONFIG] Using PREVIEW frontend with PREVIEW database`);
-
 // Check if we should enable quiet mode to reduce log noise
 const quietMode = process.env.E2E_QUIET_MODE === 'true';
 
@@ -41,8 +38,6 @@ if (logLevel !== 'ultra-quiet') {
   console.log(`Screenshots enabled: ${takeScreenshots ? 'YES' : 'NO'}`);
   console.log(`Video recording enabled: ${recordVideo ? 'YES' : 'NO'}`);
   console.log(`Starting local web server: NO`);
-} else {
-  console.log(`[Test] Running in ultra-quiet mode with base URL: ${baseURL}`);
 }
 
 export default defineConfig({

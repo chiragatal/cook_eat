@@ -33,7 +33,6 @@ if (args.length > 0) {
 }
 
 console.log(`Using test base URL: https://cook-eat-preview.vercel.app`);
-console.log(`Using preview database: YES`);
 console.log(`Quiet mode: ${quietMode ? 'YES' : 'NO'}`);
 console.log(`Screenshots enabled: ${env.PLAYWRIGHT_SCREENSHOTS === 'on' ? 'YES' : 'NO'}`);
 console.log(`Video recording enabled: ${env.PLAYWRIGHT_VIDEO === 'on' ? 'YES' : 'NO'}`);

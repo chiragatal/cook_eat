@@ -6,40 +6,24 @@ if (process.env.NODE_ENV !== 'production') {
   dotenv.config({ path: '.env.test' });
 }
 
-// Check if we're explicitly using a preview database (now true by default)
-const usePreviewDatabase = process.env.USE_PREVIEW_DATABASE !== 'false';
+// We always use the preview database now
 const quietMode = process.env.E2E_QUIET_MODE === 'true';
 
-// Determine the correct database URL with schema
-const baseDbUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || '';
-
-// For preview database, we might need a different approach to schema isolation
-// You might need to adjust this based on your specific preview database setup
-const databaseUrl = usePreviewDatabase
-  ? baseDbUrl // Use the exact preview DB URL without modification
-  : baseDbUrl.includes('schema=test_e2e')
-    ? baseDbUrl
-    : baseDbUrl.includes('?')
-      ? baseDbUrl.replace('?', '?schema=test_e2e&')
-      : `${baseDbUrl}?schema=test_e2e`;
+// Determine the database URL
+const databaseUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL || '';
 
 // Print database connection details (only if not in quiet mode)
 if (!quietMode) {
-  console.log('\n⚠️  IMPORTANT: Tests are using the database configured in .env.test ⚠️');
+  console.log('\n⚠️  IMPORTANT: Tests are using the preview database ⚠️');
   const maskedUrl = databaseUrl.split('?')[0];
-  console.log('Database URL:', maskedUrl + (usePreviewDatabase ? ' (preview)' : '?schema=test_e2e'));
-  console.log('Using preview database:', usePreviewDatabase ? 'YES' : 'NO');
-  if (!usePreviewDatabase) {
-    console.log('Make sure this points to a test database or uses schema isolation!\n');
-  }
+  console.log('Database URL:', maskedUrl + ' (preview)');
 } else {
-  console.log(`[Database] Using ${usePreviewDatabase ? 'preview' : 'test'} database with schema isolation`);
 }
 
 // Configure Prisma log levels
 const logLevel = process.env.PRISMA_LOG_LEVEL || (quietMode ? 'error' : 'info');
 
-// Test database client - uses test_e2e schema
+// Test database client
 const prisma = new PrismaClient({
   datasourceUrl: databaseUrl,
   log: [
@@ -85,11 +69,11 @@ const testPost = {
  */
 async function tableExists(tableName: string): Promise<boolean> {
   try {
-    // Check if the table exists in the test_e2e schema
+    // Check if the table exists
     const query = `
       SELECT EXISTS (
         SELECT FROM information_schema.tables
-        WHERE table_schema = 'test_e2e'
+        WHERE table_schema = 'public'
         AND table_name = '${tableName}'
       );
     `;
@@ -176,6 +160,6 @@ export async function setupTestDatabase() {
  * Required for backwards compatibility
  */
 export async function cleanupTestDatabase() {
-  // No cleanup needed for schema-isolated database
+  // No cleanup needed for preview database
   return;
 }

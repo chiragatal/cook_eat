@@ -4,17 +4,14 @@ import { takeDebugScreenshot, waitForNetworkIdle } from './utils/test-utils';
 
 test.describe('Authentication flows', () => {
   // Use a longer timeout for preview environments
-  const isPreview = process.env.USE_LOCAL_FRONTEND !== 'true';
-  if (isPreview) {
-    test.setTimeout(90000); // 90 seconds for preview tests
-  }
+  test.setTimeout(90000); // 90 seconds for preview tests
 
   test('signin page loads correctly', async ({ page }) => {
     // Create a screenshot helper for this test
     const screenshots = new ScreenshotHelper(page, 'signin-page', 'auth');
 
     try {
-      await page.goto('/auth/signin', { timeout: isPreview ? 45000 : 30000 });
+      await page.goto('/auth/signin', { timeout: 45000 });
       await waitForNetworkIdle(page);
 
       // Take a screenshot using the helper
@@ -58,7 +55,7 @@ test.describe('Authentication flows', () => {
     const screenshots = new ScreenshotHelper(page, 'signup-page', 'auth');
 
     try {
-      await page.goto('/auth/signup', { timeout: isPreview ? 45000 : 30000 });
+      await page.goto('/auth/signup', { timeout: 45000 });
       await waitForNetworkIdle(page);
 
       // Take a screenshot using the helper
@@ -105,7 +102,7 @@ test.describe('Authentication flows', () => {
     const screenshots = new ScreenshotHelper(page, 'login-error', 'auth');
 
     try {
-      await page.goto('/auth/signin', { timeout: isPreview ? 45000 : 30000 });
+      await page.goto('/auth/signin', { timeout: 45000 });
       await waitForNetworkIdle(page);
 
       // Take debug screenshot to see the initial state
@@ -232,7 +229,7 @@ test.describe('Authentication flows', () => {
       // Set viewport to mobile size
       await page.setViewportSize({ width: 375, height: 667 });
 
-      await page.goto('/auth/signin', { timeout: isPreview ? 45000 : 30000 });
+      await page.goto('/auth/signin', { timeout: 45000 });
       await waitForNetworkIdle(page);
 
       // Take debug screenshot

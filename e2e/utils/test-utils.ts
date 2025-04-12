@@ -82,9 +82,8 @@ export async function navigateToRecipe(page: Page, title: string) {
  * @param idleTime Time with no network requests to consider "idle" in milliseconds
  */
 export async function waitForNetworkIdle(page: Page, timeout = 10000, idleTime = 500): Promise<void> {
-  // If we're using the preview environment, use a shorter timeout to avoid hanging
-  const isPreview = !process.env.USE_LOCAL_FRONTEND;
-  const effectiveTimeout = isPreview ? Math.min(timeout, 5000) : timeout;
+  // We're always using the preview environment
+  const effectiveTimeout = Math.min(timeout, 5000);
 
   try {
     await page.waitForLoadState('networkidle', { timeout: effectiveTimeout });
