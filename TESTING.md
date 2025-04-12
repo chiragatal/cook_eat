@@ -20,6 +20,8 @@ npm run test:watch
 
 We use Playwright for end-to-end testing. The E2E tests are in the `e2e/` directory.
 
+All end-to-end tests run against the preview deployment (https://cook-eat-preview.vercel.app).
+
 ### Running E2E Tests
 
 ```bash
@@ -93,22 +95,13 @@ Control these with:
 
 ## Test Database
 
-Tests run against a dedicated test database. The configuration is in `.env.test`.
+Tests run against the preview database. The configuration is hardcoded in the test configuration.
 
-To set up your test database:
+The `.env.test` file contains standard environment variables for testing, including:
 
-1. Create a `.env.test.local` file (which is git-ignored) with your database URL:
-   ```
-   # Test database credentials
-   TEST_DATABASE_URL="postgres://username:password@hostname/database?sslmode=require"
-   ```
-
-2. The `.env.test` file will reference this URL during test runs.
-
-If you want to run against the preview database:
-
-```bash
-npm run test:preview
+```
+DATABASE_URL=xxx
+PLAYWRIGHT_SCREENSHOTS=on
 ```
 
 ## Screenshot Helper

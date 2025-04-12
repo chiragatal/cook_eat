@@ -51,7 +51,7 @@ A recipe sharing and discovery app that helps you track what you're cooking and 
    npm run dev
    ```
 
-6. Visit `http://localhost:3000` in your browser.
+6. Visit `https://cook-eat-preview.vercel.app` in your browser.
 
 ## Database Management
 
@@ -109,7 +109,7 @@ This project includes a comprehensive test suite with Jest and Playwright. Run t
 # Run Jest unit tests
 npm test
 
-# Run end-to-end tests
+# Run end-to-end tests against the preview deployment
 npm run test:e2e
 ```
 
@@ -117,14 +117,14 @@ See [TESTING.md](./TESTING.md) for more details.
 
 ### Testing Against Preview Deployment
 
-We've added support for testing against the preview deployment instead of production:
+All tests are configured to run against the preview deployment:
 
 ```bash
-# Run tests against the preview deployment
-npm run test:preview
+# Run tests
+npm run test:e2e
 
-# Set up the preview database and run tests
-npm run test:preview:setup
+# Run tests with UI mode
+npm run test:e2e:ui
 ```
 
 For detailed instructions, refer to [PREVIEW-TESTING.md](./PREVIEW-TESTING.md).

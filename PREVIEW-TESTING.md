@@ -1,25 +1,20 @@
 # Testing Against Preview Deployment
 
-This document describes how to run tests against the preview deployment instead of the development environment.
+This document describes how to run tests against the preview deployment.
 
-## Testing Options
+## Testing Configuration
 
-There are two main ways to run tests:
-
-1. **Local Testing**: Tests run against a local development server. This is the default and doesn't require Vercel authentication.
-2. **Preview Testing**: Tests run against the Vercel preview deployment. This may require Vercel authentication if the preview is password-protected.
-
-## Preview Deployment Information
+All tests are now configured to run against the preview deployment by default:
 
 - **Preview URL**: [https://cook-eat-preview.vercel.app](https://cook-eat-preview.vercel.app)
 - **Preview Database**: `postgres://neondb_owner:npg_kq7msfjdbL1i@ep-aged-bird-a1wn6ara-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`
 
-## Local Testing (Recommended for Development)
+## Running Tests
 
-Local testing runs against your local development server and doesn't require Vercel authentication:
+We've simplified the testing process to always use the preview deployment:
 
 ```bash
-# Standard local tests (runs against localhost:3000)
+# Run all tests
 npm run test:e2e
 
 # Run tests with UI mode
@@ -32,37 +27,7 @@ npm run test:e2e:safari
 npm run test:e2e:mobile
 ```
 
-## Preview Testing (For CI/CD and Pre-Deployment Checks)
-
-We've added npm scripts to make it easy to run tests against the preview deployment when needed:
-
-```bash
-# Set up the preview database and run all tests
-npm run test:preview:setup
-
-# Run tests against the preview deployment without database setup
-npm run test:preview
-
-# Run tests with UI mode against preview
-npm run test:preview:ui
-
-# Run tests only in Chrome browser against preview
-npm run test:preview:chrome
-
-# View the latest test results in your browser
-npm run test:preview:view-latest
-
-# View the latest screenshots
-npm run test:preview:view-screenshots
-
-# Verify your test environment is set up correctly
-npm run test:verify-env
-
-# Run a debug test with trace and screenshots enabled
-npm run test:debug-run
-```
-
-### Preview Testing Authentication
+### Preview Authentication
 
 If your Vercel preview deployment is password-protected, you'll need to provide authentication credentials:
 
@@ -73,24 +38,6 @@ If your Vercel preview deployment is password-protected, you'll need to provide 
    ```
 
 2. Alternatively, you can perform manual authentication when prompted during the global setup.
-
-## Manual Setup
-
-If you need more control, you can run the commands separately:
-
-### 1. Set up the preview database
-
-This will reset the preview database and prepare it for testing:
-
-```bash
-npm run setup-preview-db
-```
-
-### 2. Run tests against the preview URL
-
-```bash
-cross-env PLAYWRIGHT_SCREENSHOTS=on TEST_BASE_URL=https://cook-eat-preview.vercel.app npm run test:e2e
-```
 
 ## Test Results
 
@@ -117,12 +64,10 @@ You can easily access the latest test results using:
 
 ```bash
 # View the HTML report
-npm run test:preview:view-latest  # For preview tests
-npm run test:view-latest          # For local tests
+npm run test:view-latest
 
 # View the screenshots
-npm run test:preview:view-screenshots  # For preview tests
-npm run test:view-screenshots          # For local tests
+npm run test:view-screenshots
 
 # List all test result directories
 npm run test:list-results
@@ -137,10 +82,9 @@ The following environment variables control the testing behavior:
 | `TEST_RESULTS_DIR` | Set by `setup-test-results-dir.js` to indicate where test results should be stored |
 | `PLAYWRIGHT_SCREENSHOTS` | Set to `on` to force screenshots for all test steps |
 | `PLAYWRIGHT_VIDEO` | Set to `on` to record video for all tests |
-| `TEST_BASE_URL` | The base URL to test against (default: http://localhost:3000) |
 | `PWDEBUG` | Set to `1` to enable Playwright debug mode |
-| `VERCEL_EMAIL` | Your Vercel email (optional, only for preview testing) |
-| `VERCEL_PASSWORD` | Your Vercel password (optional, only for preview testing) |
+| `VERCEL_EMAIL` | Your Vercel email (optional, for preview authentication) |
+| `VERCEL_PASSWORD` | Your Vercel password (optional, for preview authentication) |
 
 ## Troubleshooting
 
@@ -167,19 +111,13 @@ If you're experiencing issues with screenshots or test artifacts:
 
 If you see the "Log in to Vercel" page during tests:
 
-1. Make sure you're using the correct testing script:
-   - Use `npm run test:e2e` for local testing (no Vercel login required)
-   - Use `npm run test:preview` for preview testing (may require Vercel login)
-
-2. If you need to test against the preview deployment, add your Vercel credentials to `.env.test`:
+1. Add your Vercel credentials to `.env.test`:
    ```
    VERCEL_EMAIL=your.email@example.com
    VERCEL_PASSWORD=your-vercel-password
    ```
 
-3. Check that your `TEST_BASE_URL` is set correctly in `.env.test`:
-   - For local testing: `TEST_BASE_URL=http://localhost:3000`
-   - For preview testing: `TEST_BASE_URL=https://cook-eat-preview.vercel.app`
+2. Check that the Vercel preview deployment is accessible (it should be configured as public in vercel.json)
 
 ## Error Handling
 
@@ -203,22 +141,19 @@ The test setup has been improved to handle database issues gracefully:
 
 The preview deployment settings are configured in these files:
 
-- `.env.test` - Contains the TEST_BASE_URL setting and other environment variables
+- `.env.test` - Contains the DATABASE_URL setting and other environment variables
 - `scripts/setup-preview-db.js` - Contains the preview database connection string
 - `scripts/setup-test-results-dir.js` - Sets up the directory structure and environment variable
 - `scripts/verify-test-env.js` - Verifies the test environment is set up correctly
-- `package.json` - Contains scripts for running tests against preview
-- `playwright.config.ts` - Uses the environment variable to determine output directories
+- `package.json` - Contains scripts for running tests
+- `playwright.config.ts` - Uses the hard-coded preview URL
 - `e2e/setup/test-database.ts` - Handles test database setup and cleanup with error handling
 - `e2e/screenshot-test.spec.ts` - Simple test to verify screenshot functionality
-- `e2e/global-setup.ts` - Handles authentication logic differently for local vs. preview testing
+- `e2e/global-setup.ts` - Handles authentication for preview testing
 
 ## Important Notes
 
 - The preview database setup will **reset the database**, so be careful if there's data you want to preserve
-- Always use the preview environment for testing new features before they go to production
 - The preview database is separate from the production database to prevent test data from affecting production users
 - Test results are preserved in date-stamped folders for historical comparison
 - Screenshots and videos are now enabled by default in the test scripts
-- Local testing is recommended for day-to-day development (no Vercel login required)
-- Preview testing should be used for CI/CD and final verification before production deployment

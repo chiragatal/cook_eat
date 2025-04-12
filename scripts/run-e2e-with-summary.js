@@ -16,7 +16,6 @@ const env = {
   ...process.env,
   E2E_QUIET_MODE: quietMode ? 'true' : 'false',
   PLAYWRIGHT_SCREENSHOTS: 'on',
-  TEST_BASE_URL: 'https://cook-eat-preview.vercel.app',
 };
 
 // Construct the command - force running within the e2e folder

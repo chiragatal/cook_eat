@@ -16,7 +16,6 @@ const env = {
   ...process.env,
   E2E_QUIET_MODE: quietMode ? 'true' : 'false',
   PLAYWRIGHT_SCREENSHOTS: 'on',
-  TEST_BASE_URL: 'https://cook-eat-preview.vercel.app',
   // This skips any Jest tests by setting a Jest worker ID
   JEST_WORKER_ID: 'playwright-only'
 };
