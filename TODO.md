@@ -179,6 +179,7 @@ A post is basically a recipe.
 - [ ] Negative tests
 - [ ] Enable more linting errors instead of ignoring them
 - [ ] End to End tests
+- [ ] Start to finish user journey test
 
 ### Optimisations
 

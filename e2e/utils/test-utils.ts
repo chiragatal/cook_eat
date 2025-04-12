@@ -74,14 +74,23 @@ export async function navigateToRecipe(page: Page, title: string) {
 }
 
 /**
- * Wait for network requests to complete
- * Useful after form submissions
+ * Wait for network to become idle (no requests for a period of time)
+ * This is a more reliable way to wait for page load completion
+ *
+ * @param page Playwright page object
+ * @param timeout Timeout in milliseconds
+ * @param idleTime Time with no network requests to consider "idle" in milliseconds
  */
-export async function waitForNetworkIdle(page: Page) {
+export async function waitForNetworkIdle(page: Page, timeout = 10000, idleTime = 500): Promise<void> {
+  // If we're using the preview environment, use a shorter timeout to avoid hanging
+  const isPreview = !process.env.USE_LOCAL_FRONTEND;
+  const effectiveTimeout = isPreview ? Math.min(timeout, 5000) : timeout;
+
   try {
-    await page.waitForLoadState('networkidle', { timeout: 5000 });
-  } catch (e) {
-    console.log('Network did not become idle within timeout, continuing anyway');
+    await page.waitForLoadState('networkidle', { timeout: effectiveTimeout });
+  } catch (error) {
+    // Don't fail the test if network doesn't become idle, just log a warning
+    console.log(`Network did not become idle within timeout, continuing anyway`);
   }
 }
 

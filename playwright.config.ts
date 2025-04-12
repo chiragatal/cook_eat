@@ -5,18 +5,28 @@ import dotenv from 'dotenv';
 // Load environment variables from .env.test
 dotenv.config({ path: '.env.test' });
 
-// Set base URL from environment or default to localhost
-let baseURL = process.env.TEST_BASE_URL || 'http://localhost:3000';
+// Set base URL from environment or default to the preview URL
+const defaultBaseURL = 'https://cook-eat-preview.vercel.app';
+let baseURL = process.env.TEST_BASE_URL || defaultBaseURL;
 
-// Check if we should use a local frontend for testing
+// Force preview usage flags by default - only use localhost when explicitly requested
+const usePreviewDatabase = process.env.USE_PREVIEW_DATABASE !== 'false';
 const useLocalFrontend = process.env.USE_LOCAL_FRONTEND === 'true';
-if (useLocalFrontend && !baseURL.includes('localhost')) {
-  console.log('Configuration flag USE_LOCAL_FRONTEND is set, forcing use of localhost frontend');
+
+// Override baseURL only if explicitly requesting local frontend
+if (useLocalFrontend) {
+  console.log('Configuration flag USE_LOCAL_FRONTEND is set, using localhost frontend');
   baseURL = 'http://localhost:3000';
+} else {
+  // Ensure we're using the preview URL when not using localhost
+  if (!baseURL.includes('vercel.app') && !baseURL.includes('preview')) {
+    console.log(`Base URL ${baseURL} doesn't appear to be a preview URL, defaulting to ${defaultBaseURL}`);
+    baseURL = defaultBaseURL;
+  }
 }
 
-// Check if we explicitly want to use a preview database
-const usePreviewDatabase = process.env.USE_PREVIEW_DATABASE === 'true';
+// Log current setup mode before any other logging
+console.log(`[CONFIG] Using ${useLocalFrontend ? 'LOCAL' : 'PREVIEW'} frontend with ${usePreviewDatabase ? 'PREVIEW' : 'LOCAL'} database`);
 
 // Check if we should enable quiet mode to reduce log noise
 const quietMode = process.env.E2E_QUIET_MODE === 'true';
@@ -39,6 +49,7 @@ const artifactsDir = join('test-results', 'latest', 'artifacts');
 // Log configuration (unless in ultra-quiet mode)
 if (logLevel !== 'ultra-quiet') {
   console.log(`Using test base URL: ${baseURL}`);
+  console.log(`Using preview deployment: ${!useLocalFrontend ? 'YES' : 'NO'}`);
   console.log(`Using preview database: ${usePreviewDatabase ? 'YES' : 'NO'}`);
   console.log(`Quiet mode: ${logLevel === 'quiet' ? 'YES' : 'NO'}`);
   console.log(`Screenshots enabled: ${takeScreenshots ? 'YES' : 'NO'}`);
@@ -50,7 +61,7 @@ if (logLevel !== 'ultra-quiet') {
 
 export default defineConfig({
   /* Maximum time one test can run for. */
-  timeout: 30 * 1000,
+  timeout: useLocalFrontend ? 30 * 1000 : 60 * 1000,
 
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -59,7 +70,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
 
   /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 2 : (useLocalFrontend ? 0 : 1),
 
   /* Only look for tests in the e2e directory */
   testDir: './e2e',
