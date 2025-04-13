@@ -7,6 +7,7 @@ import {
   loginAsTestUser
 } from './utils/test-utils';
 import { ScreenshotHelper } from './utils/screenshot-helper';
+import { createTestTag } from './utils/test-tag';
 
 // Test recipe ID from test-database.ts
 const testPostId = 'test_post_1';
@@ -25,8 +26,11 @@ test.describe('Recipe Functionality', () => {
   });
 
   test('can view recipe list', async ({ page }) => {
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'recipe-list', 'recipes');
+    // Create a test tag for this test
+    const testTag = createTestTag('recipe', 'view-list');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'recipe-list', 'recipes', '', testTag);
 
     try {
       // Take initial screenshot
@@ -93,8 +97,11 @@ test.describe('Recipe Functionality', () => {
   });
 
   test('can search for recipes', async ({ page }) => {
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'recipe-search', 'recipes');
+    // Create a test tag for this test
+    const testTag = createTestTag('recipe', 'search');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'recipe-search', 'recipes', '', testTag);
 
     try {
       // Take initial screenshot
@@ -180,8 +187,11 @@ test.describe('Recipe Functionality', () => {
   });
 
   test('can view recipe details', async ({ page }) => {
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'recipe-details', 'recipes');
+    // Create a test tag for this test
+    const testTag = createTestTag('recipe', 'view-details');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'recipe-details', 'recipes', '', testTag);
 
     try {
       // Take initial screenshot

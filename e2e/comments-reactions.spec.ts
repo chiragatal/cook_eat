@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { ScreenshotHelper } from './utils/screenshot-helper';
 import { resetDatabase, waitForNetworkIdle, loginAsTestUser } from './utils/test-utils';
+import { createTestTag } from './utils/test-tag';
 
 // Set a longer timeout for all tests
 test.setTimeout(60000);
@@ -52,8 +53,11 @@ test.describe('Comments and Reactions', () => {
   });
 
   test('can view comments on a recipe', async ({ page }) => {
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'comments-view', 'comments');
+    // Create a test tag for this test
+    const testTag = createTestTag('recipe', 'view-comments');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'comments-view', 'comments', '', testTag);
 
     // Take screenshot of the page
     await screenshots.take('recipe-with-comments');
@@ -91,8 +95,11 @@ test.describe('Comments and Reactions', () => {
   });
 
   test('can add a comment to a recipe', async ({ page }) => {
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'add-comment', 'comments');
+    // Create a test tag for this test
+    const testTag = createTestTag('recipe', 'add-comment');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'add-comment', 'comments', '', testTag);
 
     // Take initial screenshot
     await screenshots.take('before-adding-comment');
@@ -175,8 +182,11 @@ test.describe('Comments and Reactions', () => {
   });
 
   test('can react to the recipe', async ({ page }) => {
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'recipe-reactions', 'reactions');
+    // Create a test tag for this test
+    const testTag = createTestTag('recipe', 'react');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'recipe-reactions', 'reactions', '', testTag);
 
     // Take initial screenshot
     await screenshots.take('before-reaction');
@@ -240,6 +250,12 @@ test.describe('Comments and Reactions', () => {
   });
 
   test('can react to a comment', async ({ page, request }) => {
+    // Create a test tag for this test
+    const testTag = createTestTag('recipe', 'react-to-comment');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'comment-reactions', 'reactions', '', testTag);
+
     // Skip if we don't have a comment ID and can't find a comment
     if (!addedCommentId) {
       const comments = page.locator('.comment, .comment-item, [data-testid="comment"]');
@@ -259,12 +275,6 @@ test.describe('Comments and Reactions', () => {
         return;
       }
     }
-
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'comment-reactions', 'reactions');
-
-    // Take initial screenshot
-    await screenshots.take('before-comment-reaction');
 
     // Find our comment with more flexible selectors
     let comment = page.locator(`.comment[data-id="${addedCommentId}"], .comment-item[data-id="${addedCommentId}"], [data-testid="comment"][data-id="${addedCommentId}"]`);

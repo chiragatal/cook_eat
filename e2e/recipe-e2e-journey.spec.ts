@@ -1,6 +1,7 @@
 import { test, expect, Page } from '@playwright/test';
 import { ScreenshotHelper } from './utils/screenshot-helper';
 import { resetDatabase, waitForNetworkIdle, loginAsTestUser } from './utils/test-utils';
+import { createTestTag } from './utils/test-tag';
 
 // Test recipe ID (matches the one in test-database.ts)
 const testPostId = 'test_e2e_00000000-0000-0000-0000-000000000002';
@@ -134,8 +135,11 @@ test.describe('End-to-End Recipe Journey', () => {
     // Login as test user
     await loginAsTestUser(page);
 
-    // Create screenshot helper for this test
-    const screenshots = new ScreenshotHelper(page, 'recipe-journey', 'recipes');
+    // Create a test tag for this test
+    const testTag = createTestTag('recipe', 'e2e-journey');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'recipe-journey', 'recipes', '', testTag);
 
     // Navigate to the test recipe page
     await page.goto(`/recipe/${testPostId}`);

@@ -1,6 +1,7 @@
 import { Page, Locator } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
+import { createTestTag, getTestRunTimestamp } from './test-tag';
 
 /**
  * Utility class to standardize screenshot handling across all E2E tests
@@ -11,6 +12,7 @@ export class ScreenshotHelper {
   private category: string;
   private screenshotsDir: string;
   private testId: string;
+  private testTag: string;
 
   // Add a static counter to track screenshot count
   private static screenshotCount = 0;
@@ -23,12 +25,22 @@ export class ScreenshotHelper {
    * @param testName Name of the test (used for screenshot naming)
    * @param category Category folder for screenshots (e.g., 'auth', 'home', 'recipes')
    * @param testId Optional test ID for linking screenshots to test runs
+   * @param testTag Optional test tag created with createTestTag for consistent tagging
    */
-  constructor(page: Page, testName: string, category: string = 'general', testId: string = '') {
+  constructor(
+    page: Page,
+    testName: string,
+    category: string = 'general',
+    testId: string = '',
+    testTag?: string
+  ) {
     this.page = page;
     this.testName = testName.replace(/\s+/g, '-').toLowerCase();
     this.category = category;
     this.testId = testId;
+
+    // If a test tag was provided, use it; otherwise create one from component (category) and test (testName)
+    this.testTag = testTag || createTestTag(this.category, this.testName);
 
     // Create screenshots directory structure
     this.screenshotsDir = path.join(process.cwd(), 'test-results', 'screenshots', this.category);
@@ -36,10 +48,8 @@ export class ScreenshotHelper {
       fs.mkdirSync(this.screenshotsDir, { recursive: true });
     }
 
-    // If we have a testId, write it to a metadata file
-    if (this.testId) {
-      this.writeTestMetadata();
-    }
+    // Write test metadata including the new test tag
+    this.writeTestMetadata();
   }
 
   /**
@@ -52,6 +62,26 @@ export class ScreenshotHelper {
   }
 
   /**
+   * Set a custom test tag for better screenshot organization and traceability
+   * @param componentType Type of component being tested
+   * @param testType Type of test being performed
+   * @param customIdentifier Optional additional identifier
+   */
+  setTestTag(componentType: string, testType: string, customIdentifier?: string): void {
+    this.testTag = createTestTag(componentType, testType, customIdentifier);
+    this.writeTestMetadata();
+  }
+
+  /**
+   * Set a pre-generated test tag
+   * @param testTag A test tag string created with createTestTag
+   */
+  setExistingTestTag(testTag: string): void {
+    this.testTag = testTag;
+    this.writeTestMetadata();
+  }
+
+  /**
    * Write test metadata to a file to help associate screenshots with tests
    */
   private writeTestMetadata(): void {
@@ -60,7 +90,9 @@ export class ScreenshotHelper {
       testId: this.testId,
       testName: this.testName,
       category: this.category,
-      timestamp: new Date().toISOString()
+      testTag: this.testTag,
+      timestamp: new Date().toISOString(),
+      runTimestamp: getTestRunTimestamp()
     };
 
     fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
@@ -83,9 +115,9 @@ export class ScreenshotHelper {
       return 'screenshots-disabled';
     }
 
-    // Format the date for use in the filename
+    // Format the date for use in the filename - include the test tag
     const timestamp = new Date().toISOString().replace(/:/g, '-');
-    const screenshotName = `${this.testName}-${label}-${timestamp}.png`;
+    const screenshotName = `${this.testName}-${label}-${this.testTag}-${timestamp}.png`;
     const screenshotPath = path.join(this.screenshotsDir, screenshotName);
 
     // Ensure the directory exists
@@ -101,8 +133,10 @@ export class ScreenshotHelper {
         testId: this.testId,
         testName: this.testName,
         category: this.category,
+        testTag: this.testTag,
         label,
         timestamp: new Date().toISOString(),
+        runTimestamp: getTestRunTimestamp(),
         screenshotPath: actualPath,
         elementScreenshot: !!element,
         isFallback

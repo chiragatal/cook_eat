@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { ScreenshotHelper } from './utils/screenshot-helper';
 import { resetDatabase, waitForNetworkIdle, loginAsTestUser } from './utils/test-utils';
+import { createTestTag } from './utils/test-tag';
 
 test.describe('Recipe Comments', () => {
   // Reset database before running tests
@@ -30,8 +31,11 @@ test.describe('Recipe Comments', () => {
   });
 
   test('can add a comment to a recipe', async ({ page }) => {
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'real-comments-test', 'comments');
+    // Create a test tag for this test
+    const testTag = createTestTag('recipe', 'add-comment');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'real-comments-test', 'comments', '', testTag);
 
     // Take screenshot of the initial recipe page
     await screenshots.take('recipe-initial-view');
@@ -93,8 +97,11 @@ test.describe('Recipe Comments', () => {
       return;
     }
 
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'edit-comment', 'comments');
+    // Create a test tag for this test
+    const testTag = createTestTag('recipe', 'edit-comment');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'edit-comment', 'comments', '', testTag);
 
     // Find our comment
     const comment = page.locator(`.comment[data-id="${addedCommentId}"]`);
@@ -155,8 +162,11 @@ test.describe('Recipe Comments', () => {
       return;
     }
 
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'delete-comment', 'comments');
+    // Create a test tag for this test
+    const testTag = createTestTag('recipe', 'delete-comment');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'delete-comment', 'comments', '', testTag);
 
     // Take screenshot before deletion
     await screenshots.take('before-delete');

@@ -8,6 +8,7 @@ import {
   takeDebugScreenshot,
   loginAsTestUser
 } from './utils/test-utils';
+import { createTestTag } from './utils/test-tag';
 
 test.describe('Home Page', () => {
   // Reset database before running tests
@@ -16,8 +17,11 @@ test.describe('Home Page', () => {
   });
 
   test('home page loads correctly', async ({ page }) => {
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'home-page', 'home');
+    // Create a test tag for this test
+    const testTag = createTestTag('home', 'page-load');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'home-page', 'home', '', testTag);
 
     // Navigate to home page
     await page.goto('/');
@@ -68,8 +72,11 @@ test.describe('Home Page', () => {
   });
 
   test('home page loads content when logged in', async ({ page }) => {
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'home-logged-in', 'home');
+    // Create a test tag for this test
+    const testTag = createTestTag('home', 'logged-in-content');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'home-logged-in', 'home', '', testTag);
 
     // Login as test user
     await loginAsTestUser(page);
@@ -129,8 +136,11 @@ test.describe('Home Page', () => {
   });
 
   test('navigation menu works', async ({ page }) => {
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'navigation', 'home');
+    // Create a test tag for this test
+    const testTag = createTestTag('home', 'navigation');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'navigation', 'home', '', testTag);
 
     // Login as test user
     await loginAsTestUser(page);
@@ -205,8 +215,11 @@ test.describe('Home Page', () => {
 });
 
 test('responsive design works on mobile', async ({ page }) => {
-  // Create screenshot helper
-  const screenshots = new ScreenshotHelper(page, 'home-mobile', 'responsive');
+  // Create a test tag for this test
+  const testTag = createTestTag('home', 'responsive-mobile');
+
+  // Create screenshot helper with the test tag
+  const screenshots = new ScreenshotHelper(page, 'home-mobile', 'responsive', '', testTag);
 
   // Set viewport to mobile size first
   await page.setViewportSize({ width: 375, height: 667 });

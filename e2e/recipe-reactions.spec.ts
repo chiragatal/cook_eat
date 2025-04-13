@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { ScreenshotHelper } from './utils/screenshot-helper';
 import { resetDatabase, waitForNetworkIdle, loginAsTestUser } from './utils/test-utils';
+import { createTestTag } from './utils/test-tag';
 
 test.describe('Recipe Reactions', () => {
   // Reset database before running tests
@@ -25,8 +26,11 @@ test.describe('Recipe Reactions', () => {
   });
 
   test('displays reaction buttons', async ({ page }) => {
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'recipe-reactions', 'reactions');
+    // Create a test tag for this test
+    const testTag = createTestTag('recipe', 'display-reactions');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'recipe-reactions', 'reactions', '', testTag);
 
     // Take initial screenshot
     await screenshots.take('recipe-page');
@@ -63,8 +67,11 @@ test.describe('Recipe Reactions', () => {
   });
 
   test('can toggle reactions', async ({ page }) => {
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'toggle-reactions', 'reactions');
+    // Create a test tag for this test
+    const testTag = createTestTag('recipe', 'toggle-reactions');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'toggle-reactions', 'reactions', '', testTag);
 
     // Find reaction buttons
     const reactionButtons = page.locator('.reaction-btn, .reaction-button, button[data-reaction-type]');
@@ -125,8 +132,11 @@ test.describe('Recipe Reactions', () => {
   });
 
   test('verifies user reaction state persists after page reload', async ({ page }) => {
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'reaction-persistence', 'reactions');
+    // Create a test tag for this test
+    const testTag = createTestTag('recipe', 'reaction-persistence');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'reaction-persistence', 'reactions', '', testTag);
 
     // Find reaction buttons
     const reactionButtons = page.locator('.reaction-btn, .reaction-button, button[data-reaction-type]');

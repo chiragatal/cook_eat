@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { ScreenshotHelper } from './utils/screenshot-helper';
 import { resetDatabase, waitForNetworkIdle } from './utils/test-utils';
+import { createTestTag } from './utils/test-tag';
 
 test.describe('Authentication flows', () => {
   // Reset database before running tests
@@ -12,8 +13,11 @@ test.describe('Authentication flows', () => {
   test.setTimeout(90000); // 90 seconds for preview tests
 
   test('signin page loads correctly', async ({ page }) => {
-    // Create a screenshot helper for this test
-    const screenshots = new ScreenshotHelper(page, 'signin-page', 'auth');
+    // Create a test tag for this test
+    const testTag = createTestTag('auth', 'signin-page-load');
+
+    // Create a screenshot helper for this test with the test tag
+    const screenshots = new ScreenshotHelper(page, 'signin-page', 'auth', '', testTag);
 
     try {
       await page.goto('/auth/signin', { timeout: 45000 });
@@ -56,8 +60,11 @@ test.describe('Authentication flows', () => {
   });
 
   test('signup page loads correctly', async ({ page }) => {
-    // Create a screenshot helper for this test
-    const screenshots = new ScreenshotHelper(page, 'signup-page', 'auth');
+    // Create a test tag for this test
+    const testTag = createTestTag('auth', 'signup-page-load');
+
+    // Create a screenshot helper for this test with the test tag
+    const screenshots = new ScreenshotHelper(page, 'signup-page', 'auth', '', testTag);
 
     try {
       await page.goto('/auth/signup', { timeout: 45000 });
@@ -103,8 +110,11 @@ test.describe('Authentication flows', () => {
   });
 
   test('login error is displayed for incorrect credentials', async ({ page }) => {
-    // Create a screenshot helper for this test
-    const screenshots = new ScreenshotHelper(page, 'login-error', 'auth');
+    // Create a test tag for this test
+    const testTag = createTestTag('auth', 'login-error');
+
+    // Create a screenshot helper for this test with the test tag
+    const screenshots = new ScreenshotHelper(page, 'login-error', 'auth', '', testTag);
 
     try {
       await page.goto('/auth/signin', { timeout: 45000 });
@@ -211,8 +221,11 @@ test.describe('Authentication flows', () => {
   });
 
   test('can login with valid credentials', async ({ page }) => {
-    // Create a screenshot helper for this test
-    const screenshots = new ScreenshotHelper(page, 'successful-login', 'auth');
+    // Create a test tag for this test
+    const testTag = createTestTag('auth', 'successful-login');
+
+    // Create a screenshot helper for this test with the test tag
+    const screenshots = new ScreenshotHelper(page, 'successful-login', 'auth', '', testTag);
 
     try {
       await page.goto('/auth/signin', { timeout: 45000 });

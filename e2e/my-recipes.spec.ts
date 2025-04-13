@@ -7,6 +7,7 @@ import {
   loginAsTestUser
 } from './utils/test-utils';
 import { ScreenshotHelper } from './utils/screenshot-helper';
+import { createTestTag } from './utils/test-tag';
 
 test.describe('My Recipes Functionality', () => {
   // Reset database before running tests in this file
@@ -15,8 +16,11 @@ test.describe('My Recipes Functionality', () => {
   });
 
   test('redirects to login when not authenticated', async ({ page }) => {
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'my-recipes-auth-redirect', 'my-recipes');
+    // Create a test tag for this test
+    const testTag = createTestTag('my-recipes', 'auth-redirect');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'my-recipes-auth-redirect', 'my-recipes', '', testTag);
 
     try {
       // Go to my-recipes without being logged in
@@ -48,8 +52,11 @@ test.describe('My Recipes Functionality', () => {
   });
 
   test('displays my recipes when authenticated', async ({ page }) => {
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'my-recipes-authenticated', 'my-recipes');
+    // Create a test tag for this test
+    const testTag = createTestTag('my-recipes', 'display-authenticated');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'my-recipes-authenticated', 'my-recipes', '', testTag);
 
     try {
       // Login first
@@ -100,8 +107,11 @@ test.describe('My Recipes Functionality', () => {
   });
 
   test('can toggle between my recipes and all recipes', async ({ page }) => {
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'recipe-toggle', 'my-recipes');
+    // Create a test tag for this test
+    const testTag = createTestTag('my-recipes', 'toggle-view');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'recipe-toggle', 'my-recipes', '', testTag);
 
     try {
       // Login first
@@ -159,8 +169,11 @@ test.describe('My Recipes Functionality', () => {
   });
 
   test('can search and filter my recipes', async ({ page }) => {
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'my-recipes-search', 'my-recipes');
+    // Create a test tag for this test
+    const testTag = createTestTag('my-recipes', 'search-filter');
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'my-recipes-search', 'my-recipes', '', testTag);
 
     try {
       // Login first

@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
 import { setupTestDatabase } from './setup/test-database';
+import { setTestRunTimestamp } from './utils/test-tag';
 
 // Load environment variables
 if (fs.existsSync('.env.test')) {
@@ -18,6 +19,12 @@ async function globalSetup(config: FullConfig) {
 
   if (!quietMode) {
     console.log('Starting global setup...');
+  }
+
+  // Set the test run timestamp for all tests in this run
+  const timestamp = setTestRunTimestamp();
+  if (!quietMode) {
+    console.log(`Test run timestamp set: ${timestamp}`);
   }
 
   // Always use preview settings

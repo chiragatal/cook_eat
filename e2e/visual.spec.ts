@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { ScreenshotHelper } from './utils/screenshot-helper';
 import { takeDebugScreenshot, waitForNetworkIdle } from './utils/test-utils';
+import { createTestTag } from './utils/test-tag';
 import fs from 'fs';
 import path from 'path';
 
@@ -29,6 +30,9 @@ test.describe('Visual regression testing', () => {
       // Skip all visual regression tests since they were set up to expect failure
       // but are now passing, indicating they need maintenance
       test.skip(`${pageConfig.name} page on ${device.name}`, async ({ page }) => {
+        // Create a test tag for this specific test
+        const testTag = createTestTag('visual', 'regression', `${pageConfig.name.toLowerCase()}-${device.name.toLowerCase()}`);
+
         // Test body skipped - visual tests need to be updated
       });
     }
