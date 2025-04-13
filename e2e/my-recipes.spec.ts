@@ -8,6 +8,7 @@ import {
 } from './utils/test-utils';
 import { ScreenshotHelper } from './utils/screenshot-helper';
 import { createTestTag } from './utils/test-tag';
+import { setupTestDatabase } from './setup/test-database';
 
 test.describe('My Recipes Functionality', () => {
   // Reset database before running tests in this file
@@ -18,6 +19,9 @@ test.describe('My Recipes Functionality', () => {
   test('redirects to login when not authenticated', async ({ page }) => {
     // Create a test tag for this test
     const testTag = createTestTag('my-recipes', 'auth-redirect');
+
+    // Setup test database with test tag
+    await setupTestDatabase(testTag);
 
     // Create screenshot helper with the test tag
     const screenshots = new ScreenshotHelper(page, 'my-recipes-auth-redirect', 'my-recipes', '', testTag);
@@ -55,12 +59,15 @@ test.describe('My Recipes Functionality', () => {
     // Create a test tag for this test
     const testTag = createTestTag('my-recipes', 'display-authenticated');
 
+    // Setup test database with test tag
+    await setupTestDatabase(testTag);
+
     // Create screenshot helper with the test tag
     const screenshots = new ScreenshotHelper(page, 'my-recipes-authenticated', 'my-recipes', '', testTag);
 
     try {
       // Login first
-      await loginAsTestUser(page);
+      await loginAsTestUser(page, testTag);
 
       // Go to my-recipes
       await page.goto('/my-recipes');
@@ -115,7 +122,7 @@ test.describe('My Recipes Functionality', () => {
 
     try {
       // Login first
-      await loginAsTestUser(page);
+      await loginAsTestUser(page, testTag);
 
       // Go to my-recipes
       await page.goto('/my-recipes');
@@ -177,7 +184,7 @@ test.describe('My Recipes Functionality', () => {
 
     try {
       // Login first
-      await loginAsTestUser(page);
+      await loginAsTestUser(page, testTag);
 
       // Go to my-recipes
       await page.goto('/my-recipes');
@@ -269,7 +276,7 @@ test.describe('My Recipes Functionality', () => {
 
     try {
       // Login first
-      await loginAsTestUser(page);
+      await loginAsTestUser(page, screenshots.testTag);
 
       // Go to my-recipes
       await page.goto('/my-recipes');
@@ -350,7 +357,7 @@ test.describe('My Recipes Functionality', () => {
 
     try {
       // Login first
-      await loginAsTestUser(page);
+      await loginAsTestUser(page, screenshots.testTag);
 
       // Go to my-recipes
       await page.goto('/my-recipes');
@@ -425,7 +432,7 @@ test.describe('My Recipes Functionality', () => {
 
     try {
       // Login first
-      await loginAsTestUser(page);
+      await loginAsTestUser(page, screenshots.testTag);
 
       // Go to my-recipes
       await page.goto('/my-recipes');

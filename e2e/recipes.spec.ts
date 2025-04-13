@@ -8,6 +8,8 @@ import {
 } from './utils/test-utils';
 import { ScreenshotHelper } from './utils/screenshot-helper';
 import { createTestTag } from './utils/test-tag';
+import { setupTestDatabase, getTestPostId } from './setup/test-database';
+import { PAGE_URLS } from './utils/urls';
 
 // Test recipe ID from test-database.ts
 const testPostId = 'test_post_1';
@@ -26,11 +28,10 @@ test.describe('Recipe Functionality', () => {
   });
 
   test('can view recipe list', async ({ page }) => {
-    // Create a test tag for this test
     const testTag = createTestTag('recipe', 'view-list');
-
-    // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'recipe-list', 'recipes', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag);
+    await setupTestDatabase(testTag);
+    await page.goto(PAGE_URLS.recipes.list);
 
     try {
       // Take initial screenshot
@@ -99,6 +100,9 @@ test.describe('Recipe Functionality', () => {
   test('can search for recipes', async ({ page }) => {
     // Create a test tag for this test
     const testTag = createTestTag('recipe', 'search');
+
+    // Setup test data with this test tag
+    await setupTestDatabase(testTag);
 
     // Create screenshot helper with the test tag
     const screenshots = new ScreenshotHelper(page, 'recipe-search', 'recipes', '', testTag);
@@ -187,16 +191,14 @@ test.describe('Recipe Functionality', () => {
   });
 
   test('can view recipe details', async ({ page }) => {
-    // Create a test tag for this test
     const testTag = createTestTag('recipe', 'view-details');
-
-    // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'recipe-details', 'recipes', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag);
+    await setupTestDatabase(testTag);
+    const testPostId = await getTestPostId();
+    await page.goto(PAGE_URLS.recipes.details(testPostId));
+    await screenshots.take('recipe-details');
 
     try {
-      // Take initial screenshot
-      await screenshots.take('recipe-list-view');
-
       // Wait for the page to be fully loaded
       await waitForNetworkIdle(page);
 
@@ -340,19 +342,18 @@ test.describe('Recipe Functionality', () => {
   });
 
   test('logged in users can create a recipe', async ({ page }) => {
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'create-recipe', 'recipes');
+    const testTag = createTestTag('recipe', 'create');
+    const screenshots = new ScreenshotHelper(page, testTag);
+    await setupTestDatabase(testTag);
+    await page.goto(PAGE_URLS.recipes.create);
+    await screenshots.take('create-recipe-form');
 
     try {
-      // Login as test user
-      await loginAsTestUser(page);
+      // Login as test user with test tag
+      await loginAsTestUser(page, testTag);
 
-      // Go to create recipe page
-      await page.goto('/create-recipe');
+      // Wait for the page to be fully loaded
       await waitForNetworkIdle(page);
-
-      // Take initial screenshot
-      await screenshots.take('create-recipe-page');
 
       // Look for form elements
       const titleInput = page.locator('input[name="title"], input[placeholder*="title" i]').first();

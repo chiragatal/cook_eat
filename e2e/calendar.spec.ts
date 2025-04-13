@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { ScreenshotHelper } from './utils/screenshot-helper';
 import { createTestTag } from './utils/test-tag';
+import { PAGE_URLS } from './utils/urls';
+import { setupTestDatabase } from './setup/test-database';
+import { loginAsTestUser } from './utils/test-utils';
 
 // Skip calendar tests for now
 test.describe.skip('Calendar Functionality', () => {
@@ -420,5 +423,27 @@ test.describe.skip('Calendar Functionality', () => {
     });
 
     expect(calendarWidth).toBeLessThanOrEqual(pageWidth);
+  });
+});
+
+test.describe('Calendar Functionality', () => {
+  test('displays calendar view', async ({ page }) => {
+    const testTag = createTestTag('calendar', 'display');
+    const screenshots = new ScreenshotHelper(page, testTag);
+    await setupTestDatabase(testTag);
+    await loginAsTestUser(page, testTag);
+    await page.goto(PAGE_URLS.calendar.default);
+    await screenshots.take('calendar-view');
+    // ... existing code ...
+  });
+
+  test('displays full calendar view', async ({ page }) => {
+    const testTag = createTestTag('calendar', 'full-view');
+    const screenshots = new ScreenshotHelper(page, testTag);
+    await setupTestDatabase(testTag);
+    await loginAsTestUser(page, testTag);
+    await page.goto(PAGE_URLS.calendar.full);
+    await screenshots.take('full-calendar');
+    // ... existing code ...
   });
 });

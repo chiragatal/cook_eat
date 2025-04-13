@@ -15,16 +15,6 @@ dotenv.config({ path: '.env.test' });
 
 console.log('🔧 Setting up e2e test environment...');
 
-// Check if .env.test file exists
-if (!fs.existsSync('.env.test')) {
-  console.log('⚠️  Creating .env.test file with default settings');
-  const envContent = `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/cook_eat_test"
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="test-secret-do-not-use-in-production"
-`;
-  fs.writeFileSync('.env.test', envContent);
-}
-
 // Ensure prisma migrations are up to date
 try {
   console.log('🔄 Running prisma migrations...');

@@ -2,38 +2,27 @@ import { test, expect } from '@playwright/test';
 import { ScreenshotHelper } from './utils/screenshot-helper';
 import { resetDatabase, waitForNetworkIdle, loginAsTestUser } from './utils/test-utils';
 import { createTestTag } from './utils/test-tag';
+import { PAGE_URLS } from './utils/urls';
+import { setupTestDatabase, getTestPostId } from './setup/test-database';
 
 test.describe('Recipe Reactions', () => {
-  // Reset database before running tests
-  test.beforeAll(async () => {
-    await resetDatabase();
-  });
-
-  // Test recipe ID (matches the one in test-database.ts)
-  const testPostId = 'test_e2e_00000000-0000-0000-0000-000000000002';
-
-  test.beforeEach(async ({ page }) => {
-    // First, login as the test user
-    await loginAsTestUser(page);
-
-    // Navigate to the test recipe page
-    await page.goto(`/recipe/${testPostId}`);
-    await waitForNetworkIdle(page);
+  test('displays reaction buttons', async ({ page }) => {
+    const testTag = createTestTag('reactions', 'display');
+    const screenshots = new ScreenshotHelper(page, testTag);
+    await setupTestDatabase(testTag);
+    const testPostId = await getTestPostId();
+    await page.goto(PAGE_URLS.recipes.details(testPostId));
+    await screenshots.take('reaction-buttons');
 
     // Ensure recipe loads
     const recipeTitle = page.locator('h1').first();
     await expect(recipeTitle).toBeVisible({ timeout: 10000 });
-  });
-
-  test('displays reaction buttons', async ({ page }) => {
-    // Create a test tag for this test
-    const testTag = createTestTag('recipe', 'display-reactions');
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'recipe-reactions', 'reactions', '', testTag);
+    const screenshotsHelper = new ScreenshotHelper(page, 'recipe-reactions', 'reactions', '', testTag);
 
     // Take initial screenshot
-    await screenshots.take('recipe-page');
+    await screenshotsHelper.take('recipe-page');
 
     // Check if reaction section exists
     const reactionsSection = page.locator('.recipe-reactions, .reactions-container, [data-testid="reactions"]');
@@ -46,7 +35,7 @@ test.describe('Recipe Reactions', () => {
     }
 
     // Capture reactions section
-    await screenshots.captureElement(reactionsSection, 'reactions-section');
+    await screenshotsHelper.captureElement(reactionsSection, 'reactions-section');
 
     // Check that reaction buttons are visible
     const reactionButtons = page.locator('.reaction-btn, .reaction-button, button[data-reaction-type]');
@@ -63,15 +52,21 @@ test.describe('Recipe Reactions', () => {
 
     // Capture first reaction button
     const firstButton = reactionButtons.first();
-    await screenshots.captureElement(firstButton, 'reaction-button');
+    await screenshotsHelper.captureElement(firstButton, 'reaction-button');
   });
 
   test('can toggle reactions', async ({ page }) => {
-    // Create a test tag for this test
-    const testTag = createTestTag('recipe', 'toggle-reactions');
+    const testTag = createTestTag('reactions', 'toggle');
+    const screenshots = new ScreenshotHelper(page, testTag);
+    await setupTestDatabase(testTag);
+    await loginAsTestUser(page, testTag);
+    const testPostId = await getTestPostId();
+    await page.goto(PAGE_URLS.recipes.details(testPostId));
+    await screenshots.take('before-toggle');
 
-    // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'toggle-reactions', 'reactions', '', testTag);
+    // Ensure recipe loads
+    const recipeTitle = page.locator('h1').first();
+    await expect(recipeTitle).toBeVisible({ timeout: 10000 });
 
     // Find reaction buttons
     const reactionButtons = page.locator('.reaction-btn, .reaction-button, button[data-reaction-type]');
@@ -132,11 +127,17 @@ test.describe('Recipe Reactions', () => {
   });
 
   test('verifies user reaction state persists after page reload', async ({ page }) => {
-    // Create a test tag for this test
-    const testTag = createTestTag('recipe', 'reaction-persistence');
+    const testTag = createTestTag('reactions', 'persistence');
+    const screenshots = new ScreenshotHelper(page, testTag);
+    await setupTestDatabase(testTag);
+    await loginAsTestUser(page, testTag);
+    const testPostId = await getTestPostId();
+    await page.goto(PAGE_URLS.recipes.details(testPostId));
+    await screenshots.take('initial-state');
 
-    // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'reaction-persistence', 'reactions', '', testTag);
+    // Ensure recipe loads
+    const recipeTitle = page.locator('h1').first();
+    await expect(recipeTitle).toBeVisible({ timeout: 10000 });
 
     // Find reaction buttons
     const reactionButtons = page.locator('.reaction-btn, .reaction-button, button[data-reaction-type]');

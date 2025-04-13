@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 import { ScreenshotHelper } from './utils/screenshot-helper';
 import { resetDatabase, waitForNetworkIdle, loginAsTestUser } from './utils/test-utils';
 import { createTestTag } from './utils/test-tag';
+import { setupTestDatabase, getTestPostId } from './setup/test-database';
+import { PAGE_URLS } from './utils/urls';
 
 test.describe('Recipe Comments', () => {
   // Reset database before running tests
@@ -18,8 +20,14 @@ test.describe('Recipe Comments', () => {
   let addedCommentId = '';
 
   test.beforeEach(async ({ page }) => {
-    // First, login as test user
-    await loginAsTestUser(page);
+    // Create a test tag for setup
+    const testTag = createTestTag('recipe', 'comments-setup');
+
+    // Setup test database with test tag
+    await setupTestDatabase(testTag);
+
+    // Login as test user with test tag
+    await loginAsTestUser(page, testTag);
 
     // Navigate to the test recipe page - using the actual test recipe created in the database
     await page.goto(`/recipe/${testPost.id}`);
@@ -28,6 +36,27 @@ test.describe('Recipe Comments', () => {
     // Ensure recipe loads
     const recipeTitle = page.locator('h1').first();
     await expect(recipeTitle).toBeVisible({ timeout: 10000 });
+  });
+
+  test('displays comment section', async ({ page }) => {
+    const testTag = createTestTag('comments', 'display');
+    const screenshots = new ScreenshotHelper(page, testTag);
+    await setupTestDatabase(testTag);
+    const testPostId = await getTestPostId();
+    await page.goto(PAGE_URLS.recipes.details(testPostId));
+    await screenshots.take('comment-section');
+    // ... existing code ...
+  });
+
+  test('can add comment', async ({ page }) => {
+    const testTag = createTestTag('comments', 'add');
+    const screenshots = new ScreenshotHelper(page, testTag);
+    await setupTestDatabase(testTag);
+    await loginAsTestUser(page, testTag);
+    const testPostId = await getTestPostId();
+    await page.goto(PAGE_URLS.recipes.details(testPostId));
+    await screenshots.take('before-comment');
+    // ... existing code ...
   });
 
   test('can add a comment to a recipe', async ({ page }) => {

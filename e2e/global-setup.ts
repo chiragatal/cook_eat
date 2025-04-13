@@ -1,137 +1,49 @@
 import { chromium, FullConfig } from '@playwright/test';
-import path from 'path';
-import fs from 'fs';
-import dotenv from 'dotenv';
-import { setupTestDatabase } from './setup/test-database';
-import { setTestRunTimestamp } from './utils/test-tag';
-
-// Load environment variables
-if (fs.existsSync('.env.test')) {
-  dotenv.config({ path: '.env.test' });
-}
+import { ScreenshotHelper } from './utils/screenshot-helper';
+import { resetDatabase, loginAsTestUser } from './utils/test-utils';
+import { createTestTag } from './utils/test-tag';
+import { getBaseUrl, PAGE_URLS } from './utils/urls';
 
 /**
- * Global setup for tests, including authentication
+ * Global setup runs once before all tests
+ * Used to set up any global state or data needed for tests
  */
 async function globalSetup(config: FullConfig) {
-  // Check if quiet mode is enabled
-  const quietMode = process.env.E2E_QUIET_MODE === 'true';
+  // Create a test tag for global setup
+  const testTag = createTestTag('global', 'setup');
 
-  if (!quietMode) {
-    console.log('Starting global setup...');
-  }
+  // Get base URL from centralized configuration
+  const baseURL = getBaseUrl();
 
-  // Set the test run timestamp for all tests in this run
-  const timestamp = setTestRunTimestamp();
-  if (!quietMode) {
-    console.log(`Test run timestamp set: ${timestamp}`);
-  }
+  // Create browser instance
+  const browser = await chromium.launch();
 
-  // Always use preview settings
-  const usePreviewDatabase = true;
+  // Create page with base URL configuration
+  const page = await browser.newPage({
+    baseURL,
+  });
 
-  if (!quietMode) {
-    console.log('Using preview database: YES');
-  } else {
-    console.log('[Setup] Using preview database: YES');
-  }
-
-  // Set up test database
-  try {
-    await setupTestDatabase();
-    if (!quietMode) {
-      console.log('Test database setup completed');
-    }
-  } catch (error) {
-    console.warn('Warning: Error during test database setup:', error);
-    console.log('Continuing with tests, but database-dependent tests may fail');
-  }
-
-  // Create the auth state directory if it doesn't exist
-  const authDir = path.join(__dirname, 'setup');
-  if (!fs.existsSync(authDir)) {
-    fs.mkdirSync(authDir, { recursive: true });
-  }
-
-  const authFile = path.join(authDir, 'auth-state.json');
-  const baseURL = 'https://cook-eat-preview.vercel.app';
-
-  if (!quietMode) {
-    console.log(`Using base URL: ${baseURL}`);
-  }
-
-  // Always perform Vercel auth for preview URL
-  if (!quietMode) {
-    console.log('Preview URL testing configured. Will check for Vercel authentication.');
-  }
-
-  // Launch a browser
-  const browser = await chromium.launch({ headless: false });
-  const page = await browser.newPage({ baseURL });
+  // Create screenshot helper for global setup
+  const screenshots = new ScreenshotHelper(page, testTag);
 
   try {
-    if (!quietMode) {
-      console.log('Navigating to base URL for authentication...');
-    }
-    await page.goto('/');
+    // Reset database to known state
+    await resetDatabase();
+
+    // Navigate to home page and verify it loads
+    await page.goto(PAGE_URLS.home);
     await page.waitForLoadState('networkidle');
+    await screenshots.take('home-page');
 
-    // If we see the Vercel login page, need to authenticate
-    if (await page.getByText('Log in to Vercel').isVisible()) {
-      console.log('Detected Vercel login page, attempting to authenticate...');
-
-      // Check if we have authentication credentials in environment variables
-      const vercelEmail = process.env.VERCEL_EMAIL;
-      const vercelPassword = process.env.VERCEL_PASSWORD;
-
-      if (vercelEmail && vercelPassword) {
-        // If the login with email option is available, click it
-        if (await page.getByText('Continue with Email').isVisible()) {
-          await page.getByText('Continue with Email').click();
-          await page.waitForLoadState('networkidle');
-        }
-
-        // Enter email and password
-        await page.getByPlaceholder('you@example.com').fill(vercelEmail);
-        await page.getByRole('button', { name: 'Continue' }).click();
-        await page.waitForLoadState('networkidle');
-
-        // Enter password if prompted
-        if (await page.getByPlaceholder('Password').isVisible()) {
-          await page.getByPlaceholder('Password').fill(vercelPassword);
-          await page.getByRole('button', { name: 'Continue' }).click();
-          await page.waitForLoadState('networkidle');
-        }
-
-        console.log('Logged in to Vercel successfully');
-      } else {
-        console.log('No Vercel credentials found in environment variables.');
-        console.log('Please manually log in to proceed with tests.');
-
-        // Wait for manual authentication (give time for user to log in)
-        await page.waitForTimeout(60000); // Wait for 1 minute
-      }
-
-      // After login, we should be redirected to our actual application
-      await page.waitForLoadState('networkidle');
-    } else if (!quietMode) {
-      console.log('Direct access to application (no Vercel login required)');
-    }
-
-    // Store the authentication state
-    await page.context().storageState({ path: authFile });
-    if (!quietMode) {
-      console.log(`Authentication state saved to ${authFile}`);
-    }
-
+    // Log successful setup
+    console.log('Global setup complete');
+    console.log(`Using base URL: ${baseURL}`);
+    console.log('Test database reset');
   } catch (error) {
-    console.error('Error during authentication setup:', error);
+    console.error('Error in global setup:', error);
+    throw error;
   } finally {
-    // Close the browser
     await browser.close();
-    if (!quietMode) {
-      console.log('Global setup completed.');
-    }
   }
 }
 

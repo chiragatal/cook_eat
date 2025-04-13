@@ -9,6 +9,8 @@ import {
   loginAsTestUser
 } from './utils/test-utils';
 import { createTestTag } from './utils/test-tag';
+import { setupTestDatabase } from './setup/test-database';
+import { PAGE_URLS } from './utils/urls';
 
 test.describe('Home Page', () => {
   // Reset database before running tests
@@ -19,6 +21,9 @@ test.describe('Home Page', () => {
   test('home page loads correctly', async ({ page }) => {
     // Create a test tag for this test
     const testTag = createTestTag('home', 'page-load');
+
+    // Setup test database with test tag
+    await setupTestDatabase(testTag);
 
     // Create screenshot helper with the test tag
     const screenshots = new ScreenshotHelper(page, 'home-page', 'home', '', testTag);
@@ -75,11 +80,14 @@ test.describe('Home Page', () => {
     // Create a test tag for this test
     const testTag = createTestTag('home', 'logged-in-content');
 
+    // Setup test database with test tag
+    await setupTestDatabase(testTag);
+
     // Create screenshot helper with the test tag
     const screenshots = new ScreenshotHelper(page, 'home-logged-in', 'home', '', testTag);
 
     // Login as test user
-    await loginAsTestUser(page);
+    await loginAsTestUser(page, testTag);
 
     // Navigate to home page
     await page.goto('/');
@@ -143,7 +151,7 @@ test.describe('Home Page', () => {
     const screenshots = new ScreenshotHelper(page, 'navigation', 'home', '', testTag);
 
     // Login as test user
-    await loginAsTestUser(page);
+    await loginAsTestUser(page, testTag);
 
     // Navigate to home page
     await page.goto('/');
@@ -211,6 +219,34 @@ test.describe('Home Page', () => {
     const currentUrl = page.url();
     expect(currentUrl).toContain('/recipes');
     console.log(`Navigated to: ${currentUrl}`);
+  });
+
+  test('displays welcome message', async ({ page }) => {
+    const testTag = createTestTag('home', 'welcome');
+    const screenshots = new ScreenshotHelper(page, testTag);
+    await setupTestDatabase(testTag);
+    await page.goto(PAGE_URLS.home);
+    await screenshots.take('welcome-message');
+    // ... existing code ...
+  });
+
+  test('displays featured recipes', async ({ page }) => {
+    const testTag = createTestTag('home', 'featured');
+    const screenshots = new ScreenshotHelper(page, testTag);
+    await setupTestDatabase(testTag);
+    await page.goto(PAGE_URLS.home);
+    await screenshots.take('featured-recipes');
+    // ... existing code ...
+  });
+
+  test('displays user menu when logged in', async ({ page }) => {
+    const testTag = createTestTag('home', 'user-menu');
+    const screenshots = new ScreenshotHelper(page, testTag);
+    await setupTestDatabase(testTag);
+    await loginAsTestUser(page, testTag);
+    await page.goto(PAGE_URLS.home);
+    await screenshots.take('user-menu');
+    // ... existing code ...
   });
 });
 

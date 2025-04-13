@@ -2,9 +2,10 @@ import { test, expect, Page } from '@playwright/test';
 import { ScreenshotHelper } from './utils/screenshot-helper';
 import { resetDatabase, waitForNetworkIdle, loginAsTestUser } from './utils/test-utils';
 import { createTestTag } from './utils/test-tag';
+import { getTestPostId, setupTestDatabase } from './setup/test-database';
 
-// Test recipe ID (matches the one in test-database.ts)
-const testPostId = 'test_e2e_00000000-0000-0000-0000-000000000002';
+// Test recipe ID will be unique per worker
+let testPostId: string;
 
 /**
  * Reusable component for interacting with reactions
@@ -132,11 +133,17 @@ test.describe('End-to-End Recipe Journey', () => {
   });
 
   test('can view and interact with a recipe', async ({ page }) => {
-    // Login as test user
-    await loginAsTestUser(page);
-
     // Create a test tag for this test
     const testTag = createTestTag('recipe', 'e2e-journey');
+
+    // Setup test data with this test tag
+    await setupTestDatabase(testTag);
+
+    // Get the test post ID for this test
+    testPostId = getTestPostId();
+
+    // Login as test user with test tag
+    await loginAsTestUser(page, testTag);
 
     // Create screenshot helper with the test tag
     const screenshots = new ScreenshotHelper(page, 'recipe-journey', 'recipes', '', testTag);
@@ -245,11 +252,17 @@ test.describe('End-to-End Recipe Journey', () => {
   });
 
   test('can navigate between recipes', async ({ page }) => {
-    // Login as test user
-    await loginAsTestUser(page);
+    // Create a test tag for this test
+    const testTag = createTestTag('recipe', 'navigation');
 
-    // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'recipe-navigation', 'recipes');
+    // Setup test data with this test tag
+    await setupTestDatabase(testTag);
+
+    // Login as test user with test tag
+    await loginAsTestUser(page, testTag);
+
+    // Create screenshot helper with the test tag
+    const screenshots = new ScreenshotHelper(page, 'recipe-navigation', 'recipes', '', testTag);
 
     // Go to the recipes listing page
     await page.goto('/all-recipes');

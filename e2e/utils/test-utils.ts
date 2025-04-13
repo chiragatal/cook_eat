@@ -1,8 +1,10 @@
 import { Page, expect } from '@playwright/test';
-import { setupTestDatabase } from '../setup/test-database';
+import { setupTestDatabase, getTestPostId } from '../setup/test-database';
 import path from 'path';
 import fs from 'fs';
 import { ScreenshotHelper } from './screenshot-helper';
+import { createTestTag } from './test-tag';
+import { PAGE_URLS } from './urls';
 
 // Ensure screenshots directory exists
 const screenshotsDir = path.join(process.cwd(), 'test-results', 'screenshots');
@@ -18,12 +20,15 @@ const screenshotsDebugDir = path.join(screenshotsDir, 'debug');
 /**
  * Login with the test user account
  */
-export async function loginAsTestUser(page: Page) {
-  // Create screenshot helper for login
-  const screenshots = new ScreenshotHelper(page, 'login-test-user', 'auth');
+export async function loginAsTestUser(page: Page, testTag: string) {
+  // Set up test data
+  await setupTestDatabase(testTag);
 
-  await page.goto('/auth/signin');
-  await screenshots.take('login-page');
+  // Create screenshot helper for this test
+  const screenshotHelper = new ScreenshotHelper(page, testTag);
+
+  // Go to login page
+  await page.goto(PAGE_URLS.login);
 
   // Wait for elements to be available with a timeout
   await page.waitForSelector('input[type="email"], input[name="email"], input[placeholder*="email" i]', { timeout: 5000 })
@@ -39,7 +44,7 @@ export async function loginAsTestUser(page: Page) {
   await passwordField.fill('password12345');
 
   // Capture the form submission with before/after screenshots
-  await screenshots.captureAction('login-submission', async () => {
+  await screenshotHelper.captureAction('login-submission', async () => {
     await signinButton.click();
     await page.waitForURL('**/*');
   });
@@ -51,7 +56,8 @@ export async function loginAsTestUser(page: Page) {
  */
 export async function resetDatabase() {
   // Just directly call setupTestDatabase instead of a reset function that no longer exists
-  await setupTestDatabase();
+  const testTag = createTestTag('setup', 'reset-database');
+  await setupTestDatabase(testTag);
   console.log('Test database setup complete');
 }
 
@@ -216,4 +222,9 @@ export async function resizeForDevice(page: Page, device: 'desktop' | 'tablet' |
 
   // Take screenshot after resize
   await screenshots.take(`after-resize-${device}`);
+}
+
+export async function navigateToRecipes(page: Page) {
+  await page.goto(PAGE_URLS.recipes.list);
+  // ... existing code ...
 }

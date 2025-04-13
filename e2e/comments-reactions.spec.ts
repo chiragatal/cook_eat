@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { ScreenshotHelper } from './utils/screenshot-helper';
 import { resetDatabase, waitForNetworkIdle, loginAsTestUser } from './utils/test-utils';
 import { createTestTag } from './utils/test-tag';
+import { setupTestDatabase } from './setup/test-database';
 
 // Set a longer timeout for all tests
 test.setTimeout(60000);
@@ -18,8 +19,14 @@ test.describe('Comments and Reactions', () => {
 
   test.beforeEach(async ({ page }) => {
     try {
-      // First, login as test user
-      await loginAsTestUser(page);
+      // Create a test tag for setup
+      const testTag = createTestTag('comments', 'reactions-setup');
+
+      // Setup test database with test tag
+      await setupTestDatabase(testTag);
+
+      // Login as test user with test tag
+      await loginAsTestUser(page, testTag);
 
       // Navigate to the test recipe page - using the actual test recipe created in the database
       await page.goto(`/recipe/${testPostId}`);

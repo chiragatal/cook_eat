@@ -1,15 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
 import { join } from 'path';
 import dotenv from 'dotenv';
+import { getBaseUrl } from './e2e/utils/urls';
 
 // Load environment variables from .env.test
 dotenv.config({ path: '.env.test' });
 
-// Set base URL to always use the preview URL
-const baseURL = 'https://cook-eat-preview.vercel.app';
-
-// Force preview usage flags by default
-const usePreviewDatabase = true;
+// Get base URL from centralized configuration
+const baseURL = getBaseUrl();
 
 // Check if we should enable quiet mode to reduce log noise
 const quietMode = process.env.E2E_QUIET_MODE === 'true';
