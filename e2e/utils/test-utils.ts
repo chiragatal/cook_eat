@@ -24,11 +24,9 @@ export async function loginAsTestUser(page: Page, testTag: string) {
   // Set up test data
   await setupTestDatabase(testTag);
 
-  // Create screenshot helper for this test
-  const screenshotHelper = new ScreenshotHelper(page, testTag);
-
   // Go to login page
   await page.goto(PAGE_URLS.login);
+  await page.waitForLoadState('networkidle');
 
   // Wait for elements to be available with a timeout
   await page.waitForSelector('input[type="email"], input[name="email"], input[placeholder*="email" i]', { timeout: 5000 })
@@ -43,11 +41,10 @@ export async function loginAsTestUser(page: Page, testTag: string) {
   await emailField.fill('test_e2e_test@example.com');
   await passwordField.fill('password12345');
 
-  // Capture the form submission with before/after screenshots
-  await screenshotHelper.captureAction('login-submission', async () => {
-    await signinButton.click();
-    await page.waitForURL('**/*');
-  });
+  // Submit the form and wait for navigation
+  await signinButton.click();
+  await page.waitForURL('**/*');
+  await page.waitForLoadState('networkidle');
 }
 
 /**

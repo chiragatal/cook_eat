@@ -14,7 +14,7 @@ class CustomReporter implements Reporter {
   }
 
   onBegin(config: FullConfig, suite: Suite) {
-    console.log('Starting tests with custom screenshot reporter enabled');
+    // Starting tests with custom screenshot reporter enabled
   }
 
   async onTestEnd(test: TestCase, result: TestResult) {
@@ -25,7 +25,6 @@ class CustomReporter implements Reporter {
 
       if (testMetadata) {
         // If we have metadata, use it to find all screenshots for this test
-        console.log(`Found metadata for test: ${test.title}`);
         screenshots = await this.findScreenshotsByTestId(testMetadata.testId);
       } else {
         // Fallback: use test name as search pattern
@@ -35,8 +34,6 @@ class CustomReporter implements Reporter {
 
       // Attach found screenshots to the test result
       if (screenshots.length > 0) {
-        console.log(`Found ${screenshots.length} screenshots for test: ${test.title}`);
-
         // Add all screenshots as attachments
         for (const screenshotPath of screenshots) {
           // Extract relevant information from the path
@@ -62,8 +59,6 @@ class CustomReporter implements Reporter {
             path: screenshotPath,
           });
         }
-      } else {
-        console.log(`No screenshots found for test: ${test.title}`);
       }
     } catch (error) {
       console.error('Error in custom reporter:', error);
@@ -167,7 +162,6 @@ class CustomReporter implements Reporter {
 
     // Just return all screenshots if nothing else works
     if (screenshots.length === 0) {
-      console.log(`No screenshots found for pattern ${pattern}, fetching all screenshots as fallback`);
       screenshots = await glob(path.join(this.screenshotsDir, '**', '*.png'));
       // Limit to most recent 20 screenshots to avoid overwhelming the report
       screenshots = screenshots.slice(0, 20);

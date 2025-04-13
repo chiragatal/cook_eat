@@ -13,6 +13,7 @@ export class ScreenshotHelper {
   private screenshotsDir: string;
   private testId: string;
   private testTag: string;
+  private metadataWritten: boolean = false;
 
   // Add a static counter to track screenshot count
   private static screenshotCount = 0;
@@ -22,34 +23,24 @@ export class ScreenshotHelper {
    * Creates a new ScreenshotHelper instance
    *
    * @param page Playwright page object
-   * @param testName Name of the test (used for screenshot naming)
+   * @param testTag A test tag string created with createTestTag
    * @param category Category folder for screenshots (e.g., 'auth', 'home', 'recipes')
-   * @param testId Optional test ID for linking screenshots to test runs
-   * @param testTag Optional test tag created with createTestTag for consistent tagging
    */
   constructor(
     page: Page,
-    testName: string,
-    category: string = 'general',
-    testId: string = '',
-    testTag?: string
+    testTag: string,
+    category: string = 'general'
   ) {
     this.page = page;
-    this.testName = testName.replace(/\s+/g, '-').toLowerCase();
+    this.testTag = testTag;
     this.category = category;
-    this.testId = testId;
-
-    // If a test tag was provided, use it; otherwise create one from component (category) and test (testName)
-    this.testTag = testTag || createTestTag(this.category, this.testName);
+    this.testName = testTag.replace(/[^a-zA-Z0-9_]/g, '-').toLowerCase();
 
     // Create screenshots directory structure
     this.screenshotsDir = path.join(process.cwd(), 'test-results', 'screenshots', this.category);
     if (!fs.existsSync(this.screenshotsDir)) {
       fs.mkdirSync(this.screenshotsDir, { recursive: true });
     }
-
-    // Write test metadata including the new test tag
-    this.writeTestMetadata();
   }
 
   /**
@@ -105,120 +96,52 @@ export class ScreenshotHelper {
    * @returns Path to the screenshot
    */
   async take(label: string, element?: string | Locator): Promise<string> {
-    // Skip screenshots if in ultra-quiet mode
-    if (process.env.E2E_ULTRA_QUIET_MODE === 'true') {
-      return 'screenshot-skipped-in-ultra-quiet-mode';
-    }
-
-    // Check if screenshots are enabled via environment variable
-    if (process.env.PLAYWRIGHT_SCREENSHOTS !== 'on') {
+    // Skip screenshots if disabled
+    if (process.env.E2E_ULTRA_QUIET_MODE === 'true' || process.env.PLAYWRIGHT_SCREENSHOTS !== 'on') {
       return 'screenshots-disabled';
     }
 
-    // Format the date for use in the filename - include the test tag
-    const timestamp = new Date().toISOString().replace(/:/g, '-');
-    const screenshotName = `${this.testName}-${label}-${this.testTag}-${timestamp}.png`;
-    const screenshotPath = path.join(this.screenshotsDir, screenshotName);
-
-    // Ensure the directory exists
-    const dirPath = path.dirname(screenshotPath);
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true });
+    // Write metadata only once per test
+    if (!this.metadataWritten) {
+      this.writeTestMetadata();
+      this.metadataWritten = true;
     }
 
-    // Create metadata object for this screenshot
-    const writeMetadata = (actualPath: string, isFallback: boolean = false) => {
-      const metadataPath = path.join(this.screenshotsDir, `${this.testName}-${label}-${timestamp}.json`);
-      const metadata = {
-        testId: this.testId,
-        testName: this.testName,
-        category: this.category,
-        testTag: this.testTag,
-        label,
-        timestamp: new Date().toISOString(),
-        runTimestamp: getTestRunTimestamp(),
-        screenshotPath: actualPath,
-        elementScreenshot: !!element,
-        isFallback
-      };
-      fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
-    };
+    // Format the date for use in the filename
+    const timestamp = new Date().toISOString().replace(/:/g, '-');
+    const screenshotName = `${this.testName}-${label}-${timestamp}.png`;
+    const screenshotPath = path.join(this.screenshotsDir, screenshotName);
 
     try {
-      // Take the screenshot of the whole page or a specific element
+      // Take the screenshot
       const options = { path: screenshotPath, fullPage: !element };
-      let actualPath = screenshotPath;
-      let isFallback = false;
 
       if (element) {
-        try {
-          // Convert string selector to locator if needed
-          const elementLocator = typeof element === 'string'
-            ? this.page.locator(element).first()
-            : element;
+        const elementLocator = typeof element === 'string'
+          ? this.page.locator(element).first()
+          : element;
 
-          // Check if element is visible before taking screenshot
-          const isVisible = await elementLocator.isVisible().catch(() => false);
-
-          if (isVisible) {
-            await elementLocator.screenshot(options).catch(async (error) => {
-              // If we got an error for the element screenshot, fall back to page
-              console.log(`Error taking element screenshot: ${error.message}`);
-              console.log('Falling back to page screenshot');
-              await this.page.screenshot(options);
-              isFallback = true;
-            });
-          } else {
-            console.log(`Element for screenshot '${label}' not visible, taking page screenshot instead`);
-            await this.page.screenshot(options);
-            actualPath = `${screenshotPath}-fallback-page`;
-            isFallback = true;
-          }
-        } catch (elementError) {
-          console.log(`Error with element for screenshot '${label}': ${elementError instanceof Error ? elementError.message : String(elementError)}`);
-          console.log('Falling back to page screenshot');
+        const isVisible = await elementLocator.isVisible().catch(() => false);
+        if (isVisible) {
+          await elementLocator.screenshot(options);
+        } else {
           await this.page.screenshot(options);
-          actualPath = `${screenshotPath}-fallback-page`;
-          isFallback = true;
         }
       } else {
         await this.page.screenshot(options);
       }
 
-      // Write metadata with the correct path
-      writeMetadata(actualPath, isFallback);
-
-      // Increment the screenshot count
+      // Increment the screenshot count and log if needed
       ScreenshotHelper.screenshotCount++;
-
-      // Only log if not in quiet mode, or if in quiet mode, only log every Nth screenshot
-      const shouldLog = process.env.E2E_QUIET_MODE !== 'true' ||
-                        (ScreenshotHelper.screenshotCount % ScreenshotHelper.logFrequency === 0);
-
-      if (shouldLog) {
-        const countInfo = process.env.E2E_QUIET_MODE === 'true'
-          ? ` (${ScreenshotHelper.screenshotCount} total)`
-          : '';
-        console.log(`Screenshot saved: ${actualPath}${countInfo}`);
+      if (process.env.E2E_QUIET_MODE !== 'true' ||
+          (ScreenshotHelper.screenshotCount % ScreenshotHelper.logFrequency === 0)) {
+        console.log(`Screenshot taken: ${screenshotName}`);
       }
 
-      return actualPath;
-    } catch (error: any) {
-      console.error(`Error taking screenshot '${label}':`, error.message);
-
-      // Try to take a simple screenshot as fallback
-      try {
-        const fallbackPath = path.join(this.screenshotsDir, `${this.testName}-fallback-${timestamp}.png`);
-        await this.page.screenshot({ path: fallbackPath });
-
-        // Write metadata for the fallback screenshot
-        writeMetadata(fallbackPath, true);
-
-        console.log(`Fallback screenshot saved: ${fallbackPath}`);
-        return fallbackPath;
-      } catch {
-        return 'screenshot-error-with-failed-fallback';
-      }
+      return screenshotPath;
+    } catch (error) {
+      console.error(`Error taking screenshot: ${error instanceof Error ? error.message : String(error)}`);
+      return 'screenshot-failed';
     }
   }
 
