@@ -30,6 +30,7 @@ export async function loginAsTestUser(page: Page, testTag: string) {
   // Go to login page
   await page.goto(PAGE_URLS.login);
   await page.waitForLoadState('networkidle');
+  await printPageUrl(page, 'login page start');
 
   // Take screenshot of the login page
   await screenshots.take('login-page');
@@ -74,6 +75,7 @@ export async function loginAsTestUser(page: Page, testTag: string) {
 
   } catch (error) {
     console.error('Error finding login form elements:', error);
+    await printPageUrl(page, 'login form elements not found error');
     await takeDebugScreenshot(page, 'login-form-not-found', 'auth');
     throw new Error('Login form elements not found');
   }
@@ -99,6 +101,7 @@ export async function loginAsTestUser(page: Page, testTag: string) {
         console.log('Navigation or authenticated element waiting timed out, continuing anyway');
       }
       await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
+      await printPageUrl(page, 'after login submission');
     });
 
     // Take screenshot after login
@@ -117,11 +120,14 @@ export async function loginAsTestUser(page: Page, testTag: string) {
 
     if (!isAuthenticated) {
       console.log('Warning: Login may not have been successful, but continuing with test');
+      await printPageUrl(page, 'login unsuccessful warning');
     } else {
       console.log('Login successful');
+      await printPageUrl(page, 'login successful');
     }
   } catch (error) {
     console.error('Error during login process:', error);
+    await printPageUrl(page, 'login process error');
     await takeDebugScreenshot(page, 'login-process-error', 'auth');
     throw new Error('Login process failed');
   }
@@ -145,6 +151,7 @@ export async function navigateToRecipe(page: Page, title: string) {
   const screenshots = new ScreenshotHelper(page, 'recipe-navigation', 'recipes');
 
   await page.goto('/all-recipes');
+  await printPageUrl(page, 'recipe navigation - all recipes page');
   await screenshots.take('recipe-list');
 
   // Find and click the recipe with the given title - use more flexible selectors
@@ -159,6 +166,7 @@ export async function navigateToRecipe(page: Page, title: string) {
   await screenshots.captureAction('recipe-click', async () => {
     await recipeCard.click();
     await page.waitForLoadState('networkidle');
+    await printPageUrl(page, `recipe navigation - after clicking "${title}"`);
   });
 
   // Verify we're on a recipe detail page
@@ -172,16 +180,27 @@ export async function navigateToRecipe(page: Page, title: string) {
  * @param page Playwright page object
  * @param timeout Timeout in milliseconds
  * @param idleTime Time with no network requests to consider "idle" in milliseconds
+ * @param logUrl Whether to log the URL after waiting (default: true)
  */
-export async function waitForNetworkIdle(page: Page, timeout = 10000, idleTime = 500): Promise<void> {
+export async function waitForNetworkIdle(page: Page, timeout = 10000, idleTime = 500, logUrl = true): Promise<void> {
   // We're always using the preview environment
   const effectiveTimeout = Math.min(timeout, 5000);
 
   try {
     await page.waitForLoadState('networkidle', { timeout: effectiveTimeout });
+
+    // Log URL after network is idle if requested
+    if (logUrl) {
+      await printPageUrl(page, 'after network idle');
+    }
   } catch (error) {
     // Don't fail the test if network doesn't become idle, just log a warning
     console.log(`Network did not become idle within timeout, continuing anyway`);
+
+    // Still log the URL to help with debugging
+    if (logUrl) {
+      await printPageUrl(page, 'after network idle timeout');
+    }
   }
 }
 
@@ -198,6 +217,9 @@ export async function takeSnapshot(page: Page, name: string) {
  */
 export async function takeDebugScreenshot(page: Page, name: string, category: string = 'debug') {
   try {
+    // Log the URL first for immediate debugging
+    await printPageUrl(page, `debug screenshot: ${name}`);
+
     // Create a timestamp for unique filenames
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const screenshotName = `${name}-${timestamp}`;
@@ -249,6 +271,7 @@ export async function takeDebugScreenshot(page: Page, name: string, category: st
 export async function verifyCommonElements(page: Page) {
   // Create screenshot helper for common elements
   const screenshots = new ScreenshotHelper(page, 'common-elements', 'layout');
+  await printPageUrl(page, 'verifying common elements');
 
   // Look for header using flexible selectors
   const header = page.locator('header, nav, [role="banner"], div[class*="header"], div[class*="nav"]').first();
@@ -284,6 +307,9 @@ export async function resizeForDevice(page: Page, device: 'desktop' | 'tablet' |
   // Create screenshot helper for responsive testing
   const screenshots = new ScreenshotHelper(page, `responsive-${device}`, 'responsive');
 
+  // Log the current page before resizing
+  await printPageUrl(page, `before resize to ${device}`);
+
   switch (device) {
     case 'desktop':
       await page.setViewportSize({ width: 1280, height: 800 });
@@ -296,11 +322,38 @@ export async function resizeForDevice(page: Page, device: 'desktop' | 'tablet' |
       break;
   }
 
+  // Log after resizing
+  await printPageUrl(page, `after resize to ${device}`);
+
   // Take screenshot after resize
   await screenshots.take(`after-resize-${device}`);
 }
 
+/**
+ * Navigate to recipes page
+ */
 export async function navigateToRecipes(page: Page) {
   await page.goto(PAGE_URLS.recipes.list);
+  await printPageUrl(page, 'navigated to recipes list');
   // ... existing code ...
+}
+
+/**
+ * Print the current page URL for debugging purposes
+ * Only prints if not in ultra quiet mode
+ * @param page Playwright page object
+ * @param context Optional context string to identify where the URL is being printed from
+ */
+export async function printPageUrl(page: Page, context: string = '') {
+  // Skip in ultra quiet mode
+  if (process.env.E2E_ULTRA_QUIET_MODE === 'true') {
+    return;
+  }
+
+  const url = page.url();
+  const title = await page.title().catch(() => 'No title');
+  const contextPrefix = context ? `[${context}] ` : '';
+
+  console.log(`${contextPrefix}Page URL: ${url}`);
+  console.log(`${contextPrefix}Page Title: ${title}`);
 }

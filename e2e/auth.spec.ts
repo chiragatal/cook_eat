@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { ScreenshotHelper } from './utils/screenshot-helper';
-import { resetDatabase, waitForNetworkIdle, loginAsTestUser } from './utils/test-utils';
+import { resetDatabase, waitForNetworkIdle, loginAsTestUser, printPageUrl } from './utils/test-utils';
 import { createTestTag } from './utils/test-tag';
 import { setupTestDatabase } from './setup/test-database';
 import { PAGE_URLS } from './utils/urls';
@@ -21,8 +21,9 @@ test.describe('Authentication flows', () => {
 
     await page.goto(PAGE_URLS.login);
     await page.waitForLoadState('networkidle');
+    await printPageUrl(page, 'signin page load');
     await screenshots.take('signin-page');
-    await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sign in to your account' })).toBeVisible();
   });
 
   test('signup page loads correctly', async ({ page }) => {
@@ -32,8 +33,9 @@ test.describe('Authentication flows', () => {
 
     await page.goto(PAGE_URLS.signup);
     await page.waitForLoadState('networkidle');
+    await printPageUrl(page, 'signup page load');
     await screenshots.take('signup-page');
-    await expect(page.getByRole('heading', { name: 'Sign Up' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Create a new account' })).toBeVisible();
   });
 
   test('login error is displayed for incorrect credentials', async ({ page }) => {
@@ -44,6 +46,7 @@ test.describe('Authentication flows', () => {
     // Navigate to login page
     await page.goto(PAGE_URLS.login);
     await page.waitForLoadState('networkidle');
+    await printPageUrl(page, 'login page before error');
 
     // Fill in incorrect credentials
     await page.getByLabel('Email').fill('wrong@example.com');
@@ -55,6 +58,7 @@ test.describe('Authentication flows', () => {
     // Submit and wait for error
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.waitForLoadState('networkidle');
+    await printPageUrl(page, 'login page after error');
     await expect(page.getByText('Invalid email or password')).toBeVisible();
 
     // Take screenshot of error state
@@ -73,16 +77,18 @@ test.describe('Authentication flows', () => {
     // Navigate to login page
     await page.goto(PAGE_URLS.login);
     await page.waitForLoadState('networkidle');
+    await printPageUrl(page, 'login page before valid login');
     await screenshots.take('login-form');
 
-    // Fill in valid credentials
-    await page.getByLabel('Email').fill(testEmail);
+    // Fill in valid credentials - use the standard test user for consistency
+    await page.getByLabel('Email').fill('test_e2e_test@example.com');
     await page.getByLabel('Password').fill('password12345');
     await page.getByRole('button', { name: 'Sign In' }).click();
 
     // Wait for successful login
     await page.waitForURL('/', { timeout: 5000 });
     await page.waitForLoadState('networkidle');
+    await printPageUrl(page, 'page after successful login');
     await expect(page.getByTestId('user-menu')).toBeVisible();
 
     // Take screenshot of logged in state

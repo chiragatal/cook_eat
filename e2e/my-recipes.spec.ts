@@ -4,7 +4,8 @@ import {
   verifyCommonElements,
   resizeForDevice,
   waitForNetworkIdle,
-  loginAsTestUser
+  loginAsTestUser,
+  printPageUrl
 } from './utils/test-utils';
 import { ScreenshotHelper } from './utils/screenshot-helper';
 import { createTestTag } from './utils/test-tag';
@@ -29,11 +30,13 @@ test.describe('My Recipes Functionality', () => {
     try {
       // Go to my-recipes without being logged in
       await page.goto('/my-recipes');
+      await printPageUrl(page, 'my-recipes before auth redirect');
       await screenshots.take('initial-load');
 
       // Wait for redirect to occur
       await page.waitForURL('**/auth/signin**', { timeout: 5000 });
       await waitForNetworkIdle(page);
+      await printPageUrl(page, 'after auth redirect');
 
       // Verify we are redirected to login page
       await screenshots.take('redirected-to-login');
@@ -50,6 +53,7 @@ test.describe('My Recipes Functionality', () => {
       await expect(passwordField).toBeVisible();
     } catch (error) {
       console.error(`Error in auth redirect test: ${error instanceof Error ? error.message : String(error)}`);
+      await printPageUrl(page, 'auth redirect error');
       await screenshots.captureError(`Auth redirect error: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
@@ -72,6 +76,7 @@ test.describe('My Recipes Functionality', () => {
       // Go to my-recipes
       await page.goto('/my-recipes');
       await waitForNetworkIdle(page);
+      await printPageUrl(page, 'my-recipes authenticated');
 
       // Take screenshot of the page
       await screenshots.take('after-login');
@@ -108,6 +113,7 @@ test.describe('My Recipes Functionality', () => {
       }
     } catch (error) {
       console.error(`Error in authenticated my recipes test: ${error instanceof Error ? error.message : String(error)}`);
+      await printPageUrl(page, 'my-recipes authenticated error');
       await screenshots.captureError(`My recipes error: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
@@ -127,6 +133,7 @@ test.describe('My Recipes Functionality', () => {
       // Go to my-recipes
       await page.goto('/my-recipes');
       await waitForNetworkIdle(page);
+      await printPageUrl(page, 'my-recipes toggle test start');
 
       // Take screenshot of my recipes
       await screenshots.take('my-recipes-view');
@@ -143,6 +150,7 @@ test.describe('My Recipes Functionality', () => {
         await allRecipesButton.click();
         await page.waitForURL('**/all-recipes**');
         await waitForNetworkIdle(page);
+        await printPageUrl(page, 'all-recipes after toggle');
       });
 
       // Take screenshot of all recipes
@@ -161,6 +169,7 @@ test.describe('My Recipes Functionality', () => {
         await myRecipesButtonAfterNav.click();
         await page.waitForURL('**/my-recipes**');
         await waitForNetworkIdle(page);
+        await printPageUrl(page, 'my-recipes after toggle back');
       });
 
       // Take screenshot after returning
@@ -170,6 +179,7 @@ test.describe('My Recipes Functionality', () => {
       expect(page.url()).toContain('/my-recipes');
     } catch (error) {
       console.error(`Error in recipe toggle test: ${error instanceof Error ? error.message : String(error)}`);
+      await printPageUrl(page, 'recipe toggle error');
       await screenshots.captureError(`Recipe toggle error: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }

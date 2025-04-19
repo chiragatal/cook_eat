@@ -44,8 +44,8 @@ export const API_ENDPOINTS = {
 // Page URLs relative to base URL
 export const PAGE_URLS = {
   home: '/',
-  login: '/login',
-  signup: '/signup',
+  login: '/auth/signin',
+  signup: '/auth/signup',
   calendar: {
     default: '/calendar',
     full: '/full-calendar',

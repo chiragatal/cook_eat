@@ -32,7 +32,11 @@ function SignInForm() {
       console.log('Sign in result:', result);
 
       if (result?.error) {
-        setError(`Authentication error: ${result.error}`);
+        if (result.error === 'CredentialsSignin') {
+          setError('Invalid email or password');
+        } else {
+          setError(`Authentication error: ${result.error}`);
+        }
       } else {
         router.push(callbackUrl);
         router.refresh();
@@ -115,7 +119,7 @@ function SignInForm() {
 
         <div className="mt-6">
           <div className="text-center text-sm text-gray-600 dark:text-gray-400">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link
               href={`/auth/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`}
               className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"

@@ -3,13 +3,14 @@ import { ScreenshotHelper } from './utils/screenshot-helper';
 import { createTestTag } from './utils/test-tag';
 import { PAGE_URLS } from './utils/urls';
 import { setupTestDatabase } from './setup/test-database';
-import { loginAsTestUser } from './utils/test-utils';
+import { loginAsTestUser, printPageUrl } from './utils/test-utils';
 
 // Skip calendar tests for now
 test.describe.skip('Calendar Functionality', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the calendar view
     await page.goto('/calendar');
+    await printPageUrl(page, 'calendar page load');
   });
 
   test('calendar loads correctly on desktop', async ({ page }) => {
@@ -26,6 +27,7 @@ test.describe.skip('Calendar Functionality', () => {
 
     // Take initial view screenshot
     await screenshots.take('initial-view');
+    await printPageUrl(page, 'calendar desktop view');
 
     // Check for calendar heading
     const heading = page.getByRole('heading', { name: /Calendar/i });
@@ -242,6 +244,7 @@ test.describe.skip('Calendar Functionality', () => {
 
     // Take initial screenshot
     await screenshots.take('mobile-calendar-view');
+    await printPageUrl(page, 'calendar mobile view initial');
 
     // Find a date that has a recipe
     const dateWithRecipe = page.locator('.has-recipes, .event-indicator').first();
@@ -280,6 +283,7 @@ test.describe.skip('Calendar Functionality', () => {
 
       // Wait for navigation
       await page.waitForLoadState('networkidle');
+      await printPageUrl(page, 'after recipe click navigation');
     });
 
     // Should navigate to recipe details
@@ -287,6 +291,7 @@ test.describe.skip('Calendar Functionality', () => {
 
     // Take screenshot of recipe details
     await screenshots.take('mobile-recipe-details');
+    await printPageUrl(page, 'recipe details page');
 
     await expect(page.locator('h1')).toBeVisible();
   });
@@ -442,6 +447,7 @@ test.describe('Calendar Functionality', () => {
     await setupTestDatabase(testTag);
     await loginAsTestUser(page, testTag);
     await page.goto(PAGE_URLS.calendar.default);
+    await printPageUrl(page, 'calendar default view');
     await screenshots.take('calendar-view');
     // ... existing code ...
   });
@@ -452,6 +458,7 @@ test.describe('Calendar Functionality', () => {
     await setupTestDatabase(testTag);
     await loginAsTestUser(page, testTag);
     await page.goto(PAGE_URLS.calendar.full);
+    await printPageUrl(page, 'calendar full view');
     await screenshots.take('full-calendar');
     // ... existing code ...
   });
