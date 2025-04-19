@@ -26,7 +26,7 @@ test.describe('Home Page', () => {
     await setupTestDatabase(testTag);
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'home-page', 'home', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'home');
 
     // Navigate to home page
     await page.goto('/');
@@ -84,7 +84,7 @@ test.describe('Home Page', () => {
     await setupTestDatabase(testTag);
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'home-logged-in', 'home', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'home');
 
     // Login as test user
     await loginAsTestUser(page, testTag);
@@ -148,7 +148,7 @@ test.describe('Home Page', () => {
     const testTag = createTestTag('home', 'navigation');
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'navigation', 'home', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'home');
 
     // Login as test user
     await loginAsTestUser(page, testTag);
@@ -223,7 +223,7 @@ test.describe('Home Page', () => {
 
   test('displays welcome message', async ({ page }) => {
     const testTag = createTestTag('home', 'welcome');
-    const screenshots = new ScreenshotHelper(page, testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'home');
     await setupTestDatabase(testTag);
     await page.goto(PAGE_URLS.home);
     await screenshots.take('welcome-message');
@@ -232,7 +232,7 @@ test.describe('Home Page', () => {
 
   test('displays featured recipes', async ({ page }) => {
     const testTag = createTestTag('home', 'featured');
-    const screenshots = new ScreenshotHelper(page, testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'home');
     await setupTestDatabase(testTag);
     await page.goto(PAGE_URLS.home);
     await screenshots.take('featured-recipes');
@@ -241,7 +241,7 @@ test.describe('Home Page', () => {
 
   test('displays user menu when logged in', async ({ page }) => {
     const testTag = createTestTag('home', 'user-menu');
-    const screenshots = new ScreenshotHelper(page, testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'home');
     await setupTestDatabase(testTag);
     await loginAsTestUser(page, testTag);
     await page.goto(PAGE_URLS.home);
@@ -255,7 +255,7 @@ test('responsive design works on mobile', async ({ page }) => {
   const testTag = createTestTag('home', 'responsive-mobile');
 
   // Create screenshot helper with the test tag
-  const screenshots = new ScreenshotHelper(page, 'home-mobile', 'responsive', '', testTag);
+  const screenshots = new ScreenshotHelper(page, testTag, 'responsive');
 
   // Set viewport to mobile size first
   await page.setViewportSize({ width: 375, height: 667 });

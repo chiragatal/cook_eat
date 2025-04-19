@@ -8,7 +8,7 @@ import { setupTestDatabase, getTestPostId } from './setup/test-database';
 test.describe('Recipe Reactions', () => {
   test('displays reaction buttons', async ({ page }) => {
     const testTag = createTestTag('reactions', 'display');
-    const screenshots = new ScreenshotHelper(page, testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'recipes');
     await setupTestDatabase(testTag);
     const testPostId = await getTestPostId();
     await page.goto(PAGE_URLS.recipes.details(testPostId));
@@ -19,7 +19,7 @@ test.describe('Recipe Reactions', () => {
     await expect(recipeTitle).toBeVisible({ timeout: 10000 });
 
     // Create screenshot helper with the test tag
-    const screenshotsHelper = new ScreenshotHelper(page, 'recipe-reactions', 'reactions', '', testTag);
+    const screenshotsHelper = new ScreenshotHelper(page, testTag, 'reactions');
 
     // Take initial screenshot
     await screenshotsHelper.take('recipe-page');
@@ -57,7 +57,7 @@ test.describe('Recipe Reactions', () => {
 
   test('can toggle reactions', async ({ page }) => {
     const testTag = createTestTag('reactions', 'toggle');
-    const screenshots = new ScreenshotHelper(page, testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'recipes');
     await setupTestDatabase(testTag);
     await loginAsTestUser(page, testTag);
     const testPostId = await getTestPostId();
@@ -128,7 +128,7 @@ test.describe('Recipe Reactions', () => {
 
   test('verifies user reaction state persists after page reload', async ({ page }) => {
     const testTag = createTestTag('reactions', 'persistence');
-    const screenshots = new ScreenshotHelper(page, testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'recipes');
     await setupTestDatabase(testTag);
     await loginAsTestUser(page, testTag);
     const testPostId = await getTestPostId();

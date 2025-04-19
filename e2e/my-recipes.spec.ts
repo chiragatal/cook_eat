@@ -24,7 +24,7 @@ test.describe('My Recipes Functionality', () => {
     await setupTestDatabase(testTag);
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'my-recipes-auth-redirect', 'my-recipes', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'my-recipes');
 
     try {
       // Go to my-recipes without being logged in
@@ -63,7 +63,7 @@ test.describe('My Recipes Functionality', () => {
     await setupTestDatabase(testTag);
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'my-recipes-authenticated', 'my-recipes', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'my-recipes');
 
     try {
       // Login first
@@ -118,7 +118,7 @@ test.describe('My Recipes Functionality', () => {
     const testTag = createTestTag('my-recipes', 'toggle-view');
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'recipe-toggle', 'my-recipes', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'my-recipes');
 
     try {
       // Login first
@@ -180,7 +180,7 @@ test.describe('My Recipes Functionality', () => {
     const testTag = createTestTag('my-recipes', 'search-filter');
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'my-recipes-search', 'my-recipes', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'my-recipes');
 
     try {
       // Login first
@@ -270,13 +270,16 @@ test.describe('My Recipes Functionality', () => {
     }
   });
 
-  test('can view recipe details from my recipes', async ({ page }) => {
+  test('can view recipe details', async ({ page }) => {
+    // Create a test tag for this test
+    const testTag = createTestTag('my-recipes', 'view-details');
+
     // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'my-recipes-details', 'my-recipes');
+    const screenshots = new ScreenshotHelper(page, testTag, 'my-recipes');
 
     try {
       // Login first
-      await loginAsTestUser(page, screenshots.testTag);
+      await loginAsTestUser(page, testTag);
 
       // Go to my-recipes
       await page.goto('/my-recipes');
@@ -352,12 +355,15 @@ test.describe('My Recipes Functionality', () => {
   });
 
   test('mobile view displays my recipes properly', async ({ page }) => {
+    // Create a test tag for this test
+    const testTag = createTestTag('my-recipes', 'mobile-view');
+
     // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'my-recipes-mobile', 'my-recipes');
+    const screenshots = new ScreenshotHelper(page, testTag, 'my-recipes');
 
     try {
       // Login first
-      await loginAsTestUser(page, screenshots.testTag);
+      await loginAsTestUser(page, testTag);
 
       // Go to my-recipes
       await page.goto('/my-recipes');
@@ -427,12 +433,15 @@ test.describe('My Recipes Functionality', () => {
   });
 
   test('can delete a recipe', async ({ page }) => {
+    // Create a test tag for this test
+    const testTag = createTestTag('my-recipes', 'delete-recipe');
+
     // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'delete-recipe', 'my-recipes');
+    const screenshots = new ScreenshotHelper(page, testTag, 'my-recipes');
 
     try {
       // Login first
-      await loginAsTestUser(page, screenshots.testTag);
+      await loginAsTestUser(page, testTag);
 
       // Go to my-recipes
       await page.goto('/my-recipes');

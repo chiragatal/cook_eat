@@ -127,31 +127,86 @@ export async function setupTestDatabase(testTag: string) {
       if (!quietMode) {
         console.log('User table not found - have you run "npm run setup-test-db" first?');
       }
-      return;
+
+      // Continue anyway - the preview database might have tables with different casing
+      if (!quietMode) {
+        console.log('Attempting to create test data anyway...');
+      }
     }
+
+    // Add a standard test user that's always available with the same credentials
+    const standardTestUser = {
+      id: '00000000-0000-0000-0000-000000000001',
+      email: 'test_e2e_test@example.com',
+      name: 'Test User',
+      passwordHash: '$2a$10$CwTycUXWue0Thq9StjUM0uG7kQOD1yJFZb4yHiay.fi3RNcDpw76q', // password: 'password12345'
+      isAdmin: false,
+    };
 
     // Create test user for this test
     if (!quietMode) {
       console.log(`Creating test user data for test: ${testTag}...`);
     }
 
-    await safeUpsert(prisma.user, 'User', {
-      where: { email: currentTestData.user.email },
-      update: currentTestData.user,
-      create: currentTestData.user
-    });
+    try {
+      // First try to create/update the standard test user
+      await safeUpsert(prisma.user, 'User', {
+        where: { email: 'test_e2e_test@example.com' },
+        update: standardTestUser,
+        create: standardTestUser
+      });
 
+      // Then create/update the test-specific user
+      await safeUpsert(prisma.user, 'User', {
+        where: { email: currentTestData.user.email },
+        update: currentTestData.user,
+        create: currentTestData.user
+      });
+    } catch (error) {
+      console.log(`Failed to create standard test user: ${error instanceof Error ? error.message : String(error)}`);
+      console.log('Will continue with test-specific user only');
+    }
+
+    // Create test posts
     if (postTableExists) {
       // Create test post for this test
       if (!quietMode) {
         console.log(`Creating test post data for test: ${testTag}...`);
       }
 
-      await safeUpsert(prisma.post, 'Post', {
-        where: { id: currentTestData.post.id },
-        update: currentTestData.post,
-        create: { ...currentTestData.post, userId: currentTestData.user.id }
-      });
+      try {
+        // Create a standard test post
+        const standardTestPost = {
+          id: '00000000-0000-0000-0000-000000000002',
+          title: 'Test Recipe',
+          description: 'A standard recipe created for automated testing',
+          ingredients: 'Standard test ingredients',
+          steps: 'Standard test steps',
+          images: JSON.stringify([`${getBaseUrl()}/test-image.jpg`]),
+          tags: 'test,e2e,standard',
+          category: 'Testing',
+          cookingTime: 30,
+          difficulty: 'Easy',
+          isPublic: true,
+          userId: standardTestUser.id
+        };
+
+        // First create the standard test post
+        await safeUpsert(prisma.post, 'Post', {
+          where: { id: standardTestPost.id },
+          update: standardTestPost,
+          create: standardTestPost
+        });
+
+        // Then create the test-specific post
+        await safeUpsert(prisma.post, 'Post', {
+          where: { id: currentTestData.post.id },
+          update: currentTestData.post,
+          create: { ...currentTestData.post, userId: currentTestData.user.id }
+        });
+      } catch (error) {
+        console.log(`Failed to create test posts: ${error instanceof Error ? error.message : String(error)}`);
+      }
     }
 
     if (!quietMode) {

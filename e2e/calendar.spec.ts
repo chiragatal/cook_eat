@@ -17,7 +17,7 @@ test.describe.skip('Calendar Functionality', () => {
     const testTag = createTestTag('calendar', 'desktop-load');
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'calendar-desktop', 'calendar', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'calendar');
 
     // Set desktop viewport and take screenshot
     await screenshots.captureAction('resize-to-desktop', async () => {
@@ -61,7 +61,7 @@ test.describe.skip('Calendar Functionality', () => {
     const testTag = createTestTag('calendar', 'mobile-load');
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'calendar-mobile', 'calendar', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'calendar');
 
     // Set mobile viewport and capture
     await screenshots.captureAction('resize-to-mobile', async () => {
@@ -99,7 +99,7 @@ test.describe.skip('Calendar Functionality', () => {
     const testTag = createTestTag('calendar', 'desktop-navigation');
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'month-navigation-desktop', 'calendar', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'calendar');
 
     // Set desktop viewport
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -158,7 +158,7 @@ test.describe.skip('Calendar Functionality', () => {
     const testTag = createTestTag('calendar', 'mobile-navigation');
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'month-navigation-mobile', 'calendar', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'calendar');
 
     // Set mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });
@@ -196,7 +196,7 @@ test.describe.skip('Calendar Functionality', () => {
     const testTag = createTestTag('calendar', 'date-selection');
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'date-selection', 'calendar', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'calendar');
 
     // Take initial screenshot
     await screenshots.take('calendar-view');
@@ -235,7 +235,7 @@ test.describe.skip('Calendar Functionality', () => {
     const testTag = createTestTag('calendar', 'mobile-recipe-details');
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'calendar-recipe-mobile', 'calendar', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'calendar');
 
     // Set mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });
@@ -292,8 +292,11 @@ test.describe.skip('Calendar Functionality', () => {
   });
 
   test('calendar handles swipe gestures on mobile', async ({ page }) => {
+    // Create a test tag for this test
+    const testTag = createTestTag('calendar', 'mobile-swipe');
+
     // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'calendar-swipe', 'calendar');
+    const screenshots = new ScreenshotHelper(page, testTag, 'calendar');
 
     // Set mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });
@@ -352,8 +355,11 @@ test.describe.skip('Calendar Functionality', () => {
   });
 
   test('full calendar view loads and displays correctly', async ({ page }) => {
+    // Create a test tag for this test
+    const testTag = createTestTag('calendar', 'full-view');
+
     // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'full-calendar', 'calendar');
+    const screenshots = new ScreenshotHelper(page, testTag, 'calendar');
 
     // Navigate to the full calendar view
     await page.goto('/full-calendar');
@@ -391,8 +397,11 @@ test.describe.skip('Calendar Functionality', () => {
   });
 
   test('full calendar is responsive on mobile', async ({ page }) => {
+    // Create a test tag for this test
+    const testTag = createTestTag('calendar', 'mobile-full-view');
+
     // Create screenshot helper
-    const screenshots = new ScreenshotHelper(page, 'full-calendar-mobile', 'calendar');
+    const screenshots = new ScreenshotHelper(page, testTag, 'calendar');
 
     // Navigate to the full calendar view
     await page.goto('/full-calendar');
@@ -429,7 +438,7 @@ test.describe.skip('Calendar Functionality', () => {
 test.describe('Calendar Functionality', () => {
   test('displays calendar view', async ({ page }) => {
     const testTag = createTestTag('calendar', 'display');
-    const screenshots = new ScreenshotHelper(page, testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'calendar');
     await setupTestDatabase(testTag);
     await loginAsTestUser(page, testTag);
     await page.goto(PAGE_URLS.calendar.default);
@@ -439,7 +448,7 @@ test.describe('Calendar Functionality', () => {
 
   test('displays full calendar view', async ({ page }) => {
     const testTag = createTestTag('calendar', 'full-view');
-    const screenshots = new ScreenshotHelper(page, testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'calendar');
     await setupTestDatabase(testTag);
     await loginAsTestUser(page, testTag);
     await page.goto(PAGE_URLS.calendar.full);

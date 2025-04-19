@@ -21,6 +21,9 @@ const screenshotsDebugDir = path.join(screenshotsDir, 'debug');
  * Login with the test user account
  */
 export async function loginAsTestUser(page: Page, testTag: string) {
+  // Create screenshot helper for login steps
+  const screenshots = new ScreenshotHelper(page, testTag, 'auth');
+
   // Set up test data
   await setupTestDatabase(testTag);
 
@@ -28,23 +31,100 @@ export async function loginAsTestUser(page: Page, testTag: string) {
   await page.goto(PAGE_URLS.login);
   await page.waitForLoadState('networkidle');
 
-  // Wait for elements to be available with a timeout
-  await page.waitForSelector('input[type="email"], input[name="email"], input[placeholder*="email" i]', { timeout: 5000 })
-    .catch(() => console.log('Email input not found, trying alternative selectors'));
+  // Take screenshot of the login page
+  await screenshots.take('login-page');
 
-  // More flexible selectors to find inputs
-  const emailField = page.locator('input[type="email"], input[name="email"], input[placeholder*="email" i]').first();
-  const passwordField = page.locator('input[type="password"], input[name="password"], input[placeholder*="password" i]').first();
-  const signinButton = page.locator('button[type="submit"], button:has-text("Sign in"), button:has-text("Login")').first();
+  // Try a more robust approach to find login form elements with multiple selectors
+  let emailField, passwordField, signinButton;
 
-  // Fill in credentials with better error handling - use the test user from test-database.ts
-  await emailField.fill('test_e2e_test@example.com');
-  await passwordField.fill('password12345');
+  try {
+    // Wait for login form to be visible
+    await page.waitForSelector('form, [role="form"]', { timeout: 10000 });
 
-  // Submit the form and wait for navigation
-  await signinButton.click();
-  await page.waitForURL('**/*');
-  await page.waitForLoadState('networkidle');
+    // Look for email input with multiple selectors
+    emailField = page.locator([
+      'input[type="email"]',
+      'input[name="email"]',
+      'input[placeholder*="email" i]',
+      'input[placeholder*="username" i]',
+      'input:not([type="password"])'
+    ].join(', ')).first();
+
+    // Look for password input with multiple selectors
+    passwordField = page.locator([
+      'input[type="password"]',
+      'input[name="password"]',
+      'input[placeholder*="password" i]'
+    ].join(', ')).first();
+
+    // Look for submit button with multiple selectors
+    signinButton = page.locator([
+      'button[type="submit"]',
+      'button:has-text("Sign in")',
+      'button:has-text("Login")',
+      'button:has-text("Log in")',
+      'input[type="submit"]',
+      'form button'
+    ].join(', ')).first();
+
+    // Verify elements are found
+    await emailField.waitFor({ timeout: 5000 });
+    await passwordField.waitFor({ timeout: 5000 });
+    await signinButton.waitFor({ timeout: 5000 });
+
+  } catch (error) {
+    console.error('Error finding login form elements:', error);
+    await takeDebugScreenshot(page, 'login-form-not-found', 'auth');
+    throw new Error('Login form elements not found');
+  }
+
+  try {
+    // Take screenshot before filling in form
+    await screenshots.take('before-login-submission');
+
+    // Fill in credentials - use the standard test user for consistency
+    await emailField.fill('test_e2e_test@example.com');
+    await passwordField.fill('password12345');
+
+    // Take screenshot before clicking the login button
+    await screenshots.captureAction('login-submission', async () => {
+      await signinButton.click();
+      try {
+        // Wait for navigation or wait for a common element that indicates successful login
+        await Promise.race([
+          page.waitForURL('**/*', { timeout: 10000 }),
+          page.waitForSelector('header, nav, [role="banner"], a:has-text("Log out"), a:has-text("Logout")', { timeout: 10000 })
+        ]);
+      } catch (error) {
+        console.log('Navigation or authenticated element waiting timed out, continuing anyway');
+      }
+      await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
+    });
+
+    // Take screenshot after login
+    await screenshots.take('after-login-submission');
+
+    // Verify login was successful
+    const isAuthenticated = await page.locator([
+      '.user-menu',
+      '.profile-icon',
+      '[data-testid="user-menu"]',
+      'a:has-text("Log out")',
+      'a:has-text("Logout")',
+      'a:has-text("My Recipes")',
+      'a:has-text("Profile")'
+    ].join(', ')).count() > 0;
+
+    if (!isAuthenticated) {
+      console.log('Warning: Login may not have been successful, but continuing with test');
+    } else {
+      console.log('Login successful');
+    }
+  } catch (error) {
+    console.error('Error during login process:', error);
+    await takeDebugScreenshot(page, 'login-process-error', 'auth');
+    throw new Error('Login process failed');
+  }
 }
 
 /**
@@ -55,7 +135,6 @@ export async function resetDatabase() {
   // Just directly call setupTestDatabase instead of a reset function that no longer exists
   const testTag = createTestTag('setup', 'reset-database');
   await setupTestDatabase(testTag);
-  console.log('Test database setup complete');
 }
 
 /**

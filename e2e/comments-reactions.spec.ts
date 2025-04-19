@@ -64,7 +64,7 @@ test.describe('Comments and Reactions', () => {
     const testTag = createTestTag('recipe', 'view-comments');
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'comments-view', 'comments', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'comments');
 
     // Take screenshot of the page
     await screenshots.take('recipe-with-comments');
@@ -106,7 +106,7 @@ test.describe('Comments and Reactions', () => {
     const testTag = createTestTag('recipe', 'add-comment');
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'add-comment', 'comments', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'comments');
 
     // Take initial screenshot
     await screenshots.take('before-adding-comment');
@@ -193,7 +193,7 @@ test.describe('Comments and Reactions', () => {
     const testTag = createTestTag('recipe', 'react');
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'recipe-reactions', 'reactions', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'reactions');
 
     // Take initial screenshot
     await screenshots.take('before-reaction');
@@ -261,7 +261,7 @@ test.describe('Comments and Reactions', () => {
     const testTag = createTestTag('recipe', 'react-to-comment');
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'comment-reactions', 'reactions', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'reactions');
 
     // Skip if we don't have a comment ID and can't find a comment
     if (!addedCommentId) {

@@ -11,7 +11,7 @@ export class ScreenshotHelper {
   private testName: string;
   private category: string;
   private screenshotsDir: string;
-  private testId: string;
+  private testId: string = '';
   private testTag: string;
   private metadataWritten: boolean = false;
 

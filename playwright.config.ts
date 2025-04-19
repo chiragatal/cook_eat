@@ -28,11 +28,10 @@ const recordVideo = process.env.PLAYWRIGHT_VIDEO === 'on';
 const artifactsDir = join('test-results', 'latest', 'artifacts');
 
 // Log configuration (unless in ultra-quiet mode)
-if (logLevel !== 'ultra-quiet') {
+if (logLevel !== 'ultra-quiet' && logLevel !== 'quiet') {
   console.log(`Using test base URL: ${baseURL}`);
   console.log(`Using preview deployment: YES`);
   console.log(`Using preview database: YES`);
-  console.log(`Quiet mode: ${logLevel === 'quiet' ? 'YES' : 'NO'}`);
   console.log(`Screenshots enabled: ${takeScreenshots ? 'YES' : 'NO'}`);
   console.log(`Video recording enabled: ${recordVideo ? 'YES' : 'NO'}`);
   console.log(`Starting local web server: NO`);

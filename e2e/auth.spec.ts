@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { ScreenshotHelper } from './utils/screenshot-helper';
 import { resetDatabase, waitForNetworkIdle, loginAsTestUser } from './utils/test-utils';
-import { createTestTag, setupTestDatabase } from './setup/test-database';
+import { createTestTag } from './utils/test-tag';
+import { setupTestDatabase } from './setup/test-database';
 import { PAGE_URLS } from './utils/urls';
 
 test.describe('Authentication flows', () => {
@@ -15,7 +16,7 @@ test.describe('Authentication flows', () => {
 
   test('signin page loads correctly', async ({ page }) => {
     const testTag = createTestTag('auth', 'signin-page-load');
-    const screenshots = new ScreenshotHelper(page, testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'auth');
     await setupTestDatabase(testTag);
 
     await page.goto(PAGE_URLS.login);
@@ -26,7 +27,7 @@ test.describe('Authentication flows', () => {
 
   test('signup page loads correctly', async ({ page }) => {
     const testTag = createTestTag('auth', 'signup-page-load');
-    const screenshots = new ScreenshotHelper(page, testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'auth');
     await setupTestDatabase(testTag);
 
     await page.goto(PAGE_URLS.signup);
@@ -37,7 +38,7 @@ test.describe('Authentication flows', () => {
 
   test('login error is displayed for incorrect credentials', async ({ page }) => {
     const testTag = createTestTag('auth', 'login-error');
-    const screenshots = new ScreenshotHelper(page, testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'auth');
     await setupTestDatabase(testTag);
 
     // Navigate to login page
@@ -62,7 +63,7 @@ test.describe('Authentication flows', () => {
 
   test('can login with valid credentials', async ({ page }) => {
     const testTag = createTestTag('auth', 'successful-login');
-    const screenshots = new ScreenshotHelper(page, testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'auth');
     await setupTestDatabase(testTag);
 
     // Create safe prefix from test tag for email

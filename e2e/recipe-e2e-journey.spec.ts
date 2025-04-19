@@ -146,7 +146,7 @@ test.describe('End-to-End Recipe Journey', () => {
     await loginAsTestUser(page, testTag);
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'recipe-journey', 'recipes', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'recipes');
 
     // Navigate to the test recipe page
     await page.goto(`/recipe/${testPostId}`);
@@ -262,7 +262,7 @@ test.describe('End-to-End Recipe Journey', () => {
     await loginAsTestUser(page, testTag);
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'recipe-navigation', 'recipes', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'recipes');
 
     // Go to the recipes listing page
     await page.goto('/all-recipes');

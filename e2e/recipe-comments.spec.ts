@@ -40,7 +40,7 @@ test.describe('Recipe Comments', () => {
 
   test('displays comment section', async ({ page }) => {
     const testTag = createTestTag('comments', 'display');
-    const screenshots = new ScreenshotHelper(page, testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'recipes');
     await setupTestDatabase(testTag);
     const testPostId = await getTestPostId();
     await page.goto(PAGE_URLS.recipes.details(testPostId));
@@ -50,7 +50,7 @@ test.describe('Recipe Comments', () => {
 
   test('can add comment', async ({ page }) => {
     const testTag = createTestTag('comments', 'add');
-    const screenshots = new ScreenshotHelper(page, testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'recipes');
     await setupTestDatabase(testTag);
     await loginAsTestUser(page, testTag);
     const testPostId = await getTestPostId();
@@ -64,7 +64,7 @@ test.describe('Recipe Comments', () => {
     const testTag = createTestTag('recipe', 'add-comment');
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'real-comments-test', 'comments', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'comments');
 
     // Take screenshot of the initial recipe page
     await screenshots.take('recipe-initial-view');
@@ -130,7 +130,7 @@ test.describe('Recipe Comments', () => {
     const testTag = createTestTag('recipe', 'edit-comment');
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'edit-comment', 'comments', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'comments');
 
     // Find our comment
     const comment = page.locator(`.comment[data-id="${addedCommentId}"]`);
@@ -195,7 +195,7 @@ test.describe('Recipe Comments', () => {
     const testTag = createTestTag('recipe', 'delete-comment');
 
     // Create screenshot helper with the test tag
-    const screenshots = new ScreenshotHelper(page, 'delete-comment', 'comments', '', testTag);
+    const screenshots = new ScreenshotHelper(page, testTag, 'comments');
 
     // Take screenshot before deletion
     await screenshots.take('before-delete');
